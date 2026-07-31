@@ -1,0 +1,216 @@
+---
+/*
+ * A página inteira, montada uma vez e servida a qualquer idioma.
+ *
+ * Existe para que acrescentar um idioma custe uma rota de três linhas em vez de
+ * uma cópia desta composição — `src/pages/index.astro` é o português e
+ * `src/pages/en/index.astro` será o inglês, os dois chamando isto aqui.
+ *
+ * É também o ÚNICO ponto que fala com o Sanity: uma consulta, e o conteúdo desce
+ * por props. Os componentes não sabem de onde veio — que é o que sempre esteve
+ * escrito no AGENTS.md ("muda a origem do dado e os componentes ficam iguais").
+ */
+import Base from './Base.astro';
+import Abertura from '../components/Abertura.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import Hero from '../components/Hero.astro';
+import Manifesto from '../components/Manifesto.astro';
+import Clientes from '../components/Clientes.astro';
+import Sobre from '../components/Sobre.astro';
+import Areas from '../components/Areas.astro';
+import Divisoria from '../components/Divisoria.astro';
+import FaleConosco from '../components/FaleConosco.astro';
+import Formulario from '../components/Formulario.astro';
+import Rodape from '../components/Rodape.astro';
+import { buscarConteudo } from '../lib/conteudo';
+
+interface Props {
+  idioma: string;
+}
+
+const { idioma } = Astro.props;
+const { pagina, config } = await buscarConteudo(idioma);
+---
+
+<Base titulo={pagina.seo.titulo} descricao={pagina.seo.descricao} idioma={idioma}>
+  <Abertura />
+  <Cabecalho
+    navegacao={pagina.navegacao}
+    whatsapp={config.whatsapp}
+    whatsappTexto={pagina.whatsappTexto}
+  />
+  {/* O "Voltar ao topo" do rodapé mira aqui: o header é fixo, então o topo do
+      `main` é o topo do documento. Sem JS o âncora funciona igual. */}
+  <main id="topo">
+    <div class="palco">
+      <Hero hero={pagina.hero} />
+    </div>
+
+    {/* Sobe por cima do hero conforme a página rola. */}
+    <div class="conteudo">
+      <Manifesto manifesto={pagina.manifesto} />
+      <Clientes rotulo={pagina.clientesRotulo} clientes={config.clientes} idioma={idioma} />
+    </div>
+
+    {/* E o Sobre repete a jogada: sobe por cima do bloco branco. */}
+    <div class="camada-sobre">
+      <Sobre
+        historia={pagina.historia}
+        socios={pagina.socios}
+        materia={config.materia}
+        apresentacao={config.apresentacao}
+        email={config.email}
+        idioma={idioma}
+      />
+    </div>
+
+    {/* Mais uma volta: as Áreas sobem por cima do Sobre. */}
+    <div class="camada-areas">
+      <Areas areas={pagina.areas} />
+    </div>
+
+    {/* A faixa vermelha abre a camada do contato e é ela que passa por cima da
+        grade das Áreas — as duas seções são brancas, então quem marca a
+        virada é o movimento, não a cor. A verde mora dentro das Áreas, entre os
+        dois grupos (ver Areas.astro). */}
+    <div class="camada-contato">
+      <Divisoria cor="vermelha" />
+      <FaleConosco faleConosco={pagina.faleConosco} config={config} idioma={idioma} />
+      <Formulario formulario={pagina.formulario} areas={pagina.areas} envio={config.formulario} />
+    </div>
+  </main>
+
+  {/* Fora do `main` e último no documento: a revelação dele se apoia em ser o
+      fim da página (ver Rodape.astro). */}
+  <Rodape rodape={pagina.rodape} config={config} idioma={idioma} />
+</Base>
+
+<style>
+  /*
+   * Parallax do hero.
+   *
+   * Só `position: sticky` deixaria o hero parado (velocidade zero). Para que
+   * ele suba mais devagar que o conteúdo, mas ainda visivelmente, somamos um
+   * deslocamento ligado à rolagem: em 100vh de rolagem ele anda 35vh, ou seja,
+   * 35% da velocidade do conteúdo.
+   *
+   * Onde `animation-timeline` não existe (Firefox hoje), o hero fica só
+   * grudado no topo — perde o movimento lento, mas o empilhamento continua
+   * correto e nada quebra.
+   */
+  .palco {
+    position: sticky;
+    top: 0;
+    z-index: 0;
+  }
+
+  .conteudo {
+    position: relative;
+    z-index: 1;
+    background: var(--cor-branco);
+  }
+
+  /*
+   * Cada camada é ao mesmo tempo a que cobre a de baixo e a que vai ser
+   * coberta pela de cima: publica a própria linha do tempo (usada pela
+   * anterior para frear) e usa a da seguinte para ser freada.
+   *
+   * `entry` vai de "a camada encosta na base da tela" até "o topo dela chega
+   * ao topo da tela" — 100vh cravados, que é a conta em que o freio se apoia.
+   */
+  .camada-sobre {
+    position: relative;
+    z-index: 2;
+    view-timeline-name: --sobre;
+    view-timeline-axis: block;
+  }
+
+  .camada-areas {
+    position: relative;
+    z-index: 3;
+    view-timeline-name: --areas;
+    view-timeline-axis: block;
+  }
+
+  /*
+   * O contato é a única camada que NÃO entra por cima da anterior: a passagem
+   * das Áreas para ele é rolagem linear, e quem marca a virada é o movimento
+   * das esteiras da divisória (ver Divisoria.astro).
+   *
+   * Por isso ele não publica `view-timeline`: não há ninguém para frear contra
+   * ele. O `z-index` fica só para o empilhamento — sem `transform` em jogo, as
+   * duas seções nem chegam a se sobrepor.
+   */
+  .camada-contato {
+    position: relative;
+    z-index: 4;
+  }
+
+  /* Cada camada precisa da timeline da SEGUINTE, e por padrão um elemento só
+     enxerga a de um ancestral ou de um irmão anterior. O escopo aqui é o que
+     deixa olhar para a frente. */
+  main {
+    timeline-scope: --sobre, --areas;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .palco {
+        animation: hero-subir linear both;
+        animation-range: 0 100vh;
+      }
+
+      /*
+       * Mesmos 35% de velocidade do hero, agora para quem está sendo coberto:
+       * o bloco branco sob o Sobre, e o Sobre sob as Áreas.
+       *
+       * Aqui o freio é por transform, não por `sticky`. Tentei `sticky` e não
+       * serve: com `bottom: 0` o navegador puxa o bloco para cima desde o
+       * início da página (ele fica preso à base da tela ANTES de chegar a hora),
+       * e o branco cobria o hero desde a rolagem zero. Com `top` só funcionaria
+       * sabendo a altura do bloco, que depende do conteúdo.
+       *
+       * Como a faixa `entry` dura exatamente 100vh de rolagem, empurrar 65vh
+       * para baixo nesse intervalo deixa o bloco subindo a 35% da velocidade
+       * da página — a mesma conta do hero, por outro caminho.
+       */
+      .conteudo,
+      .camada-sobre {
+        animation: camada-frear linear both;
+        animation-range: entry;
+      }
+
+      /*
+       * Regra separada de propósito — não juntar com a de cima. O minificador
+       * funde `animation` + `animation-timeline` no atalho, e o navegador
+       * rejeita nome de timeline ali: descarta a declaração inteira,
+       * `animation-name` vira `none` e o parallax some no build (só o dev,
+       * sem minificação, continuava funcionando). Seletor diferente impede
+       * a fusão. Mesmo cuidado vale no manifesto.
+       */
+      main > .palco {
+        animation-timeline: scroll(root block);
+      }
+
+      main > .conteudo {
+        animation-timeline: --sobre;
+      }
+
+      main > .camada-sobre {
+        animation-timeline: --areas;
+      }
+    }
+  }
+
+  @keyframes hero-subir {
+    to {
+      transform: translateY(-35vh);
+    }
+  }
+
+  @keyframes camada-frear {
+    to {
+      transform: translateY(65vh);
+    }
+  }
+</style>

@@ -1,0 +1,365 @@
+---
+import MapaPino from '../assets/icones/mapa-pino.svg';
+import Agenda from '../assets/icones/agenda.svg';
+import Relogio from '../assets/icones/relogio.svg';
+import { textos } from '../lib/interface';
+import type { Config, Pagina } from '../lib/conteudo';
+
+interface Props {
+  faleConosco: NonNullable<Pagina>['faleConosco'];
+  config: NonNullable<Config>;
+  idioma: string;
+}
+
+const { faleConosco, config, idioma } = Astro.props;
+const t = textos(idioma);
+
+/* Os dois canais do bloco da agenda: telefone e e-mail, nesta ordem. O rótulo
+   lido pelo leitor de tela acompanha cada um. */
+const canais = [
+  {
+    texto: config.telefonePrincipal.texto,
+    href: `tel:${config.telefonePrincipal.href}`,
+    rotulo: t['contato.telefone'],
+  },
+  { texto: config.email, href: `mailto:${config.email}`, rotulo: t['contato.email'] },
+];
+---
+
+<section class="fale-conosco" id="contato">
+  <div class="fale-conosco__coluna">
+    <div class="fale-conosco__cabecalho">
+      {/* Chapéu — pedido do cliente, 2026-07-31: o rótulo "Localização", que
+          era coluna grudada à direita, vira texto de apoio acima do título. */}
+      <p class="fale-conosco__chapeu">{faleConosco.rotulo}</p>
+      <h3 class="fale-conosco__titulo">{faleConosco.titulo}</h3>
+    </div>
+
+    <div class="cartao-info">
+      {/*
+        `<address>` é o elemento dos dados de contato da página — é isso que
+        esses três blocos são. Nenhum deles tem rótulo escrito no desenho: quem
+        diz o que é cada um são os ícones, então os ícones somem para o leitor
+        de tela e o nome vem no `.sr-only` ao lado.
+      */}
+      <address class="cartao-info__dados">
+        <div class="dado dado--endereco">
+          <MapaPino class="dado__icone" aria-hidden="true" />
+          <p class="dado__texto dado__texto--endereco">
+            <span class="sr-only">{t['contato.endereco']}</span>{config.endereco}
+          </p>
+        </div>
+
+        {/* Horário antes dos canais desde a revisão de 2026-07-30 — no arquivo
+            os dois blocos trocaram de lugar (#181:30 antes de #181:29). */}
+        <div class="dado">
+          <Relogio class="dado__icone" aria-hidden="true" />
+          <p class="dado__pilha">
+            <span class="sr-only">{t['contato.atendimento']}</span>
+            {faleConosco.atendimento.map((linha) => <span class="dado__item">{linha}</span>)}
+          </p>
+        </div>
+
+        <div class="dado">
+          <Agenda class="dado__icone dado__icone--canais" aria-hidden="true" />
+          <ul class="dado__pilha">
+            {
+              canais.map((canal) => (
+                <li class="dado__item dado__item--traco">
+                  <a class="dado__canal" href={canal.href}>
+                    <span class="sr-only">{canal.rotulo}</span>
+                    {canal.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </address>
+
+      {/*
+        O "Localização" do rodapé mira aqui — é a única âncora da página que não
+        é uma seção inteira.
+
+        `loading="lazy"` porque o mapa é o fim de uma página longa: quem nunca
+        chega aqui não paga pelos scripts do Google. As medidas do trecho que o
+        Maps entrega (`width`/`height`/`style`) ficam de fora — tamanho mora no
+        CSS, em `rem`, senão sai da escala fluida.
+      */}
+      <iframe
+        id="localizacao"
+        class="cartao-info__mapa"
+        src={config.mapaEmbed}
+        title={faleConosco.mapaTitulo}
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen></iframe>
+    </div>
+  </div>
+
+  {/*
+    A coluna do rótulo (#161:440) vem DEPOIS do conteúdo, e por isso o rótulo
+    gruda à direita — nas Áreas ele fica à esquerda, e o espelho é de
+    propósito. Só existe no desktop: no mobile ele dá lugar ao chapéu acima
+    (ver `.fale-conosco__lateral` e `.fale-conosco__chapeu` no style).
+  */}
+  <div class="fale-conosco__lateral">
+    <h2 class="fale-conosco__rotulo">{faleConosco.rotulo}</h2>
+  </div>
+</section>
+
+<style>
+  .fale-conosco {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem; /* 32px */
+    /* 128 em cima e embaixo (#161:439). Eram 64 embaixo antes da revisão de
+       2026-07-30, quando o formulário completava o respiro com o padding
+       próprio; agora as duas seções têm o respiro inteiro. */
+    padding: var(--respiro-secao) var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
+     `--gutter-mobile` em tokens.css. */
+  @media (max-width: 700px) {
+    .fale-conosco {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  .fale-conosco__coluna {
+    display: flex;
+    flex: 0 1 61.25rem; /* 980px */
+    flex-direction: column;
+    gap: 2rem; /* 32px (#161:442) */
+  }
+
+  .fale-conosco__cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px, mesmo respiro chapéu-título das Áreas */
+  }
+
+  /* Só no mobile (ver `.fale-conosco__lateral` abaixo) — no desktop o rótulo
+     continua sendo a coluna grudada, e mostrar os dois ao mesmo tempo
+     duplicaria o texto. */
+  .fale-conosco__chapeu {
+    display: none;
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  @media (max-width: 700px) {
+    .fale-conosco__chapeu {
+      display: block;
+    }
+  }
+
+  .fale-conosco__titulo {
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    /* Sobra de métrica da Noto Serif KR, mesma dos outros títulos do token
+       `--texto-titulo-secao` (ver Sobre.astro) — `padding-bottom`, não
+       `min-height`: a sobra não muda com o número de linhas, e este título
+       quebra em duas abaixo da largura de projeto. */
+    padding-bottom: 1.25rem; /* 20px na largura de projeto */
+    /* Anula o `text-wrap: balance` do reset. */
+    text-wrap: wrap;
+  }
+
+  .fale-conosco__lateral {
+    display: flex;
+    /* Vai do topo ao pé da seção: é ela que dá ao rótulo grudado onde
+       passear. */
+    align-self: stretch;
+    flex: 1; /* 306px na largura de projeto */
+    flex-direction: column;
+    /* Os 12px do frame (#161:440) — desce o rótulo até a altura da primeira
+       linha do título, bem maior que ele. Fica dentro da caixa de propósito:
+       assim ele viaja junto no `top`. */
+    padding-top: 0.75rem;
+  }
+
+  /*
+   * O rótulo gruda a 128px do topo da tela, igual ao das Áreas — 128 é o
+   * mesmo `--respiro-secao` do padding, e é isso que faz a troca ser
+   * invisível: parado, ele já está nessa altura, então não dá salto no
+   * instante em que passa a grudar.
+   */
+  .fale-conosco__rotulo {
+    position: sticky;
+    top: var(--respiro-secao);
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    /* `RIGHT` no arquivo (#161:441): a coluna fica à direita do conteúdo e o
+       texto encosta na margem da seção, não na divisa com o card. */
+    text-align: right;
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  /* Pedido do cliente, 2026-07-31: a coluna grudada só existe no desktop —
+     no mobile ela dá lugar ao chapéu inline acima do título. */
+  @media (max-width: 700px) {
+    .fale-conosco__lateral {
+      display: none;
+    }
+  }
+
+  /*
+   * --- O card ---
+   *
+   * Traço SÓ EM CIMA (`strokeWeight: 1px 0px 0px` em #161:446): não é caixa
+   * fechada nem par de réguas, é uma régua só, abrindo o bloco embaixo do
+   * título. Embaixo quem fecha é a borda do próprio mapa.
+   *
+   * O padding também é só em cima: o recuo de 32px que era do card inteiro
+   * passou a ser da fileira de dados (#181:26), e o mapa foi para a largura
+   * cheia da coluna.
+   */
+  .cartao-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem; /* 32px */
+    padding-top: 2rem;
+    border-top: 1px solid var(--cor-cinza-claro);
+  }
+
+  .cartao-info__dados {
+    display: flex;
+    /* 96px entre os blocos, e eles ficam agrupados à esquerda: no arquivo a
+       fileira é mais larga que a soma deles e sobra espaço à direita. */
+    gap: 6rem;
+    /* Abaixo da largura de projeto os três blocos não cabem mais numa linha
+       só — sem wrap a fileira vazava a seção. `row-gap` menor que o `gap` de
+       96px porque esse número foi pensado para respiro lado a lado, não para
+       empilhado. */
+    flex-wrap: wrap;
+    row-gap: 2rem;
+    /* O recuo que antes era do card (#181:26). Só à esquerda: o mapa embaixo
+       vai de ponta a ponta. */
+    padding-left: 2rem;
+    /* `<address>` nasce em itálico no navegador. */
+    font-style: normal;
+  }
+
+  .dado {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px */
+  }
+
+  /* Só o endereço tem largura de coluna: é o único que quebra em mais de uma
+     linha, e são os 254px do arquivo que decidem onde. Os outros dois são do
+     tamanho do que carregam. */
+  .dado--endereco {
+    /* `0 1`, não `0 0`: precisa encolher para o `flex-wrap` da fileira acima
+       ter efeito abaixo da largura de projeto. */
+    flex: 0 1 15.875rem; /* 254px */
+  }
+
+  /*
+   * Os ícones foram redesenhados na revisão de 2026-07-30 e cresceram: 40,4px
+   * de altura no endereço (#194:157) e no horário (#194:151), 37,59 na agenda
+   * (#194:153). As alturas divergem no arquivo, e é de propósito que elas
+   * continuem divergindo aqui — os três blocos alinham pelo TOPO do ícone, não
+   * pela base, então quem se desencontra é a linha de texto de cada um, que é
+   * o que o Figma desenha.
+   *
+   * A altura é o que se declara, e a largura vem da proporção do desenho: os
+   * três têm razão própria no arquivo (27,73 / 40,4 / 36,1 de largura), e fixar
+   * as duas medidas deformaria o ícone em vez de posicioná-lo.
+   */
+  .dado__icone {
+    /* Sem isto o bloco estica a caixa do SVG até a largura toda, e um SVG
+       esticado não deforma o desenho: centraliza. O ícone sairia da borda
+       esquerda e iria para o meio da coluna, longe do texto. */
+    align-self: flex-start;
+    height: 2.525rem; /* 40,4px */
+    width: auto;
+    /* Agora os ícones ficam no mesmo recuo do texto (0.7 no arquivo); antes
+       eram os únicos em cor cheia. */
+    opacity: 0.7;
+  }
+
+  .dado__icone--canais {
+    height: 2.349rem; /* 37,59px */
+  }
+
+  /* Vale para o `<ul>` dos canais e para o `<p>` do horário — os dois empilham
+     duas linhas com 6px entre elas. */
+  .dado__pilha {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem; /* 6px */
+    padding: 0;
+    list-style: none;
+  }
+
+  .dado__texto,
+  .dado__item {
+    font: 400 0.875rem / 1.24 var(--fonte-corpo); /* 14px */
+    letter-spacing: var(--texto-corpo-ls);
+    /* 0.7, o mesmo recuo das descrições das Áreas — os ícones, esses, ficam na
+       cor cheia. */
+    opacity: 0.7;
+  }
+
+  /* Entrelinha maior só aqui: é o único texto do card que vira parágrafo. */
+  .dado__texto--endereco {
+    line-height: 1.5;
+  }
+
+  .dado__item--traco {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem; /* 6px */
+  }
+
+  /*
+   * O traço antes do telefone e do e-mail (#181:73). No arquivo é um SVG de
+   * 14×1,09 — aqui é `::before` porque assim ele acompanha a cor do texto e a
+   * escala fluida, coisas que uma imagem externa não faria.
+   */
+  .dado__item--traco::before {
+    content: '';
+    flex: none;
+    width: 0.875rem; /* 14px */
+    height: 0.068rem; /* 1,09px */
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .dado__canal {
+    transition: opacity 0.2s ease;
+  }
+
+  .dado__canal:hover,
+  .dado__canal:focus-visible {
+    opacity: 1;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /*
+   * O mapa atravessa o bloco inteiro (#181:22 é `fill` e o card perdeu o padding
+   * lateral): 980px na largura de projeto, e a altura é a do arquivo.
+   *
+   * `display: block` não é enfeite — iframe nasce `inline`, e o reset só endireita
+   * `img/picture/svg/video`. Como linha de texto, ele ganharia o descender embaixo:
+   * uma fresta de ~4px bem onde a borda do mapa é quem fecha o card.
+   *
+   * Rolagem: com o ponteiro sobre o mapa a roda pertence ao iframe, então o Lenis
+   * não vê o gesto e a página anda pelo scroll nativo, sem a inércia. É o preço de
+   * qualquer embed do Maps, e é mais barato que o JS que evitaria isso.
+   */
+  .cartao-info__mapa {
+    display: block;
+    width: 100%;
+    height: 14.0625rem; /* 225px */
+    border: 0;
+  }
+</style>

@@ -1,0 +1,992 @@
+---
+import Mais from '../assets/icones/mais-circulo.svg';
+import Baixar from '../assets/icones/baixar.svg';
+import { imagem } from '../lib/imagem';
+import { textos } from '../lib/interface';
+import type { Config, Pagina } from '../lib/conteudo';
+
+interface Props {
+  historia: NonNullable<Pagina>['historia'];
+  socios: NonNullable<Pagina>['socios'];
+  materia: NonNullable<Config>['materia'];
+  apresentacao: NonNullable<Config>['apresentacao'];
+  /* Só para a frase de falha do bloco da apresentação: quando o e-mail não sai,
+     o endereço do escritório é a saída de quem não vai tentar de novo. */
+  email: NonNullable<Config>['email'];
+  idioma: string;
+}
+
+const { historia, socios, materia, apresentacao, email, idioma } = Astro.props;
+const t = textos(idioma);
+
+/*
+ * O PDF da apresentação institucional (#212:78).
+ *
+ * `?dl=` e não o atributo `download` do HTML: o arquivo vem da CDN da Sanity,
+ * que é outro domínio, e entre domínios o navegador ignora o atributo e navega
+ * para o PDF em vez de baixá-lo. Quem manda a CDN mandar `Content-Disposition:
+ * attachment` é este parâmetro. O atributo fica junto pelo dia em que o arquivo
+ * for servido do mesmo domínio.
+ */
+const pdfApresentacao = apresentacao?.arquivo
+  ? `${apresentacao.arquivo}?dl=${encodeURIComponent(apresentacao.nomeArquivo ?? '')}`
+  : null;
+
+/* Meia tela na largura de projeto, e o dobro para telas densas. */
+const LARGURAS_FOTO = [722, 1444];
+const SIZES_FOTO = '50vw';
+
+const fotoEscritorio = imagem(historia.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
+const logoValor = imagem(materia.logo, { larguras: [105, 210], sizes: '105px' });
+
+/* O aviso do formato só existe para o leitor de tela; o número de páginas vem
+   das configurações, que é onde mora o dado do arquivo. */
+const avisoFormato = (historia.materiaFormato ?? '').replace(
+  '{paginas}',
+  String(materia.paginas ?? ''),
+);
+---
+
+<section class="sobre" id="historia">
+  <div class="sobre__faixa sobre__faixa--abertura">
+    <div class="sobre__texto">
+      <h2 class="sobre__titulo">{historia.titulo}</h2>
+      <p>{historia.texto}</p>
+    </div>
+
+    {/*
+      Link de verdade, não botão: no toque não existe passar o mouse, e é o
+      clique que abre o PDF em outra aba. O visor ao lado é o extra de quem
+      tem ponteiro.
+    */}
+    <a
+      class="materia"
+      href={materia.arquivo}
+      target="_blank"
+      rel="noopener"
+      aria-describedby="materia-formato"
+    >
+      <span class="materia__fonte">
+        <img
+          class="materia__logo"
+          src={logoValor.src}
+          srcset={logoValor.srcset}
+          width={logoValor.width}
+          height={logoValor.height}
+          alt={materia.veiculo}
+        />
+        <span class="materia__chamada">{materia.chamada}</span>
+      </span>
+      <Mais class="materia__icone" />
+      <span class="sr-only" id="materia-formato">{avisoFormato}</span>
+    </a>
+
+    <div class="sobre__moldura">
+      <img
+        class="sobre__foto"
+        src={fotoEscritorio.src}
+        srcset={fotoEscritorio.srcset}
+        sizes={fotoEscritorio.sizes}
+        width={fotoEscritorio.width}
+        height={fotoEscritorio.height}
+        alt={historia.fotoAlt}
+      />
+
+      {/*
+        `loading="lazy"` para o PDF (e o leitor embutido do navegador) só
+        entrarem quando a seção estiver perto da tela — a página não paga por
+        eles na carga.
+      */}
+      <div class="materia__visor">
+        <iframe
+          class="materia__pdf"
+          src={`${materia.arquivo}#toolbar=0&navpanes=0&view=FitH`}
+          title={`${materia.veiculo}: ${materia.chamada}`}
+          loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+
+  {
+    socios.map((socio) => {
+      const foto = imagem(socio.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
+      /* A âncora vem do nome porque o CMS não tem por que pedir um id ao
+         cliente — e assim `#marjorye` e `#thiago` continuam existindo. */
+      const ancora = socio.nome.toLowerCase();
+      /* Quem decide se a faixa tem o bloco de download é o texto dele, no
+         Sanity — e o PDF, porque bloco sem arquivo é botão que não entrega
+         nada. */
+      const bloco = socio.apresentacao?.titulo && pdfApresentacao ? socio.apresentacao : null;
+      return (
+      <div
+        class:list={[
+          'sobre__faixa',
+          `sobre__faixa--${socio.cor}`,
+          socio.imagemPrimeiro === 'sim' && 'sobre__faixa--foto-antes',
+          bloco && 'sobre__faixa--com-bloco',
+        ]}
+        id={ancora}
+      >
+        <div class="sobre__texto">
+          <p>
+            {/* A frase de abertura é run em 600 dentro do mesmo parágrafo,
+                não um título à parte. */}
+            <strong>{socio.destaque}</strong> {socio.paragrafos[0]}
+          </p>
+          <p>{socio.paragrafos[1]}</p>
+        </div>
+        <div class="sobre__moldura">
+          <img
+            class="sobre__foto"
+            src={foto.src}
+            srcset={foto.srcset}
+            sizes={foto.sizes}
+            width={foto.width}
+            height={foto.height}
+            alt={t['socio.alt'](socio.nome)}
+            loading="lazy"
+          />
+        </div>
+
+        {/*
+          O bloco de download da apresentação (#212:78, três variantes).
+
+          `<form>` para o Enter valer dentro do campo — o que ele faz é o mesmo
+          clique do botão, nunca um envio: não há `action`, e o e-mail não sai
+          do navegador. Ver a política do gate no `<script>` lá embaixo.
+
+          A gaveta do e-mail nasce `hidden` e é o script que a revela, como o
+          botão de país do formulário: sem JS não existe destravamento, e um
+          campo que não destrava nada seria pior que a ausência dele. O que
+          sobra sem script é a variante Default — chamada mais botão, baixando
+          direto.
+        */}
+        {bloco && (
+          <form
+            class="apresentacao"
+            novalidate
+            data-aviso={t['apresentacao.travado']}
+            data-idioma={idioma}
+            data-config={JSON.stringify({ estados: bloco.estados ?? {}, escritorio: email })}
+          >
+            <div class="apresentacao__chamada">
+              <div class="apresentacao__texto">
+                <p class="apresentacao__titulo">{bloco.titulo}</p>
+                <p class="apresentacao__descricao">{bloco.descricao}</p>
+              </div>
+
+              <a
+                class="apresentacao__baixar"
+                href={pdfApresentacao}
+                download
+                aria-label={t['apresentacao.baixar']}
+                aria-describedby={`apresentacao-aviso-${ancora}`}
+              >
+                <Baixar class="apresentacao__icone" aria-hidden="true" />
+              </a>
+            </div>
+
+            <div class="apresentacao__gaveta" hidden>
+              <div class="apresentacao__campo">
+                <label class="sr-only" for={`apresentacao-email-${ancora}`}>
+                  {bloco.campo}
+                </label>
+                <input
+                  class="apresentacao__entrada"
+                  id={`apresentacao-email-${ancora}`}
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder={bloco.campo}
+                />
+
+                {/*
+                  As três frases (enviando, deu certo, não saiu) ocupam o LUGAR
+                  do campo, uma de cada vez — pedido do cliente. Por isso a
+                  linha é uma só e o campo se esconde: não há faixa nova, e o
+                  bloco não muda de altura ao responder.
+
+                  `role="status"` para o leitor de tela anunciar a mudança sem
+                  interromper o que estiver lendo.
+                */}
+                <p class="apresentacao__estado" role="status" hidden></p>
+              </div>
+            </div>
+
+            {/*
+              Campo-armadilha contra robô: fica fora da tela e fora do Tab, e
+              gente nunca o preenche. A função descarta em silêncio o pedido que
+              vier com ele escrito — sem isso, um endpoint que manda e-mail para
+              quem pedir vira máquina de spam assinada pelo escritório.
+            */}
+            <input
+              class="apresentacao__armadilha"
+              type="text"
+              name="assunto"
+              tabindex="-1"
+              autocomplete="off"
+              aria-hidden="true"
+            />
+
+            {/*
+              Nasce VAZIO, e quem escreve é o script — a frase viaja no
+              `data-aviso` do formulário, que é a única ponte para um script
+              de cliente (ele não recebe prop, e a frase muda de idioma).
+
+              Vazio na origem porque sem JS o botão não está travado: o aviso
+              descreveria um estado que não existe.
+            */}
+            <span class="sr-only apresentacao__aviso" id={`apresentacao-aviso-${ancora}`}></span>
+          </form>
+        )}
+      </div>
+      );
+    })
+  }
+</section>
+
+<style>
+  /*
+   * Sem padding e sem gap na faixa DE PROPÓSITO: assim os 50% da moldura
+   * medem metade da tela de verdade, e não metade do que sobra depois do
+   * respiro. Todo o espaçamento horizontal vive na coluna de texto.
+   */
+  .sobre__faixa {
+    display: flex;
+    /* stretch para a foto cobrir a faixa inteira, de topo a base. */
+    align-items: stretch;
+    /* Abaixo da largura de projeto a coluna de texto (com 97px de padding de
+       cada lado) e a moldura da foto (presa em 50%) não cabem mais lado a
+       lado — sem wrap o texto ficava espremido a poucos pixels de largura. */
+    flex-wrap: wrap;
+    /* min-height, não height: se o texto crescer (CMS, tela estreita), a faixa
+       acompanha em vez de vazar. */
+    min-height: var(--altura-faixa-sobre);
+  }
+
+  /*
+   * `row-reverse` em vez de trocar a ordem no HTML: no DOM o texto vem sempre
+   * antes da foto (é ele o conteúdo), e aqui só a faixa da Marjorye inverte
+   * para a foto cair à esquerda, como no Figma.
+   */
+  .sobre__faixa--foto-antes {
+    flex-direction: row-reverse;
+  }
+
+  /* `relative` porque esta faixa é a referência de duas coisas que flutuam
+     dentro dela: a faixa preta da matéria e o visor do PDF. */
+  .sobre__faixa--abertura {
+    position: relative;
+    background: var(--cor-menta);
+  }
+
+  /* Mesmo motivo, para a faixa que recebe o bloco da apresentação. Modificador
+     e não regra geral: posicionar as faixas que não precisam mudaria a ordem
+     de pintura delas sem que ninguém tivesse pedido. */
+  .sobre__faixa--com-bloco {
+    position: relative;
+  }
+
+  .sobre__faixa--petroleo {
+    color: var(--cor-branco);
+    background: var(--cor-petroleo);
+  }
+
+  .sobre__faixa--terracota {
+    color: var(--cor-branco);
+    background: var(--cor-terracota);
+  }
+
+  .sobre__texto {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem; /* 32px */
+    /* Os dois lados somam a mesma coisa — 64 de respiro da faixa (borda da tela
+       de um lado, folga até a foto do outro) mais os 32 da própria coluna no
+       Figma —, então o texto fica centrado na metade.
+       97 e não 96: com 96 sobra uma coluna de 531px, e é justamente 1px a mais
+       do que cabe para "Contenciosa," ficar na segunda linha do parágrafo da
+       Marjorye. Mesma folga de 1px do manifesto e do hero. */
+    padding: var(--gutter) 6.0625rem; /* 64px 97px */
+    font: var(--texto-c2);
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  /* Pedido do cliente, 2026-07-31: menos respiro no mobile — os 97px laterais
+     (pensados para centralizar o texto na metade da faixa, ver acima) e os
+     64px verticais não fazem sentido numa coluna que já ocupa a tela toda.
+     48px nos quatro lados (ajustado de novo no mesmo dia, `px` e não `rem`
+     para não depender do piso do clamp). */
+  @media (max-width: 700px) {
+    .sobre__texto {
+      padding: 48px;
+    }
+  }
+
+  .sobre__titulo {
+    /* 468px no Figma: mais estreito que a coluna, para a frase quebrar em três
+       linhas mesmo com espaço de sobra ao lado. Continua quebrando em três
+       depois da troca para 58px (2026-07-31, ver tokens.css). */
+    max-width: 29.25rem;
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    /*
+     * A CAIXA do nó de texto da Noto Serif KR é maior que a `line-height`
+     * declarada — sem compensar, a última linha some sob o que vem depois.
+     * `padding-bottom`, e não `min-height`: a sobra é de ~20px na largura de
+     * projeto (medida no navegador) e não muda com o número de linhas — é a
+     * métrica de descendente do PRÓPRIO fonte, não algo que se acumula por
+     * linha. `min-height` só cobriria o número de linhas medido hoje; abaixo
+     * da largura de projeto o título quebra em mais linhas (a coluna
+     * estreita) e ficaria curto de novo. `rem`, para a sobra encolher junto
+     * com a fonte no piso do clamp (20px → ~15px medidos em 375px).
+     */
+    padding-bottom: 1.25rem; /* 20px na largura de projeto */
+  }
+
+  .sobre__texto strong {
+    font-weight: var(--peso-destaque);
+  }
+
+  /*
+   * A moldura existe para dar uma altura definida à foto. O `<Image>` do Astro
+   * escreve `width`/`height` como atributo, e isso conta como altura própria:
+   * com a imagem solta no flex, o `stretch` era ignorado, ela voltava à
+   * proporção original e esticava a faixa junto (a primeira ia a 1083px, e sem
+   * `height` no CSS chegou aos 3100px do arquivo). Aqui quem estica é a
+   * moldura, que é um bloco comum, e a imagem preenche os 100% dela.
+   */
+  /*
+   * Metade da tela, não os 722px do arquivo.
+   *
+   * O Figma tem 722 numa faixa e 724 na outra — arredondamento dos 723 que são
+   * a metade de 1446. Traduzir esses números ao pé da letra faz a divisa de uma
+   * faixa cair num x e a da seguinte em outro: as duas só se encontram na
+   * largura de projeto, e escapam assim que o `clamp` da escala fluida para de
+   * acompanhar a tela (abaixo de ~1084px e acima de ~2530px). Com 50% elas se
+   * encontram no meio exato em qualquer largura, que é o que o desenho quer
+   * dizer.
+   */
+  .sobre__moldura {
+    position: relative;
+    /* `0 1`, não `0 0`: precisa encolher para o `flex-wrap` da faixa acima ter
+       efeito abaixo da largura de projeto. */
+    flex: 0 1 50%;
+    align-self: stretch;
+    overflow: hidden;
+  }
+
+  /*
+   * Exceção pontual à regra de "sem media query" (a mesma do cabeçalho, das
+   * Áreas e do rodapé): abaixo de 700px a moldura, sozinha na própria linha
+   * (por causa do `flex-wrap` acima), ainda ficaria travada em 50% — uma foto
+   * pela metade com vazio ao lado. Aqui ela vira a linha inteira.
+   */
+  @media (max-width: 700px) {
+    .sobre__moldura {
+      flex-basis: 100%;
+      /*
+       * Sozinha na própria linha, o `align-self: stretch` da base não tem
+       * altura de irmão para copiar — o `flex-wrap` distribui o miolo da
+       * faixa (`--altura-faixa-sobre`) entre as duas linhas, e a da foto
+       * praticamente não sobra nada (97px medidos numa tela de 375px, uma
+       * foto quase deitada). `auto` solta a moldura da conta da linha, e o
+       * `aspect-ratio` dá a ela uma altura de verdade.
+       */
+      align-self: auto;
+      /* 3/4 (retrato), não 4/3: pedido do cliente, 2026-07-31, mais alta do
+         que a primeira tentativa (4/3, ~281px numa tela de 375px). Em 3/4 a
+         mesma tela dá ~500px — cabe melhor numa foto de pessoa. */
+      aspect-ratio: 3 / 4;
+    }
+  }
+
+  /* Fora do fluxo: se a imagem contasse para a altura da moldura, era ela quem
+     mandaria na altura da faixa de novo — a moldura ficaria do tamanho da foto
+     em vez de a foto ficar do tamanho da faixa. */
+  .sobre__foto {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* --- A matéria do Valor Econômico --- */
+
+  /*
+   * Colada na base e na borda esquerda da tela, terminando exatamente onde a
+   * foto começa — daí os mesmos 50% da moldura, e não os 724px do arquivo
+   * (mesma conta da divisa das faixas: 724 é o arredondamento de meia tela).
+   */
+  .materia {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    width: 50%;
+    /*
+     * 96 nos lados (#185:97), e não o gutter de 64: é o que alinha o logo com a
+     * coluna de texto que está logo acima. Lá os 96 são os 64 de respiro da
+     * faixa mais os 32 do padding da própria coluna; aqui a faixa começa na
+     * borda da tela, então os dois viram um número só.
+     */
+    padding: 1.5rem 6rem; /* 24px 96px */
+    /* 0.8 é a cor da chamada (#185:104). O ícone é um passo mais apagado e tem
+       cor própria, lá embaixo. */
+    color: rgba(255, 255, 255, 0.8);
+    background: var(--cor-preto);
+    transition: color 0.2s ease;
+  }
+
+  /*
+   * Mesma exceção pontual da moldura: abaixo de 700px a foto vira a linha
+   * inteira (ver `.sobre__moldura`), e esta faixa precisa acompanhar a mesma
+   * borda para continuar terminando exatamente onde a foto começa. Os 96px de
+   * padding de cada lado, pensados para alinhar com a coluna de texto na
+   * largura de projeto, também não cabem mais aqui.
+   */
+  @media (max-width: 700px) {
+    .materia {
+      width: 100%;
+      /* Padrão de 32px (`--gutter-mobile`), igual ao resto do site. */
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  /*
+   * No hover os dois vão a branco cheio — é o que a variante da foto trocada
+   * desenha (#185:121 e #185:122).
+   */
+  .materia:is(:hover, :focus-visible),
+  .materia:is(:hover, :focus-visible) .materia__icone {
+    color: var(--cor-branco);
+  }
+
+  .materia__fonte {
+    display: flex;
+    align-items: center;
+    gap: 2rem; /* 32px */
+  }
+
+  .materia__logo {
+    flex-shrink: 0;
+    /* 105px (#185:101) — o arquivo de origem tem exatamente essa largura, então
+       aqui não há redução nem ampliação. */
+    width: 6.5625rem;
+    height: auto;
+  }
+
+  .materia__chamada {
+    /*
+     * 232px, e não os 219px do arquivo: nos 219 o Chrome joga "gaúchas." para
+     * uma terceira linha e a faixa engorda de 83px para 100px. Vira em 224 —
+     * os 8px a mais são a folga de sempre para a diferença de medida entre
+     * Chrome e Figma (a mesma história dos 348px do hero).
+     *
+     * A virada foi conferida de novo depois de o peso subir para 500: continua
+     * em 224, porque a quebra cai num limite de palavra e alguns pixels a mais
+     * de largura não mudam onde ela acontece.
+     */
+    max-width: 14.5rem;
+    font: 500 0.875rem / 1.26 var(--fonte-corpo); /* 14px Medium */
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  .materia__icone {
+    flex-shrink: 0;
+    width: 2.25rem; /* 36px */
+    height: 2.25rem;
+    /* 0.63 (#185:105): o ícone recua em relação à chamada, que está a 0.8. */
+    color: rgba(255, 255, 255, 0.63);
+    transition: color 0.2s ease;
+  }
+
+  /* --- O visor do PDF, no lugar da foto --- */
+
+  .materia__visor {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--cor-preto);
+    opacity: 0;
+    visibility: hidden;
+    /*
+     * O atraso mora AQUI, no estado normal, e é por isso que ele só age na
+     * saída: enquanto o ponteiro está na faixa preta vale a regra de baixo,
+     * que zera os dois tempos.
+     *
+     * 0,4s parado antes de começar a apagar é o tempo de atravessar da faixa
+     * até o PDF, do outro lado da tela. Sem essa folga o visor some no meio do
+     * caminho e não há como chegar nele para rolar a matéria. (Era 1,5s; o
+     * cliente pediu mais curto em 2026-07-30 — o gesto todo dura menos que
+     * isso, e a espera longa parecia travamento.)
+     *
+     * `visibility` fecha o par: sem ela o iframe continuaria capturando o
+     * ponteiro e a roda do mouse mesmo transparente. Ela só vira `hidden` no
+     * fim de tudo — 0,4s de espera mais os 0,3s do apagamento.
+     */
+    transition:
+      opacity 0.3s ease 0.4s,
+      visibility 0s linear 0.7s;
+  }
+
+  /*
+   * `:has()` porque o gatilho e o visor são irmãos, em metades opostas da
+   * faixa — não existe pai comum para o hover descer sozinho.
+   *
+   * O `:hover`/`:focus-within` do próprio visor é o que o segura aberto depois
+   * que a pessoa chega: dali em diante quem manda é o ponteiro dentro do PDF, e
+   * a contagem do atraso só recomeça quando ele sai de novo.
+   *
+   * `@media (hover: hover)` para o toque não entrar nessa história: lá o hover
+   * gruda no primeiro toque e o visor ficaria preso por cima da foto. No toque
+   * o link abre o PDF em outra aba, que é o comportamento certo.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .sobre__faixa--abertura:has(.materia:is(:hover, :focus-visible)) .materia__visor,
+    .materia__visor:is(:hover, :focus-within) {
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 0.3s ease,
+        visibility 0s;
+    }
+  }
+
+  .materia__pdf {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* --- O bloco de download da apresentação (#212:78) --- */
+
+  /*
+   * Mesma geometria da faixa da matéria: colado na base e na borda da tela,
+   * terminando onde a foto começa — 50%, e não os 724px do arquivo (que são o
+   * arredondamento de meia tela; ver a divisa das faixas, acima).
+   *
+   * A base fixa é o que faz o bloco CRESCER PARA CIMA quando a gaveta abre: os
+   * 704px de topo do Default e os 645 das outras duas variantes (#212:69,
+   * #212:83, #212:114) são consequência da altura, não medida a reproduzir.
+   */
+  .apresentacao {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    /* Os mesmos 96 da faixa da matéria, e pelo mesmo motivo: é o que alinha o
+       bloco com a coluna de texto logo acima (64 de respiro da faixa + 32 do
+       padding da coluna, que aqui viram um número só). */
+    padding: 1.5rem 6rem; /* 24px 96px */
+    color: rgba(255, 255, 255, 0.8);
+    background: var(--cor-preto);
+  }
+
+  /* O bloco fica sempre do lado do TEXTO. No arquivo ele só existe na faixa do
+     Thiago, que tem a foto à direita; numa faixa invertida ele acompanha. */
+  .sobre__faixa--foto-antes .apresentacao {
+    right: 0;
+    left: auto;
+  }
+
+  /* Mesma exceção pontual da moldura e da matéria (ver acima): abaixo de
+     700px a foto vira a linha inteira, e este bloco — que também mede a
+     largura dela para alinhar com a coluna de texto — precisa acompanhar. */
+  @media (max-width: 700px) {
+    .apresentacao {
+      width: 100%;
+      /* Padrão de 32px (`--gutter-mobile`), igual ao resto do site. */
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  .apresentacao__chamada {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .apresentacao__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem; /* 4px */
+    /* 389px (#212:71). `max-width` e não largura fixa: na largura de projeto
+       sobram 531px de coluna, mas abaixo dela o texto precisa poder encolher. */
+    max-width: 24.3125rem;
+  }
+
+  /* `max()`, não `0.875rem` puro: abaixo da largura de projeto o piso do
+     clamp reduz a fonte-raiz a 12px, e 0.875rem caía para 10,5px — ilegível
+     no mobile. `max()` crava 14px físicos ali. */
+  .apresentacao__titulo {
+    font: 600 max(0.875rem, 14px) / 1.26 var(--fonte-corpo); /* 14px Semi Bold */
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  .apresentacao__descricao {
+    font: 400 max(0.875rem, 14px) / 1.26 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    /* Os 0.8 do bloco vezes os 0.7 do nó (#212:73). */
+    color: rgba(255, 255, 255, 0.56);
+  }
+
+  /*
+   * O ícone nasce CINZA, que é a cor da variante Default (#212:74) — o estado
+   * em que a página vive antes de alguém passar o mouse. Ele só vai a branco
+   * com o e-mail preenchido, que é a variante email-download (#212:119).
+   */
+  .apresentacao__baixar {
+    flex-shrink: 0;
+    color: #a1a1a1;
+    transition: color 0.2s ease;
+  }
+
+  .apresentacao__icone {
+    display: block;
+    /* 27px (#212:74). Só a largura: a razão do desenho é 27 × 27,93, e fixar as
+       duas medidas o deformaria. */
+    width: 1.6875rem;
+    height: auto;
+  }
+
+  .apresentacao--liberado .apresentacao__baixar {
+    color: var(--cor-branco);
+  }
+
+  /* Enquanto o gate existe e não foi destravado, o botão não parece clicável —
+     e o clique nele leva ao campo, não ao PDF (ver o script). Sem JS não há
+     gate, e a classe nunca entra: lá o botão baixa direto. */
+  .apresentacao--gate:not(.apresentacao--liberado) .apresentacao__baixar {
+    cursor: default;
+  }
+
+  /* --- A gaveta do e-mail --- */
+
+  /*
+   * Fechada, a gaveta é uma fileira de grade de altura zero: é o único jeito de
+   * transitar "de nada até a altura do conteúdo" sem saber essa altura de
+   * antemão — e ela depende da fonte, do idioma e da largura da tela.
+   *
+   * ABERTA é o estado base, de propósito. Sem ponteiro (toque) não existe
+   * hover, e um campo que nunca aparece deixaria o download travado para
+   * sempre; é o mesmo princípio do "nunca deixe o estado apagado como base".
+   */
+  .apresentacao__gaveta {
+    display: grid;
+    /*
+     * `minmax(0, …)` e não `1fr`/`0fr` puros: `0fr` sozinho é `minmax(auto,
+     * 0fr)`, e esse `auto` devolve o mínimo automático da fileira — que inclui
+     * padding e borda do que está dentro. Fechada, a gaveta ficava com os 9px
+     * do respiro de baixo mais o traço, e o bloco nascia 9px mais alto do que o
+     * arquivo desenha. Medido: 113,81 contra os 104,8 certos.
+     */
+    grid-template-rows: minmax(0, 1fr);
+    /* Margem, e não o `gap` do bloco: o respiro precisa fechar JUNTO com a
+       gaveta, senão a faixa fica 32px mais alta com a gaveta vazia. */
+    margin-top: 2rem; /* 32px */
+  }
+
+  /* ARMADILHA: `[hidden]` é só `display: none` na folha padrão do navegador, e
+     qualquer regra de classe com `display` ganha dele. Sem isto a gaveta
+     apareceria antes de o script montar o gate. */
+  .apresentacao__gaveta[hidden] {
+    display: none;
+  }
+
+  /* Quem recorta a fileira enquanto ela encolhe. */
+  .apresentacao__gaveta > * {
+    overflow: hidden;
+  }
+
+  /*
+   * Com ponteiro, a gaveta nasce fechada e o hover a abre.
+   *
+   * O atraso mora no estado FECHADO, e é por isso que ele só age na saída —
+   * mesma forma do visor da matéria, e o mesmo 0,4s pedido pelo cliente. Aqui
+   * a travessia é curta (o campo nasce debaixo do ponteiro), mas a folga
+   * continua valendo: sem ela, raspar a borda do bloco fecha a gaveta na cara
+   * de quem ia digitar.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .apresentacao__gaveta {
+      grid-template-rows: minmax(0, 0fr);
+      margin-top: 0;
+      opacity: 0;
+      transition:
+        grid-template-rows 0.3s ease 0.4s,
+        margin-top 0.3s ease 0.4s,
+        opacity 0.2s ease 0.4s;
+    }
+
+    /* `:focus-within` para quem chega de Tab — sem ele o campo se fecharia
+       debaixo do próprio foco. */
+    .apresentacao:is(:hover, :focus-within) .apresentacao__gaveta,
+    /* E depois de escrito o campo não se fecha mais: quem digitou precisa poder
+       conferir o que digitou, e o botão liberado sem o e-mail à vista não
+       explica por que liberou. */
+    .apresentacao:has(.apresentacao__entrada:not(:placeholder-shown)) .apresentacao__gaveta,
+    /* Com uma frase de estado no lugar do campo, a gaveta fica aberta pelo
+       motivo mais óbvio de todos: é ela que está mostrando a resposta. */
+    .apresentacao:has(.apresentacao__estado:not([hidden])) .apresentacao__gaveta {
+      grid-template-rows: minmax(0, 1fr);
+      margin-top: 2rem;
+      opacity: 1;
+      transition-delay: 0s;
+    }
+  }
+
+  .apresentacao__campo {
+    /* 8px embaixo e à esquerda (#212:122). */
+    padding: 0 0 0.5rem 0.5rem;
+    border-bottom: 1px solid #a1a1a1;
+  }
+
+  .apresentacao__entrada {
+    appearance: none;
+    display: block;
+    width: 100%;
+    padding: 0;
+    /* Pedido do cliente, 2026-07-31: 12px, era 14px. */
+    font: 400 0.75rem / 1.26 var(--fonte-corpo); /* 12px */
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-branco);
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* #8F8F8F (#212:106) — o cinza do campo vazio, um passo abaixo do texto. */
+  .apresentacao__entrada::placeholder {
+    color: #8f8f8f;
+    opacity: 1;
+  }
+
+  /*
+   * As frases de estado moram na MESMA linha do campo e se revezam com ele —
+   * por isso a mesma tipografia e a mesma altura. Trocar uma pela outra não
+   * mexe na altura do bloco.
+   */
+  .apresentacao__estado {
+    font: 400 0.875rem / 1.26 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-branco);
+    /* Uma linha só, como o campo que ela substitui. */
+    text-wrap: wrap;
+  }
+
+  /* Enquanto envia, a frase recua — é o mesmo passo do botão desabilitado do
+     formulário. */
+  .apresentacao__estado[data-estado='enviando'] {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* O e-mail que não saiu é o único caso de erro, e ele não impede o download:
+     por isso terracota e não vermelho de alarme. */
+  .apresentacao__estado[data-estado='falha'] {
+    color: #e2a08f;
+  }
+
+  .apresentacao__estado :global(a) {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* A mesma armadilha de sempre: `[hidden]` perde para o `display` da classe.
+     Aqui os dois lados se revezam, então os dois precisam devolvê-lo. */
+  .apresentacao__estado[hidden],
+  .apresentacao__entrada[hidden] {
+    display: none;
+  }
+
+  /*
+   * O campo-armadilha some da tela, do Tab e do leitor de tela, mas continua no
+   * formulário — que é exatamente o que faz o robô preenchê-lo. `position:
+   * absolute` e não `display: none`: robô esperto pula o que está com display
+   * none.
+   */
+  .apresentacao__armadilha {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  /*
+   * SEM moldura no foco — pedido do cliente, 2026-07-31: o retângulo branco em
+   * volta do campo destoava do resto do bloco.
+   *
+   * Mas foco visível não é enfeite (WCAG 2.4.7), e o campo é o único caminho
+   * para o download. No lugar da moldura, o TRAÇO do campo vai a branco e
+   * engrossa — o desenho continua o mesmo, só que aceso. Quem chega de Tab
+   * enxerga onde está; quem clica não ganha caixa nenhuma.
+   *
+   * A moldura padrão do site (2px petróleo, 3px de folga) também não serviria
+   * aqui: a folga fica FORA da caixa, e a gaveta recorta o que transborda —
+   * ela seria cortada justamente quando aparecesse.
+   */
+  .apresentacao__entrada:focus-visible {
+    outline: none;
+  }
+
+  .apresentacao__campo:has(:focus-visible) {
+    border-bottom-width: 2px;
+    border-bottom-color: var(--cor-branco);
+    /* Compensa o pixel que a borda engordou, senão a linha do campo sobe 1px
+       ao receber foco. */
+    padding-bottom: calc(0.5rem - 1px);
+  }
+</style>
+
+<script>
+  /*
+   * O gate do download da apresentação: o e-mail destrava o botão.
+   *
+   * Exceção ao "sem JS" pelo mesmo critério das outras (ver AGENTS.md): não
+   * existe em CSS — desativar um link é atributo, não estilo, e `pointer-events`
+   * só o esconde do ponteiro, deixando-o no Tab e anunciado como clicável — e
+   * sem o script a página continua inteira: a gaveta nem aparece e o botão
+   * baixa direto, que é exatamente a variante Default do arquivo.
+   *
+   * O clique faz DUAS coisas, e essa é a decisão do cliente: o download começa
+   * na hora e o mesmo e-mail recebe o link, por
+   * [`servidor/apresentacao.ts`](servidor/apresentacao.ts). Se o envio falhar,
+   * o download acontece do mesmo jeito — quem preencheu fez a parte dele.
+   */
+  for (const bloco of document.querySelectorAll<HTMLFormElement>('.apresentacao')) {
+    const gaveta = bloco.querySelector<HTMLElement>('.apresentacao__gaveta')!;
+    const entrada = bloco.querySelector<HTMLInputElement>('.apresentacao__entrada')!;
+    const baixar = bloco.querySelector<HTMLAnchorElement>('.apresentacao__baixar')!;
+    const aviso = bloco.querySelector<HTMLElement>('.apresentacao__aviso')!;
+    const estado = bloco.querySelector<HTMLElement>('.apresentacao__estado')!;
+    const { estados, escritorio } = JSON.parse(bloco.dataset.config!);
+
+    const liberado = () => bloco.classList.contains('apresentacao--liberado');
+
+    const sincronizar = () => {
+      /* `checkValidity` já sabe de `required` e do formato de e-mail; não há por
+         que reescrever isso à mão. */
+      const vale = entrada.checkValidity();
+      bloco.classList.toggle('apresentacao--liberado', vale);
+      baixar.setAttribute('aria-disabled', String(!vale));
+      /* Fora da ordem do Tab enquanto trava: link que não leva a lugar nenhum
+         não deve receber foco. */
+      baixar.tabIndex = vale ? 0 : -1;
+      /* A frase viaja no `data-` porque script de cliente não recebe prop, e
+         ela muda de idioma. Vazia quando libera: o aviso descreve o botão
+         travado, e travado ele deixou de estar. */
+      aviso.textContent = vale ? '' : (bloco.dataset.aviso ?? '');
+    };
+
+    /* `change` além de `input` por causa do preenchimento automático, que em
+       alguns navegadores não dispara o segundo. */
+    entrada.addEventListener('input', sincronizar);
+    entrada.addEventListener('change', sincronizar);
+
+    /* Uma frase de cada vez, no lugar do campo. */
+    const mostrar = (qual: 'enviando' | 'sucesso' | 'falha') => {
+      estado.textContent = '';
+      estado.dataset.estado = qual;
+
+      if (qual === 'falha') {
+        /* O e-mail do escritório vira link: quem não recebeu o arquivo na caixa
+           de entrada não vai preencher de novo, mas clica. */
+        const [antes, depois = ''] = String(estados.falha ?? '').split('{email}');
+        const link = document.createElement('a');
+        link.href = `mailto:${escritorio}`;
+        link.textContent = escritorio;
+        estado.append(antes, link, depois);
+      } else {
+        estado.textContent = estados[qual] ?? '';
+      }
+
+      estado.hidden = false;
+      /* O campo sai de cena, mas continua no DOM com o valor: é ele que mantém
+         a gaveta aberta e o botão liberado. */
+      entrada.hidden = true;
+    };
+
+    /*
+     * Encenação para conferir as frases sem enviar nada, como no formulário:
+     * `?apresentacao=enviando`, `?apresentacao=sucesso` ou
+     * `?apresentacao=falha`. Com qualquer uma delas nada é pedido ao servidor.
+     */
+    const encenado = new URLSearchParams(location.search).get('apresentacao');
+    const encenavel = ['enviando', 'sucesso', 'falha'].includes(encenado ?? '');
+
+    let pedido: Promise<void> | null = null;
+
+    const pedirPorEmail = () => {
+      if (encenavel) {
+        mostrar(encenado as 'enviando' | 'sucesso' | 'falha');
+        return;
+      }
+
+      /* Uma vez por página: o segundo clique é de quem quer o arquivo de novo,
+         não um segundo lead. */
+      if (pedido) return;
+
+      mostrar('enviando');
+      pedido = fetch('/api/apresentacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: entrada.value.trim(),
+          idioma: bloco.dataset.idioma,
+          assunto: bloco.querySelector<HTMLInputElement>('.apresentacao__armadilha')!.value,
+        }),
+      })
+        .then((resposta) => {
+          if (!resposta.ok) throw new Error(String(resposta.status));
+          mostrar('sucesso');
+        })
+        .catch(() => {
+          /* O download já aconteceu; o que falhou foi só o e-mail, e a frase
+             fala disso. */
+          mostrar('falha');
+        });
+    };
+
+    baixar.addEventListener('click', (evento) => {
+      if (!liberado()) {
+        evento.preventDefault();
+        entrada.focus();
+        return;
+      }
+      /*
+       * SEM `preventDefault` aqui: quem baixa é o navegador, seguindo o link
+       * como faria sozinho. Disparar o download depois do `await` do envio
+       * custaria o gesto do usuário — download programático fora de gesto é
+       * coisa que o navegador bloqueia —, e ainda faria quem preencheu esperar
+       * a resposta de um servidor para receber um arquivo que já está pronto.
+       */
+      pedirPorEmail();
+    });
+
+    /* Enter dentro do campo faz o mesmo que o clique. O `submit` é só um atalho
+       para o botão: o formulário não tem `action`, e não é para ter. */
+    bloco.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      if (liberado()) baixar.click();
+      else entrada.focus();
+    });
+
+    gaveta.hidden = false;
+    bloco.classList.add('apresentacao--gate');
+    sincronizar();
+  }
+</script>

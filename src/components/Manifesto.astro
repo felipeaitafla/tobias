@@ -1,0 +1,250 @@
+---
+import Simbolo from '../assets/logos/simbolo-positivo.svg';
+import type { Pagina } from '../lib/conteudo';
+
+interface Props {
+  manifesto: NonNullable<Pagina>['manifesto'];
+}
+
+const { manifesto } = Astro.props;
+---
+
+<section class="manifesto secao" id="manifesto">
+  <div class="manifesto__aparte">
+    {/* `simbolo-monta` é a folha comum da montagem (src/styles/simbolo.css); a
+        classe do componente dá só o tamanho. */}
+    <Simbolo class="manifesto__simbolo simbolo-monta" />
+    <h2 class="manifesto__chamada">{manifesto.chamada}</h2>
+  </div>
+
+  <div class="manifesto__texto">
+    {manifesto.paragrafos.map((paragrafo) => <p>{paragrafo}</p>)}
+  </div>
+</section>
+
+<style>
+  .manifesto {
+    display: flex;
+    /* stretch para a coluna lateral acompanhar a altura do texto: quando ele
+       quebra em mais linhas, a chamada continua ancorada embaixo. */
+    align-items: stretch;
+    justify-content: space-between;
+    /* Abaixo da largura de projeto o clamp trava e os 330px da coluna lateral
+       não cabem mais ao lado do texto — sem wrap ela e o texto disputavam
+       espaço até vazar. `space-between` com 1 item por linha já se comporta
+       como `flex-start`, então o alinhamento não muda ao quebrar. */
+    flex-wrap: wrap;
+    gap: var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  .manifesto__aparte {
+    display: flex;
+    /* Sem altura própria: o `stretch` da linha já faz esta coluna acompanhar o
+       texto, e é isso que mantém a chamada colada no rodapé do bloco. */
+    /* `0 1`, não `0 0`: sem encolher, esta coluna era o que forçava o
+       transbordo antes do `flex-wrap` acima ter chance de agir. */
+    flex: 0 1 20.625rem; /* 330px */
+    flex-direction: column;
+    justify-content: space-between;
+    /*
+     * Pedido do cliente, 2026-07-31: mínimo de 32px entre o símbolo e a
+     * chamada — `space-between` sozinho não garante piso nenhum entre os
+     * dois, só distribui o que sobrar. `max()`, e não `2rem` puro, porque o
+     * pedido era visto no mobile: abaixo da largura de projeto o clamp trava
+     * a fonte-raiz em 12px, e aí `2rem` vira 24px físicos, não 32 — `max()`
+     * crava o piso em 32px em qualquer escala, sem tocar no que já é maior
+     * (a largura de projeto para cima continua livre para crescer com o
+     * `space-between`).
+     */
+    gap: max(2rem, 32px);
+  }
+
+  /*
+   * --- Símbolo ---
+   *
+   * A montagem (o leque que se abre no hover e na primeira aparição) mora em
+   * `src/styles/simbolo.css`, folha comum: desde 2026-07-31 o símbolo do fim
+   * das áreas de atuação faz a mesma coisa, e duas cópias divergiriam na
+   * primeira vez que alguém acertasse uma só. Aqui fica só o TAMANHO.
+   */
+  .manifesto__simbolo {
+    width: 4.956rem; /* 79.29px */
+    height: auto;
+  }
+
+  .manifesto__chamada {
+    /* `max-width`, não `width`: a coluna ao lado pode encolher abaixo de
+       254px numa tela estreita, e um `width` fixo vazaria por cima dela. */
+    max-width: 15.875rem; /* 254px */
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  .manifesto__texto {
+    /* A coluna tem 868px, mas o texto quebra antes (#62:3). Os dois números
+       importam: o de fora posiciona a coluna, o de dentro define a quebra de
+       linha — e também até onde o gradiente da revelação vai.
+
+       702px, e não os 697px do Figma: o Chrome mede as mesmas linhas uns 4px
+       mais largas que o Figma, e em 697 "multiplicar" caía para a linha
+       seguinte, mudando todo o parágrafo. Entre 699 e 706 as quebras batem com
+       o arquivo; 702 fica no meio dessa folga. */
+    --largura-texto: 43.875rem; /* 702px */
+
+    display: flex;
+    flex: 0 1 54.25rem; /* 868px */
+    flex-direction: column;
+    /* Ancorado embaixo, junto com a chamada — vale também quando a coluna
+       lateral for a mais alta das duas. */
+    justify-content: flex-end;
+    /* Uma linha inteira em branco (2rem × 1.25), não os 20px de gap do frame
+       do Figma: lá os dois parágrafos são UM nó de texto separado por \n\n, e
+       o gap do frame nem chega a ser aplicado (o frame tem um filho só). */
+    gap: 2.5rem; /* 40px */
+    font: var(--texto-manifesto);
+    letter-spacing: var(--texto-corpo-ls);
+    /* Cor final — e também o estado de quem não tem animação por rolagem.
+       Precisa ser a escura: sem suporte o texto nasce pronto, não apagado. */
+    color: var(--cor-preto);
+    /* Linha do tempo da revelação, baseada na travessia desta caixa pela tela. */
+    view-timeline-name: --revelar;
+    view-timeline-axis: block;
+  }
+
+  .manifesto__texto p {
+    max-width: var(--largura-texto);
+    /*
+     * Anula o `text-wrap: pretty` global. Ele reequilibra o parágrafo para
+     * evitar linha final curta e, fazendo isso, empurrava "multiplicar" para a
+     * linha seguinte — quebra diferente da do Figma. Aqui as quebras são
+     * desenho, não sobra: o designer escolheu terminar em "para navegar.".
+     */
+    text-wrap: wrap;
+  }
+
+  /*
+   * --- Revelação por rolagem ---
+   *
+   * A frente de revelação atravessa o bloco na diagonal, saindo do canto
+   * superior esquerdo. É um gradiente recortado dentro do próprio texto
+   * (`background-clip: text`) e deslocado pela rolagem — não um atraso por
+   * palavra.
+   *
+   * Por que gradiente e não `<span>` por palavra (como era antes): a frente
+   * precisa depender de ONDE a palavra caiu na caixa, não da posição dela na
+   * frase. Isso só se sabe depois da quebra de linha, que muda com a largura
+   * da tela — em CSS puro, sem medir nada, quem resolve é o gradiente. De
+   * quebra, o texto volta a ser `<p>` limpo, que é o que o Sanity vai entregar
+   * quando o conteúdo sair daqui.
+   */
+  @property --revelacao {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 100%;
+  }
+
+  @supports (animation-timeline: view()) {
+    /* `screen`: na impressão o fundo não sai, e texto recortado em fundo
+       ausente é texto invisível. */
+    @media screen and (prefers-reduced-motion: no-preference) {
+      .manifesto__texto {
+        /* 135deg = eixo apontando para baixo e para a direita, ou seja, frente
+           a 45° saindo do canto superior esquerdo. É a inclinação que o
+           bymonolog.com produz escalonando caractere a caractere (0.1s) e
+           atrasando cada linha (0.3s).
+           A suavidade é a largura da borda da frente: ~3 caracteres, o mesmo
+           que o escalonamento deles deixa em transição ao mesmo tempo. */
+        --suavidade: 6%;
+
+        color: transparent;
+        background-image: linear-gradient(
+          135deg,
+          var(--cor-preto) var(--revelacao),
+          var(--cor-texto-fraco) calc(var(--revelacao) + var(--suavidade))
+        );
+        /* O gradiente cobre só a largura em que o texto quebra, não os 868px da
+           coluna: espalhado pelos 868 ele terminaria a varredura antes da
+           última palavra. */
+        background-size: var(--largura-texto) 100%;
+        background-repeat: no-repeat;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: revelar linear both;
+        /* Começa quando a caixa entra pela base e termina com ela ainda na
+           metade de cima — ler já acompanhando a frente, não depois. */
+        animation-range: cover 0% cover 57%;
+      }
+
+      /*
+       * A timeline fica em regra separada DE PROPÓSITO — não juntar com a de
+       * cima. O minificador funde `animation` + `animation-timeline` no atalho
+       * (`animation: linear both revelar --revelar`), e o navegador não aceita
+       * nome de timeline ali: rejeita a declaração inteira, `animation-name`
+       * vira `none` e a animação simplesmente não existe. Já aconteceu, e passa
+       * despercebido porque o texto continua legível na cor final.
+       * Seletor diferente impede a fusão.
+       */
+      .manifesto .manifesto__texto {
+        animation-timeline: --revelar;
+      }
+    }
+  }
+
+  /* Sai de −(suavidade) para 100%: assim nem o primeiro canto começa aceso nem
+     o último termina apagado. */
+  @keyframes revelar {
+    from {
+      --revelacao: -6%;
+    }
+    to {
+      --revelacao: 100%;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Único script de animação do site, e por um motivo: o CSS não tem gatilho
+   * "apareceu na tela, toque uma vez". O que existe é `animation-timeline`, que
+   * amarra a animação à barra de rolagem — o símbolo montaria conforme a rolagem
+   * e congelaria no meio se a pessoa parasse. Aqui a montagem tem que rodar no
+   * tempo dela, igual à abertura.
+   *
+   * Nada de conteúdo depende disto: sem JS o símbolo já está montado na tela, e
+   * o `:hover` continua funcionando sozinho.
+   */
+  const simbolo = document.querySelector<SVGElement>('.manifesto__simbolo');
+  /* Da folha comum, não do componente: é ela que carrega os keyframes. */
+  const MONTANDO = 'simbolo-monta--montando';
+
+  if (simbolo) {
+    const observador = new IntersectionObserver(
+      ([entrada]) => {
+        if (!entrada.isIntersecting) return;
+        observador.disconnect();
+        simbolo.classList.add(MONTANDO);
+
+        /*
+         * A classe SAI no fim. Se ficasse, as barras seguiriam com a mesma
+         * animação aplicada (parada no último quadro) e o `:hover` não teria o
+         * que reiniciar — o navegador só recomeça quando as propriedades da
+         * animação mudam, e elas seriam idênticas. Tirar não pisca: o fim da
+         * animação é o estado normal.
+         */
+        const barras = simbolo.querySelectorAll('polygon').length;
+        let terminadas = 0;
+        simbolo.addEventListener('animationend', () => {
+          if (++terminadas >= barras) simbolo.classList.remove(MONTANDO);
+        });
+      },
+      // O símbolo inteiro na tela: ele é pequeno, e assim ninguém vê a montagem
+      // acontecendo cortada na borda de baixo.
+      { threshold: 1 },
+    );
+
+    observador.observe(simbolo);
+  }
+</script>

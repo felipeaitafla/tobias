@@ -1,0 +1,352 @@
+---
+import Simbolo from '../assets/logos/simbolo-positivo.svg';
+import Divisoria from './Divisoria.astro';
+import type { Pagina } from '../lib/conteudo';
+
+interface Props {
+  areas: NonNullable<Pagina>['areas'];
+}
+
+const { areas: areasAtuacao } = Astro.props;
+---
+
+{/*
+  Os dois grupos são DUAS seções, com a faixa verde entre elas (#54:179,
+  #161:433, #105:191). Até 2026-07-30 eram uma seção só com 192px de respiro no
+  meio, e as duas faixas da divisória vinham juntas depois; o designer subiu a
+  verde para o meio das Áreas.
+
+  A marcação dos cartões fica em um lugar só, então o laço continua — o que os
+  índices decidem é o que existe em cada ponta: o rótulo e a âncora abrem o
+  primeiro bloco, a faixa abre o segundo.
+*/}
+{
+  areasAtuacao.grupos.map((grupo, i) => (
+    <>
+      {i === 1 && <Divisoria cor="verde" />}
+
+      <section
+        class:list={['areas', i === 0 ? 'areas--abertura' : 'areas--fecho']}
+        id={i === 0 ? 'areas' : undefined}
+      >
+        {/* Pedido do cliente, 2026-07-31: os dois grupos carregam o rótulo
+            grudado (#154:384 no arquivo, mas repetido aqui a pedido — no
+            arquivo só o primeiro bloco tem coluna à esquerda). Só existe no
+            desktop: no mobile ele dá lugar ao chapéu abaixo, que também
+            existe nos dois grupos (ver `.areas__rotulo` e `.grupo__chapeu`
+            no style). */}
+        <h2 class="areas__rotulo">{areasAtuacao.rotulo}</h2>
+
+        <article class="grupo">
+          <div class="grupo__cabecalho">
+            {/* Chapéu — pedido do cliente, 2026-07-31, só no mobile: o
+                rótulo "Área de Atuação" vira texto de apoio acima do título
+                nos dois grupos, no lugar da coluna grudada (que é só
+                desktop). */}
+            <p class="grupo__chapeu">{areasAtuacao.rotulo}</p>
+            <h3 class="grupo__titulo">{grupo.titulo}</h3>
+          </div>
+
+          <div class="grupo__grade">
+            {grupo.itens.map((item) => (
+              <div class="cartao">
+                <h4 class="cartao__titulo">{item.titulo}</h4>
+                <p class="cartao__texto">{item.descricao}</p>
+              </div>
+            ))}
+
+            {/*
+              A célula que sobra quando o grupo tem um número ímpar de itens.
+              Ela não desenha traço nenhum — no arquivo a última fileira do
+              segundo grupo é um cartão de 490px sozinho (#105:204), e a linha
+              de cima para na metade da grade. O que a célula ainda faz é
+              ancorar o símbolo no canto inferior direito (#105:219).
+
+              aria-hidden: é ornamento, e o símbolo já identifica a marca no
+              cabeçalho e no manifesto.
+            */}
+            {grupo.itens.length % 2 === 1 && (
+              <div class="grupo__vazio" aria-hidden="true">
+                {/* `simbolo-monta`: o mesmo leque que o símbolo do manifesto
+                    abre no hover, da folha comum (src/styles/simbolo.css).
+                    Pedido do cliente, 2026-07-31. */}
+                <Simbolo class="grupo__simbolo simbolo-monta" />
+              </div>
+            )}
+          </div>
+        </article>
+      </section>
+    </>
+  ))
+}
+
+<style>
+  .areas {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem; /* 32px */
+    /* Sem isto os 980px do grupo encostariam à esquerda em vez de alinhar
+       com a margem direita da seção — o rótulo (`flex: 1`) ocupa a sobra à
+       esquerda dele. */
+    justify-content: flex-end;
+    padding-inline: var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
+     `--gutter-mobile` em tokens.css. */
+  @media (max-width: 700px) {
+    .areas {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  /*
+   * O respiro é assimétrico e espelhado, porque a faixa verde entra no meio: o
+   * primeiro bloco abre com 128 e fecha com 64 (#54:179), o segundo faz o
+   * inverso (#105:191). Os 64 de cada lado somam-se aos 64 do padding da faixa.
+   */
+  .areas--abertura {
+    padding-block: var(--respiro-secao) var(--gutter);
+  }
+
+  .areas--fecho {
+    padding-block: var(--gutter) var(--respiro-secao);
+  }
+
+  /*
+   * O rótulo acompanha a seção inteira: gruda a 128px do topo da tela e só se
+   * solta quando a seção acaba — quem o segura é o próprio bloco de conteúdo,
+   * porque um item grudado não sai do bloco que o contém.
+   *
+   * 128px é o mesmo `--respiro-secao` do padding de cima, e é isso que faz a
+   * troca ser invisível: parado, o rótulo já está exatamente nessa altura,
+   * então ele não dá salto nenhum no instante em que passa a grudar.
+   */
+  .areas__rotulo {
+    position: sticky;
+    top: var(--respiro-secao);
+    /* Cresce com o que sobra: 980 da coluna de conteúdo + 32 de gap deixam
+       306px aqui, dentro dos 1318 úteis da largura de projeto. */
+    flex: 1;
+    /* Os 12px de padding do frame (#154:384) — desce o rótulo até a altura
+       da primeira linha do título, bem maior que ele. Fica dentro da caixa
+       de propósito: assim ele viaja junto no `top`. */
+    padding-top: 0.75rem;
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  /* Pedido do cliente, 2026-07-31: a coluna grudada só existe no desktop —
+     no mobile ela dá lugar ao chapéu inline acima do título (ver
+     `.grupo__chapeu`). Mesma exceção pontual das outras abaixo de 700px. */
+  @media (max-width: 700px) {
+    .areas__rotulo {
+      display: none;
+    }
+  }
+
+  .grupo__cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px, mesmo respiro chapéu-título do Fale conosco */
+  }
+
+  /* Só no mobile (ver `.areas__rotulo` acima) — no desktop o rótulo continua
+     sendo a coluna grudada nos dois grupos, e mostrar os dois ao mesmo tempo
+     duplicaria o texto. */
+  .grupo__chapeu {
+    display: none;
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  @media (max-width: 700px) {
+    .grupo__chapeu {
+      display: block;
+    }
+  }
+
+  .grupo {
+    display: flex;
+    /* 0 1: pode encolher junto com a tela, como as colunas de 868px das outras
+       seções — abaixo da largura de projeto o clamp trava e 980px não cabem. */
+    flex: 0 1 61.25rem; /* 980px */
+    flex-direction: column;
+    gap: var(--gutter); /* 64px */
+  }
+
+  .grupo__titulo {
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    /* Anula o `text-wrap: balance` do reset — a 58px (2026-07-31) o título
+       cabe numa linha só na largura de projeto, mas quebra em duas ou três
+       abaixo dela (a coluna estreita bem mais que o texto). */
+    text-wrap: wrap;
+    /* Sobra de métrica da Noto Serif KR (mesma dos outros títulos do token
+       `--texto-titulo-secao`, ver Sobre.astro) — `padding-bottom`, e não
+       `min-height`, porque a sobra não muda com o número de linhas e este
+       título quebra de 1 para até 3 conforme a largura. */
+    padding-bottom: 1.25rem; /* 20px na largura de projeto */
+  }
+
+  .grupo__grade {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /*
+   * Exceção pontual à regra de "sem media query" (a mesma do cabeçalho e do
+   * rodapé): abaixo da largura de projeto o rótulo grudado (`flex: 1`) já
+   * encolhe sozinho, mas 2 colunas de ~140px deixam ~74px de conteúdo por
+   * cartão depois do padding — pouco para título + 4 linhas de descrição. 1
+   * coluna lê melhor. Não uso `flex-wrap` em `.areas` para chegar lá: a
+   * seção tem `justify-content: flex-end` (pensado para o segundo bloco, sem
+   * rótulo) e isso empurraria o rótulo sozinho para a direita ao quebrar
+   * linha, invertendo o alinhamento à esquerda que é a identidade das Áreas.
+   */
+  @media (max-width: 700px) {
+    .grupo__grade {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .cartao {
+    display: flex;
+    flex-direction: column;
+    /* Título no topo, descrição no rodapé — o miolo é respiro. */
+    justify-content: space-between;
+    /* Piso de folga: se o texto crescer (CMS, tela estreita), ele empurra a
+       altura em vez de encostar no título. */
+    gap: 2rem;
+    min-height: 21.875rem; /* 350px */
+    padding: 2rem; /* 32px */
+  }
+
+  /*
+   * --- Divisórias ---
+   *
+   * Cada emenda é 1px, nunca duas bordas somadas: o cartão desenha só o topo,
+   * a coluna da esquerda desenha a divisa do meio, e a última fileira fecha
+   * embaixo. É o que faz a fileira medir os 350px do arquivo cravados — com
+   * borda em cima E embaixo em todos, cada emenda viraria 2px e a grade
+   * cresceria junto.
+   *
+   * De fora a grade fica aberta: no Figma o `strokeWeight` zera à esquerda na
+   * primeira coluna e à direita na segunda.
+   *
+   * A célula vazia NÃO entra aqui: na última fileira do segundo grupo o arquivo
+   * desenha um cartão de 490px sozinho (#105:204), então a linha de cima para na
+   * metade da grade em vez de atravessá-la.
+   */
+  .cartao {
+    border-top: 1px solid var(--cor-cinza-claro);
+  }
+
+  .cartao:nth-child(odd) {
+    border-right: 1px solid var(--cor-cinza-claro);
+  }
+
+  /*
+   * Pedido do cliente, 2026-07-31: divisória só em cima e embaixo, nunca nas
+   * laterais. Em 1 coluna (ver `.grupo__grade` acima) o `nth-child(odd)`
+   * continua contando posição no DOM, não coluna visual — sem isto metade dos
+   * cartões empilhados ficava com um traço solto à direita, sobra de quando
+   * ele dividia duas colunas.
+   */
+  @media (max-width: 700px) {
+    .cartao:nth-child(odd) {
+      border-right: none;
+    }
+  }
+
+  /*
+   * Os dois casos saem da mesma regra. Com um número par de itens sobram os
+   * dois cartões da última fileira; com um número ímpar, quem fecha a lista é
+   * a célula vazia, então sobra só o cartão da esquerda — e a linha de baixo
+   * para na metade da grade, como no arquivo.
+   */
+  .cartao:nth-last-child(-n + 2) {
+    border-bottom: 1px solid var(--cor-cinza-claro);
+  }
+
+  .cartao__titulo {
+    font: var(--texto-d4);
+    letter-spacing: var(--texto-d4-ls);
+  }
+
+  .cartao__texto {
+    font: var(--texto-c2);
+    /* -0.03em, e não os -0.04 do resto do corpo: pedido do cliente em
+       2026-07-31, só para a descrição dos cartões. */
+    letter-spacing: -0.03em;
+    /*
+     * QUATRO LINHAS DE ESPAÇO, sempre — e é isso que alinha as descrições da
+     * fileira pelo TOPO (pedido do cliente, 2026-07-31).
+     *
+     * O bloco continua ancorado no rodapé do cartão (`space-between`), então
+     * reservar a altura da descrição mais alta faz as de 3 linhas começarem na
+     * mesma linha das de 4, e a linha que sobra cair EMBAIXO em vez de em cima.
+     * Medido antes: as de 4 linhas começavam em y=210 e as de 3 em y=237 — um
+     * degrau de 27px, uma linha inteira, bem no meio da grade.
+     *
+     * `lh` é a própria entrelinha do elemento, então o número se lê como o que
+     * é: quatro linhas. O `em` antes dele é para navegador sem `lh` (4 × 1.5).
+     * Se um dia uma descrição passar de quatro linhas, é este número que sobe
+     * — senão ela volta a começar mais alto que as vizinhas.
+     */
+    min-height: 6em;
+    min-height: 4lh;
+    /* Anula o `text-wrap: pretty` do reset, que evita última linha curta e por
+       isso subia uma palavra em quase todo cartão ("…perenidade ao / negócio."
+       virava "…perenidade / ao negócio."). */
+    text-wrap: wrap;
+    /* 0.7 no arquivo — a descrição recua um passo em relação ao título, que
+       fica na cor cheia. Não é o 0.83 dos rótulos de apoio. */
+    opacity: 0.7;
+  }
+
+  /* Símbolo encostado no canto inferior direito da célula, sem respiro: a
+     borda direita dele é a mesma margem de 64px da seção. */
+  .grupo__vazio {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    /* Pedido do cliente, 2026-07-31: faltava a linha embaixo do cartão
+       Cível — a célula vazia fica na mesma fileira dele (2ª coluna), e sem
+       borda própria não fechava a divisa entre as duas fileiras do lado
+       direito. Mesmo traço de `.cartao`. */
+    border-top: 1px solid var(--cor-cinza-claro);
+  }
+
+  /*
+   * Em 1 coluna (mobile) a célula vazia empilha embaixo do cartão anterior —
+   * aqui "Outsourcing de Apoio" — sem gap nenhum entre as duas (a grade não
+   * declara `gap`, só as bordas separam os cartões de verdade). Pedido do
+   * cliente, 2026-07-31: 32px entre o símbolo e o cartão acima dele.
+   */
+  @media (max-width: 700px) {
+    .grupo__vazio {
+      /* `px`, não `2rem`: aqui dentro a fonte-raiz já está travada em 12px
+         pelo piso do clamp, e `2rem` daria 24px físicos, não os 32 pedidos. */
+      margin-top: 32px;
+    }
+  }
+
+  /*
+   * Largura do arquivo (86.16px) com a altura livre.
+   *
+   * No Figma o símbolo está esticado ~10% na vertical (86.16 × 62.29, contra
+   * os 1.52 de proporção do SVG). Deformar a marca não é opção; a largura é o
+   * que importa aqui, porque é ela que alinha o símbolo com a margem da
+   * seção. Mesma decisão já tomada no manifesto.
+   */
+  .grupo__simbolo {
+    width: 5.385rem; /* 86.16px */
+    height: auto;
+  }
+</style>

@@ -1,0 +1,1440 @@
+---
+/*
+ * Formulário de contato (#63:79), com as três variantes do componente
+ * (#85:312): normal, sucesso e erro.
+ *
+ * Para onde envia e o que cada faixa diz está em `formulario.envio` e
+ * `formulario.estados`, no site.ts — inclusive o aviso de que o destino atual é
+ * de teste.
+ *
+ * PARA CONFERIR OS ESTADOS SEM ENVIAR NADA, abra a página com
+ * `?formulario=sucesso`, `?formulario=erro`, `?formulario=falha` ou
+ * `?formulario=enviando`. Com qualquer um deles o envio de verdade não
+ * acontece — o clique só encena o estado pedido.
+ *
+ * Rolagem linear: esta seção não entra no esquema de camadas freadas. Ela mora
+ * dentro da `.camada-contato`, que não publica nem consome `view-timeline`.
+ */
+import Elemento from '../assets/elementos/elemento-vertical.svg';
+import SetaBaixo from '../assets/icones/seta-baixo.svg';
+import SetaEnviar from '../assets/icones/seta-enviar.svg';
+import spriteBandeiras from '../assets/bandeiras.webp';
+import type { Config, Pagina } from '../lib/conteudo';
+
+interface Props {
+  formulario: NonNullable<Pagina>['formulario'];
+  areas: NonNullable<Pagina>['areas'];
+  envio: NonNullable<Config>['formulario'];
+}
+
+const { formulario, areas, envio } = Astro.props;
+const { campos } = formulario;
+
+/*
+ * As opções do dropdown são as próprias áreas de atuação — derivadas, nunca uma
+ * segunda lista. Manter duas foi o que um dia pôs "Tributário" duas vezes aqui.
+ */
+const gruposDeAreas = areas.grupos.map((grupo) => ({
+  titulo: grupo.titulo,
+  itens: grupo.itens.map((item) => item.titulo),
+}));
+---
+
+<section class="formulario" id="formulario">
+  {/*
+    Ornamento de marca — irmão das duas colunas, não filho de nenhuma. Tem
+    que ser assim: o corpo dele mora ATRÁS do card branco de campos, e um
+    elemento só fica atrás do fundo opaco de outro sendo irmão anterior no
+    DOM (fundo se pinta antes dos filhos SEMPRE, então um filho do `.campos`
+    pintaria por CIMA do branco, nunca atrás). `.formulario__coluna` e
+    `.campos` têm `position: relative` só por isto — devolve a ordem de
+    pintura certa para os dois ficarem por cima do ornamento.
+  */}
+  <Elemento class="formulario__elemento" aria-hidden="true" />
+
+  {/* Pedido do cliente, 2026-07-31: os quatro eixos (Tempo/Empresa/
+      Patrimônio/Família) saíram — o título fica sozinho no topo da coluna. */}
+  <div class="formulario__coluna">
+    <div class="formulario__chamada">
+      <h2 class="formulario__titulo">{formulario.titulo}</h2>
+    </div>
+  </div>
+
+  {/* O sprite entra por variável porque o caminho só existe depois que o Astro
+      processa o arquivo — não dá para escrevê-lo no bloco `<style>`. */}
+  {/*
+    `novalidate` desliga só as BOLHAS do navegador, não a validação: os
+    `required` continuam no HTML (é o que o leitor de tela lê como campo
+    obrigatório) e quem checa é o script, para a mensagem sair na faixa
+    desenhada em vez de num balão do sistema.
+  */}
+  {/*
+    O script precisa dos textos e do destino, e script de cliente não recebe
+    prop do Astro. Eles viajam como JSON num `data-`: é a única ponte possível,
+    e é a mesma para os dois idiomas — sem isto as frases em português iriam
+    para dentro do bundle e a página inglesa herdaria os avisos errados.
+  */}
+  <form
+    class="campos"
+    novalidate
+    style={`--sprite-bandeiras: url('${spriteBandeiras.src}')`}
+    data-config={JSON.stringify({
+      envio,
+      estados: formulario.estados,
+      campos,
+      enviar: formulario.enviar,
+    })}
+  >
+    <p class="campo">
+      <label class="sr-only" for="form-nome">{campos.nome}</label>
+      <input
+        class="campo__entrada"
+        id="form-nome"
+        name="nome"
+        type="text"
+        autocomplete="name"
+        required
+        placeholder={campos.nome}
+      />
+    </p>
+
+    {/* Telefone e e-mail dividem a fileira; a divisa do meio é do primeiro. */}
+    <div class="campos__dupla">
+      {/*
+        `<div>` e não `<p>` como as outras células: aqui dentro tem `<ul>`, que
+        um parágrafo não pode conter.
+
+        O botão de país nasce `hidden` e é o script que o revela. Sem JS não
+        existe lista para abrir nem máscara para aplicar, e um botão morto seria
+        pior que a ausência dele — o campo continua um `type="tel"` comum, que é
+        o que o Figma desenha.
+      */}
+      <div class="campo campo--metade campo--telefone">
+        <label class="sr-only" for="form-telefone">{campos.telefone}</label>
+
+        <button
+          class="pais"
+          type="button"
+          hidden
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          aria-controls="form-paises"
+        >
+          <span class="pais__bandeira" aria-hidden="true"></span>
+          <span class="pais__ddi"></span>
+          <SetaBaixo class="pais__seta" aria-hidden="true" />
+          <span class="sr-only">País do telefone</span>
+        </button>
+
+        <input
+          class="campo__entrada campo__telefone"
+          id="form-telefone"
+          name="telefone"
+          type="tel"
+          autocomplete="tel"
+          placeholder={campos.telefone}
+        />
+
+        {/* O número em E.164 (+5551999990000), que é o formato que qualquer
+            destino de envio vai querer — o campo visível guarda a versão
+            formatada, boa de ler e ruim de processar. */}
+        <input class="campo__e164" type="hidden" name="telefoneE164" />
+
+        {/*
+          `data-lenis-prevent` na área rolável: sem ele a roda do mouse dentro
+          da lista rolaria a página, porque quem trata a roda é o Lenis.
+        */}
+        <div class="paises" id="form-paises" hidden data-lenis-prevent>
+          <input
+            class="paises__busca"
+            type="text"
+            role="combobox"
+            autocomplete="off"
+            aria-expanded="true"
+            aria-controls="form-paises-lista"
+            aria-label="Buscar país"
+            placeholder="Buscar país"
+          />
+          <ul class="paises__lista" id="form-paises-lista" role="listbox" aria-label="País"></ul>
+          <p class="paises__vazio" hidden>Nenhum país com esse nome.</p>
+        </div>
+      </div>
+
+      <p class="campo campo--metade">
+        <label class="sr-only" for="form-email">{campos.email}</label>
+        <input
+          class="campo__entrada"
+          id="form-email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+          placeholder={campos.email}
+        />
+      </p>
+    </div>
+
+    {/*
+      `<select>` nativo com `<optgroup>`, e não uma lista montada à mão: o
+      `<optgroup>` É o título que separa sem ser escolhível — o navegador não
+      deixa selecioná-lo, o leitor de tela anuncia o grupo antes da opção e o
+      teclado já funciona. Uma lista de `<div>` precisaria de JS e de um punhado
+      de ARIA para chegar no mesmo lugar, e a página deixaria de funcionar sem
+      script (ver a política de animação no AGENTS.md — o critério é o mesmo).
+
+      A seta é irmã do campo e não filha, porque `<select>` não aceita filho que
+      não seja opção. Ela fica por cima da área de padding com
+      `pointer-events: none`, então clicar nela abre a lista igual.
+    */}
+    <p class="campo campo--selecao">
+      <label class="sr-only" for="form-area">{campos.area}</label>
+      <SetaBaixo class="campo__seta" aria-hidden="true" />
+      <select class="campo__entrada" id="form-area" name="area">
+        {/*
+          `value=""` com `disabled` é o que faz o rótulo aparecer sem virar
+          resposta: ele mostra o texto no estado vazio e some da lista aberta.
+        */}
+        <option value="" disabled selected>{campos.area}</option>
+        {
+          gruposDeAreas.map((grupo) => (
+            <optgroup label={grupo.titulo}>
+              {grupo.itens.map((item) => (
+                <option value={item}>{item}</option>
+              ))}
+            </optgroup>
+          ))
+        }
+      </select>
+    </p>
+
+    <p class="campo campo--caso">
+      <label class="sr-only" for="form-caso">{campos.caso}</label>
+      <textarea class="campo__entrada" id="form-caso" name="caso" required placeholder={campos.caso}
+      ></textarea>
+    </p>
+
+    {/*
+      A faixa de estado (#85:326 sucesso, #85:340 erro), entre o texto e o
+      botão. `role="status"` para o leitor de tela anunciar sem interromper —
+      em erro de validação quem grita mesmo é o foco, que pula para o campo.
+    */}
+    <p class="aviso" role="status" hidden></p>
+
+    <button class="campos__enviar" type="submit">
+      <span class="campos__rotulo">{formulario.enviar}</span>
+      <SetaEnviar class="campos__seta" aria-hidden="true" />
+    </button>
+  </form>
+</section>
+
+<style>
+  .formulario {
+    /* Âncora do ornamento, que é absoluto. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    /* Abaixo da largura de projeto a coluna do título e o card de campos não
+       cabem mais lado a lado — sem wrap os campos vazavam a seção. */
+    flex-wrap: wrap;
+    gap: var(--gutter); /* 64px */
+    /* 96 em cima e embaixo, 64 nos lados (#63:79) — eram 64 em volta antes da
+       revisão de 2026-07-30, quando o Fale conosco fechava com 64 e as duas
+       seções somavam o respiro. Agora cada uma traz o seu. */
+    padding: 6rem var(--gutter);
+    background: var(--cor-menta);
+    /* O ornamento (1277px) é bem mais ALTO que a seção e sangra de propósito
+       — desde que ele passou a ancorar embaixo (2026-07-31), sangra por
+       CIMA. Aqui é onde a sobra some. */
+    overflow: hidden;
+  }
+
+  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
+     `--gutter-mobile` em tokens.css. */
+  @media (max-width: 700px) {
+    .formulario {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  /*
+   * Ornamento trocado na revisão de 2026-07-30: era o bege deitado (#116:279,
+   * 1557×409, sangrando pela direita) e virou este, em pé e em petróleo —
+   * #201:83, 713×1277 a partir de (64, 253). Em rem, para acompanhar a escala
+   * junto com o resto.
+   *
+   * A cor vem do token porque o SVG é inlinado e usa `currentColor` — ao
+   * contrário das divisórias, que entram como `background-image` e precisam da
+   * cor escrita dentro do arquivo.
+   */
+  /*
+   * O deslocamento do ponteiro entra por variável, e não por `style` direto,
+   * para o `top`/`left` do arquivo continuarem sendo a posição de repouso: o
+   * script mexe só no desvio, e sem script o desvio é zero.
+   */
+  .formulario__elemento {
+    position: absolute;
+    /* Desenho original — #201:83, 713×1277 a partir de (64, 253). Pedido do
+       cliente, 2026-07-31: continua assim no DESKTOP; as tentativas de
+       centralizar/diminuir daquele dia eram para o MOBILE, não para cá — ver
+       o `@media` logo abaixo. */
+    top: 15.8125rem; /* 253px */
+    left: var(--gutter);
+    width: 44.5625rem; /* 713px */
+    height: 79.8125rem; /* 1277px */
+    translate: var(--ornamento-x, 0px) var(--ornamento-y, 0px);
+    /* O reset dá `max-width: 100%` a todo svg, e para um absoluto os 100% são a
+       caixa do ancestral posicionado. Aqui o ornamento cabe na largura, mas o
+       teto continua declarado porque quem manda no desenho é a proporção: com
+       ele ativo, qualquer estreitamento da seção achataria as barras na
+       horizontal e mudaria a inclinação delas. */
+    max-width: none;
+    color: var(--cor-petroleo);
+  }
+
+  /*
+   * Exceção pontual à regra de "sem media query" (a mesma do cabeçalho, das
+   * Áreas e do rodapé): pedido do cliente, 2026-07-31, só para o MOBILE —
+   * "bem no meio-inferior", menor (75% do tamanho: 713 × 1277 → 535 × 958,
+   * mesma proporção) e centralizado horizontalmente.
+   *
+   * `bottom`, não `top`: no mobile as colunas empilham (coluna do texto em
+   * cima, card de campos embaixo — `flex-wrap` em `.formulario`), e a seção
+   * fica bem mais alta que o desenho. Ancorar embaixo garante que a sobra
+   * apareça perto do card de campos (o último bloco empilhado), não perto
+   * do título — `top: 15.8125rem` original ficaria colado no título aqui.
+   *
+   * `left: 50%` + `translate`, não `right`: sem colunas lado a lado para
+   * driblar (ver a versão de desktop, que usa `right` por causa do card),
+   * centralizar na seção já centraliza atrás de qualquer coisa que esteja
+   * embaixo nela.
+   *
+   * Pedido do cliente, 2026-07-31: mais pra baixo ainda — 33% do corpo
+   * (958px × 0,33 ≈ 316px) vazando por baixo da seção, sem aparecer (o
+   * `overflow: hidden` de `.formulario` é quem corta). `bottom` negativo
+   * empurra o desenho além da borda inferior, em vez de rente a ela.
+   */
+  @media (max-width: 700px) {
+    .formulario__elemento {
+      top: auto;
+      left: 50%;
+      bottom: -19.75rem; /* -316px = 33% de 958px */
+      width: 33.4375rem; /* 535px */
+      height: 59.875rem; /* 958px */
+      translate: calc(-50% + var(--ornamento-x, 0px)) var(--ornamento-y, 0px);
+    }
+  }
+
+  /* Irmãos estáticos ficariam ATRÁS de um irmão posicionado, por mais que
+     venham depois no HTML. Posicionar as duas colunas é o que devolve a ordem
+     de pintura esperada. */
+  .formulario__coluna,
+  .campos {
+    position: relative;
+  }
+
+  .formulario__coluna {
+    display: flex;
+    /* Ocupa a altura do card ao lado (#63:80). */
+    align-self: stretch;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  /* --- Título --- */
+
+  .formulario__chamada {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .formulario__titulo {
+    /* 58px/110%/-7%, pedido do cliente em 2026-07-31 — mesmo token dos
+       títulos de Sobre, Áreas de Atuação e Fale conosco (ver tokens.css). */
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    /* Anula o `text-wrap: balance` do reset. */
+    text-wrap: wrap;
+    /* Sobra de métrica da Noto Serif KR, mesma dos outros títulos do token
+       `--texto-titulo-secao` (ver Sobre.astro) — `padding-bottom`, não
+       `min-height`: a sobra não muda com o número de linhas, e este título
+       ("O jurídico para de ser seu problema aqui.") já quebra em duas na
+       largura de projeto e em mais abaixo dela. */
+    padding-bottom: 1.25rem; /* 20px na largura de projeto */
+  }
+
+  /* --- O card de campos --- */
+
+  .campos {
+    display: flex;
+    /* 659px do arquivo. `0 1` para poder encolher junto com a tela abaixo da
+       largura de projeto, como as outras colunas fixas do site. */
+    flex: 0 1 41.1875rem;
+    /* Sem isto o card não encolhia abaixo do mínimo automático do próprio
+       conteúdo — e quem manda nesse mínimo, aqui, é o botão de país
+       (`.pais`, `flex-shrink: 0`) depois que o script o revela. Abaixo de
+       ~360px de viewport o card ficava mais largo que a tela, e como
+       `.formulario` tem `overflow: hidden`, a sobra não virava barra de
+       rolagem — sumia cortada, sem aviso nenhum. */
+    min-width: 0;
+    flex-direction: column;
+    background: var(--cor-branco);
+  }
+
+  /*
+   * Cada campo desenha a própria divisa de baixo; o último antes do botão não
+   * desenha, porque a barra preta já fecha o card (o frame "caso" no Figma é o
+   * único sem traço).
+   */
+  .campo,
+  .campos__dupla {
+    border-bottom: 1px solid var(--cor-cinza-borda);
+  }
+
+  .campo {
+    padding: 2rem; /* 32px */
+  }
+
+  .campos__dupla {
+    display: flex;
+  }
+
+  /*
+   * Pedido do cliente, 2026-07-31: e-mail embaixo do telefone no mobile.
+   *
+   * ARMADILHA: `flex-wrap: wrap` sozinho não empilha aqui. `.campo--metade`
+   * usa `flex: 1`, que é `flex-basis: 0%` — um item de base zero nunca
+   * "transborda" a linha, ele só encolhe (ou cresce) para caber, então o
+   * `wrap` nunca tinha o que fazer e os dois campos ficavam lado a lado,
+   * espremidos, em qualquer largura. `flex-direction: column` força o
+   * empilhamento de verdade, independente da base dos filhos.
+   */
+  @media (max-width: 700px) {
+    .campos__dupla {
+      flex-direction: column;
+    }
+  }
+
+  /* A divisa do meio é do primeiro; a de baixo já é da fileira inteira, então
+     as metades não desenham a delas. */
+  .campo--metade {
+    flex: 1;
+    border-bottom: none;
+  }
+
+  .campo--metade:first-child {
+    border-right: 1px solid var(--cor-cinza-borda);
+  }
+
+  /* Empilhado (`.campos__dupla` acima), o traço que dividia os dois campos
+     lado a lado precisa descer para baixo do telefone — sem isto sobrava uma
+     linha vertical solta à direita e nenhuma divisa entre os dois campos. */
+  @media (max-width: 700px) {
+    .campo--metade:first-child {
+      border-right: none;
+      border-bottom: 1px solid var(--cor-cinza-borda);
+    }
+  }
+
+  /* Encolheu de 322 para 190px na revisão de 2026-07-30 (#85:306). São 133px a
+     menos na seção inteira, que é o que devolve os 718 de altura do arquivo. */
+  .campo--caso {
+    height: 11.875rem; /* 190px */
+    border-bottom: none;
+  }
+
+  /*
+   * Um estilo só para input, select e textarea: no desenho os cinco campos são
+   * a mesma linha de texto, e é o `appearance: none` que tira a moldura que
+   * cada navegador põe por conta própria no select.
+   */
+  .campo__entrada {
+    appearance: none;
+    display: block;
+    width: 100%;
+    padding: 0;
+    /* `max(1rem, 16px)`: abaixo da largura de projeto o clamp trava a fonte
+       em 12px, e campo de formulário com menos de 16px físicos dispara o
+       zoom automático do Safari no iOS ao ganhar foco. Acima da largura de
+       projeto `1rem` já passa de 16px sozinho, então o `max()` não muda nada
+       lá. */
+    font: 400 max(1rem, 16px) / 1.1 var(--fonte-corpo); /* 16px */
+    letter-spacing: -0.04em;
+    color: var(--cor-preto);
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  /*
+   * --- Foco ---
+   *
+   * O destaque contorna a célula inteira do campo, não a caixa do texto: o
+   * contorno sai do `<input>` e vai para o `.campo` que o embrulha, que é quem
+   * tem a largura do card e a altura com os 32px de padding. Sem isso aparecia
+   * um retângulo menor flutuando dentro da célula.
+   *
+   * `outline-offset` negativo porque contorno nasce por FORA da caixa: em 0 ele
+   * passaria 2px além das bordas do card e por cima das divisas dos vizinhos.
+   * Puxado para dentro, ele encosta exatamente na emenda.
+   *
+   * Dentro de `@supports` para que um navegador sem `:has()` fique com o
+   * contorno padrão no campo em vez de ficar sem contorno nenhum.
+   */
+  @supports selector(:has(*)) {
+    .campo__entrada:focus-visible {
+      outline: none;
+    }
+
+    /* `:focus-visible` e não `.campo__entrada:focus-visible`: no telefone quem
+       recebe o foco também pode ser o botão de país ou a busca da lista, e o
+       traçado é o mesmo nos três casos. */
+    .campo:has(:focus-visible) {
+      outline: 2px solid var(--cor-petroleo);
+      outline-offset: -2px;
+    }
+  }
+
+  /*
+   * 0.32 de preto (#85:300 e irmãos). O `::placeholder` precisa ser regra
+   * própria: navegador que não entende o seletor descarta a declaração inteira
+   * se ela vier junto com outras.
+   */
+  .campo__entrada::placeholder {
+    color: rgba(0, 0, 0, 0.32);
+    /* Firefox aplica opacidade própria por cima da cor. */
+    opacity: 1;
+  }
+
+  .campo--caso .campo__entrada {
+    height: 100%;
+    /* Um textarea nasce com a entrelinha do desenho apertada demais para
+       parágrafo; 1.5 é a mesma do corpo do site. */
+    line-height: 1.5;
+    /*
+     * Sem alça de redimensionar: o navegador desenha um triângulo no canto que
+     * não existe no arquivo e destoa das divisas limpas do card. A caixa já tem
+     * ~9 linhas, e texto mais longo rola dentro dela.
+     */
+    resize: none;
+  }
+
+  /* --- Telefone: seletor de país + máscara --- */
+
+  .campo--telefone {
+    /* Âncora da lista, que é absoluta. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* 12px */
+  }
+
+  /* O input é irmão do botão agora, então o `width: 100%` de `.campo__entrada`
+     não serve — quem divide a linha é o flex. */
+  .campo__telefone {
+    flex: 1;
+    /* Sem isto o conteúdo do input define um mínimo e ele empurra o botão para
+       fora da célula em vez de encolher. */
+    min-width: 0;
+    width: auto;
+  }
+
+  .pais {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    padding: 0;
+    /* Sem padding próprio, o alvo de toque nasce do tamanho da linha de
+       texto — abaixo da largura de projeto isso cai bem aquém dos 24px. */
+    min-height: max(1.5rem, 24px);
+    font: inherit;
+    letter-spacing: inherit;
+    color: var(--cor-preto);
+  }
+
+  /*
+   * ARMADILHA: `[hidden]` do navegador é só `display: none` na folha de estilo
+   * padrão, e QUALQUER regra de classe com `display` ganha dele por
+   * especificidade. Os dois elementos daqui que declaram `display` precisam
+   * devolver o atributo na mão — senão o botão de país aparece antes de o
+   * script montar, e a busca filtra no DOM sem esconder nada na tela.
+   */
+  .pais[hidden],
+  .paises__lista :global(.pais__opcao[hidden]) {
+    display: none;
+  }
+
+  /*
+   * Uma imagem só para as 243 bandeiras (ver scripts/gerar-bandeiras.mjs). O
+   * `--i` é a fileira do país, escrita pelo script; a conta desce o sprite até
+   * ela. `background-size` com a largura de tela reduz o sprite inteiro pela
+   * metade — ele é 2× para aguentar retina.
+   *
+   * ARMADILHA: os itens da lista são criados pelo script, e o Astro só carimba
+   * o atributo de escopo no que está no template. Sem `:global` nenhuma regra
+   * daqui para baixo casaria com eles. O ancestral segue escopado, então nada
+   * vaza para fora do campo.
+   */
+  .campo--telefone :global(.pais__bandeira),
+  .campo--telefone :global(.pais__opcao-bandeira) {
+    flex-shrink: 0;
+    width: 1.5rem; /* 24px */
+    height: 1.125rem; /* 18px */
+    background-image: var(--sprite-bandeiras);
+    background-repeat: no-repeat;
+    background-size: 1.5rem auto;
+    background-position-y: calc(var(--i, 0) * -1.125rem);
+    /* Bandeira clara sobre card branco precisa de contorno para não sumir. */
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  }
+
+  .pais__ddi {
+    /* Tabular para o número não dançar ao trocar de país. */
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  .pais__seta {
+    width: 0.9375rem; /* 15px */
+    height: 0.5rem;
+    color: #adadad;
+    transition: rotate 0.2s ease;
+  }
+
+  .pais[aria-expanded='true'] .pais__seta {
+    rotate: 180deg;
+  }
+
+  /*
+   * A lista abre colada na base da célula e um pouco mais larga que a metade,
+   * porque nome de país é longo. Fica dentro da célula na horizontal para não
+   * escapar do card.
+   */
+  .paises {
+    position: absolute;
+    top: 100%;
+    left: -1px;
+    z-index: 2;
+    width: calc(100% + 2px);
+    max-height: 18rem;
+    overflow-y: auto;
+    /* Sem isso a rolagem da lista, ao chegar no fim, continua na página. */
+    overscroll-behavior: contain;
+    background: var(--cor-branco);
+    border: 1px solid var(--cor-cinza-borda);
+  }
+
+  /*
+   * `z-index` num elemento que já é `sticky` parece redundante, mas não é: o
+   * `opacity: .55` do DDI de cada opção cria contexto de empilhamento, e um
+   * elemento com opacidade é pintado na MESMA camada de um posicionado. Como a
+   * lista vem depois no HTML, os "+351" da vida apareciam por cima da busca ao
+   * rolar. O z-index desempata.
+   */
+  .paises__busca {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    width: 100%;
+    padding: 1rem;
+    /* Mesma trava de 16px físicos do `.campo__entrada`, e pelo mesmo motivo:
+       evitar o zoom automático do iOS ao focar a busca. */
+    font: 400 max(0.9375rem, 16px) / 1.2 var(--fonte-corpo); /* 15px */
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-preto);
+    background: var(--cor-branco);
+    border: 0;
+    border-bottom: 1px solid var(--cor-cinza-borda);
+  }
+
+  .paises__busca::placeholder {
+    color: rgba(0, 0, 0, 0.32);
+    opacity: 1;
+  }
+
+  .paises__busca:focus-visible {
+    outline: none;
+  }
+
+  .paises__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .paises__lista :global(.pais__opcao) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem; /* 10px 16px */
+    font: 400 0.9375rem / 1.2 var(--fonte-corpo); /* 15px */
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-preto);
+    cursor: pointer;
+  }
+
+  .paises__lista :global(.pais__opcao-nome) {
+    flex: 1;
+    /* Nome longo não pode empurrar o DDI para fora. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .paises__lista :global(.pais__opcao-ddi) {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.55;
+  }
+
+  /*
+   * O destaque é um só, e ele acompanha o `aria-activedescendant`: o foco de
+   * verdade nunca sai da busca, então mouse e teclado precisam pintar a mesma
+   * marca — senão o leitor de tela anuncia uma opção e a tela mostra outra.
+   */
+  .paises__lista :global(.pais__opcao[data-ativa]),
+  .paises__lista :global(.pais__opcao:hover) {
+    background: var(--cor-menta);
+  }
+
+  .paises__lista :global(.pais__opcao[aria-selected='true'] .pais__opcao-nome) {
+    font-weight: 500;
+  }
+
+  .paises__vazio {
+    padding: 1rem;
+    font: 400 0.9375rem / 1.2 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* --- Área de atuação --- */
+
+  .campo--selecao {
+    position: relative;
+  }
+
+  .campo__seta {
+    position: absolute;
+    top: 50%;
+    left: 2rem; /* alinhada com o padding do campo */
+    width: 0.9375rem; /* 15px */
+    height: 0.5rem; /* 8px */
+    translate: 0 -50%;
+    color: #adadad;
+    /* Deixa o clique passar para o campo que está embaixo — a seta cobre parte
+       da área dele. */
+    pointer-events: none;
+  }
+
+  /* Abre espaço para a seta: os 15px dela mais os 16 de gap do arquivo. */
+  .campo--selecao .campo__entrada {
+    padding-left: 1.9375rem; /* 31px */
+    cursor: pointer;
+  }
+
+  /*
+   * Enquanto nada foi escolhido, o campo mostra a opção vazia — e ela tem que
+   * parecer placeholder, não resposta. `:has()` porque quem sabe se a opção
+   * vazia está selecionada é ela, não o select.
+   */
+  .campo--selecao .campo__entrada:has(option[value='']:checked) {
+    color: rgba(0, 0, 0, 0.32);
+  }
+
+  /* A lista aberta é pintada pelo sistema, então o preto do site não chega lá:
+     as opções voltam à cor normal de texto. */
+  .campo__entrada option {
+    color: var(--cor-preto);
+  }
+
+  /* --- Enviar --- */
+
+  .campos__enviar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    font: 400 1rem / 1.1 var(--fonte-corpo); /* 16px */
+    letter-spacing: -0.04em;
+    color: var(--cor-branco);
+    /*
+     * Preto, e não o #031E21 que as variantes de sucesso e erro trazem: é a
+     * mesma decisão já registrada em tokens.css — o petróleo escuro saiu do
+     * projeto e o corpo todo unificou em preto.
+     */
+    background: var(--cor-preto);
+    transition: background-color 0.2s ease;
+  }
+
+  /* Enquanto envia: sem segundo clique e sem parecer clicável. */
+  .campos__enviar[disabled] {
+    cursor: default;
+    opacity: 0.75;
+  }
+
+  .campos__enviar:hover,
+  .campos__enviar:focus-visible {
+    /* Acréscimo ao Figma: o arquivo não desenha estado de ponteiro, mas um
+       botão sem reação nenhuma não parece clicável. */
+    background: #1a1a1a;
+  }
+
+  /* Mesmo tratamento dos campos: o contorno acompanha a barra inteira. Sem
+     isto ele nasceria 3px por fora e viraria uma moldura solta em volta do
+     card. */
+  .campos__enviar:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /*
+   * A seta encolheu junto com a fonte: a caixa do nó (#85:310) foi de 32,67
+   * para 25,33, e a tinta medida no render do arquivo, de 17 para 13px. Vale a
+   * tinta, não o número do nó — ver a armadilha no AGENTS.md.
+   *
+   * A folga entra como margem porque é ela que dá ao botão os 89,33 de altura
+   * e afasta a seta ~6px a mais da margem direita.
+   */
+  .campos__seta {
+    flex-shrink: 0;
+    width: 0.8125rem; /* 13px */
+    height: 0.8125rem;
+    margin: 0.3853rem; /* (25,33 − 13) ÷ 2 */
+  }
+
+  /* --- A faixa de estado --- */
+
+  /*
+   * Sucesso em petróleo (#85:326), erro e falha em terracota (#85:340). O
+   * arquivo escreve a de sucesso em Regular e a de erro em Semi Bold; aqui vale
+   * o mesmo, porque erro pede mais peso mesmo.
+   */
+  .aviso {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem; /* 10px */
+    padding: 2rem;
+    font: 400 1rem / 1.1 var(--fonte-corpo); /* 16px */
+    letter-spacing: -0.04em;
+    text-align: center;
+    text-wrap: wrap;
+    color: var(--cor-branco);
+    background: var(--cor-petroleo);
+  }
+
+  .aviso[data-estado='erro'],
+  .aviso[data-estado='falha'] {
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    background: var(--cor-terracota);
+  }
+
+  /* O link de escape na falha: o e-mail direto, para quem não vai tentar de
+     novo. */
+  .aviso :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* Mesma armadilha do botão de país: `[hidden]` perde para o `display` da
+     classe. */
+  .aviso[hidden] {
+    display: none;
+  }
+
+  /* O campo que barrou o envio: no arquivo a variante de erro engrossa o rótulo
+     (#85:332 e irmãos). Aqui só o campo culpado engrossa — engrossar todos
+     apontaria para o lugar errado. */
+  .campo[data-invalido] .campo__entrada::placeholder {
+    font-weight: 600;
+    color: var(--cor-terracota);
+  }
+</style>
+
+<script>
+  /*
+   * O ornamento acompanha o ponteiro — pedido do cliente, 2026-07-31: "um
+   * movimento pesado, que se mova um pouco, mas permanecendo naquela região".
+   *
+   * Sétima exceção ao "sem JS", e o critério é o de sempre: não existe em CSS
+   * (nenhuma propriedade lê a posição do ponteiro fora do elemento sob ele), e
+   * sem o script a página continua inteira — o desvio nasce zero e o ornamento
+   * fica exatamente onde o Figma o desenha.
+   *
+   * PESADO é o ponto, e ele mora em dois números: a amplitude é pequena (16px
+   * de desvio máximo, contra os 713 de largura da figura) e o λ é baixo, então
+   * a figura chega ao alvo devagar e sempre atrás do ponteiro. Amplitude maior
+   * ou λ alto viram "elemento grudado no mouse", que é o oposto de peso.
+   *
+   * Fica dentro da região porque o desvio é limitado E porque a seção já tem
+   * `overflow: hidden` — o ornamento sangra por baixo dela de propósito.
+   */
+  {
+    const secao = document.querySelector<HTMLElement>('.formulario');
+    const ornamento = secao?.querySelector<HTMLElement>('.formulario__elemento');
+    const fino = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* No toque não há ponteiro para seguir, e com movimento reduzido a figura
+       simplesmente não se move. Nos dois casos o CSS já basta. */
+    if (secao && ornamento && fino && !calmo) {
+      /*
+       * 44px de desvio máximo — eram 16, e o cliente pediu mais expressivo no
+       * mesmo dia. Continua pequeno perto dos 713 de largura da figura, e o
+       * `overflow` da seção segue cortando o que passar da região.
+       */
+      const AMPLITUDE = 44;
+      /* λ do amortecimento, e é ELE o peso: 2.5 leva ~1,2s para assentar. Ficou
+         onde estava de propósito — a amplitude é que subiu. Acima de ~8 a
+         figura cola no ponteiro, que é o oposto do que foi pedido. */
+      const LAMBDA = 2.5;
+      /* Abaixo de meio pixel ninguém enxerga, e o laço pode dormir. */
+      const REPOUSO = 0.5;
+
+      let alvoX = 0;
+      let alvoY = 0;
+      let x = 0;
+      let y = 0;
+      let ultimoT = 0;
+      let laco = 0;
+      let visivel = false;
+
+      const quadro = (agora: number) => {
+        const dt = ultimoT ? Math.min((agora - ultimoT) / 1000, 0.05) : 1 / 60;
+        ultimoT = agora;
+
+        /* `damp` e não passo fixo: independente de frame rate, e é a mesma
+           conta da esteira da divisória. */
+        const passo = 1 - Math.exp(-LAMBDA * dt);
+        x += (alvoX - x) * passo;
+        y += (alvoY - y) * passo;
+
+        ornamento.style.setProperty('--ornamento-x', `${x.toFixed(2)}px`);
+        ornamento.style.setProperty('--ornamento-y', `${y.toFixed(2)}px`);
+
+        if (visivel && (Math.abs(alvoX - x) > REPOUSO || Math.abs(alvoY - y) > REPOUSO)) {
+          laco = requestAnimationFrame(quadro);
+          return;
+        }
+
+        /* Assentou: crava no alvo antes de dormir. Um damp nunca CHEGA ao
+           destino, e sem isto o ornamento ficaria meio pixel fora do lugar do
+           arquivo depois que o ponteiro saísse — invisível, mas errado. */
+        x = alvoX;
+        y = alvoY;
+        ornamento.style.setProperty('--ornamento-x', `${x.toFixed(2)}px`);
+        ornamento.style.setProperty('--ornamento-y', `${y.toFixed(2)}px`);
+        laco = 0;
+        ultimoT = 0;
+      };
+
+      const acordar = () => {
+        if (!laco && visivel) laco = requestAnimationFrame(quadro);
+      };
+
+      /*
+       * O alvo sai da posição do ponteiro DENTRO da seção, normalizada em
+       * −1..1 a partir do centro. Fora da seção o ponteiro não move nada: a
+       * figura fica no último lugar e volta ao centro quando ele sai.
+       */
+      secao.addEventListener('pointermove', (evento) => {
+        if (evento.pointerType !== 'mouse') return;
+        const caixa = secao.getBoundingClientRect();
+        alvoX = ((evento.clientX - caixa.left) / caixa.width - 0.5) * 2 * AMPLITUDE;
+        alvoY = ((evento.clientY - caixa.top) / caixa.height - 0.5) * 2 * AMPLITUDE;
+        acordar();
+      });
+
+      /* Ponteiro fora: a figura volta para o lugar do arquivo, no mesmo ritmo
+         pesado da ida. */
+      secao.addEventListener('pointerleave', () => {
+        alvoX = 0;
+        alvoY = 0;
+        acordar();
+      });
+
+      /* Nada de rAF girando com a seção fora da tela — mesma economia do laço
+         da divisória. */
+      new IntersectionObserver((entradas) => {
+        visivel = entradas[0].isIntersecting;
+        if (visivel) acordar();
+        else if (laco) {
+          cancelAnimationFrame(laco);
+          laco = 0;
+          ultimoT = 0;
+        }
+      }).observe(secao);
+    }
+  }
+</script>
+
+<script>
+  /*
+   * Envio do formulário e as três faixas de estado.
+   *
+   * O destino e os textos vêm do Sanity, renderizados no `data-config` do
+   * `<form>` — script de cliente não recebe prop, e as frases mudam de idioma.
+   * Aqui só tem o fluxo: valida, mostra "enviando", faz o POST e conta como foi.
+   *
+   * Sem JS o formulário não envia — e não finge que envia: o botão é `submit`
+   * de um `<form>` sem `action`, então o navegador recarregaria a página. É o
+   * pior caso conhecido, e some no dia em que existir um endpoint próprio para
+   * pôr no `action` (aí o JS vira melhoria e o `<noscript>` continua enviando).
+   */
+  const forma = document.querySelector<HTMLFormElement>('.campos');
+
+  if (forma) {
+    const aviso = forma.querySelector<HTMLElement>('.aviso')!;
+    const botao = forma.querySelector<HTMLButtonElement>('.campos__enviar')!;
+    const rotulo = forma.querySelector<HTMLElement>('.campos__rotulo')!;
+    const { envio, estados, campos, enviar } = JSON.parse(forma.dataset.config!);
+
+    const nomeDoCampo: Record<string, string> = {
+      nome: campos.nome,
+      telefone: campos.telefone,
+      email: campos.email,
+      area: campos.area,
+      caso: campos.caso,
+    };
+
+    // A busca da lista de países também é `input`, e não é campo do formulário.
+    const controles = () =>
+      [...forma.querySelectorAll<HTMLInputElement>('input, select, textarea')].filter(
+        (c) => c.type !== 'hidden' && !c.closest('.paises'),
+      );
+
+    const limpar = () => {
+      aviso.hidden = true;
+      delete aviso.dataset.estado;
+      aviso.textContent = '';
+      for (const celula of forma.querySelectorAll<HTMLElement>('[data-invalido]')) {
+        delete celula.dataset.invalido;
+      }
+    };
+
+    const aplicar = (estado: string, campo?: string) => {
+      limpar();
+      botao.disabled = estado === 'enviando';
+      rotulo.textContent = estado === 'enviando' ? estados.enviando : enviar;
+
+      if (estado === 'sucesso') {
+        aviso.dataset.estado = estado;
+        aviso.textContent = estados.sucesso;
+        aviso.hidden = false;
+      }
+
+      if (estado === 'erro') {
+        aviso.dataset.estado = estado;
+        aviso.textContent = estados.erro.replace('{campo}', campo ?? campos.nome);
+        aviso.hidden = false;
+      }
+
+      if (estado === 'falha') {
+        // O e-mail vira link: quem já tentou e não conseguiu não vai tentar de
+        // novo, mas clica.
+        const [antes, depois = ''] = estados.falha.split('{email}');
+        const link = document.createElement('a');
+        link.href = `mailto:${envio.destino}`;
+        link.textContent = envio.destino;
+        aviso.dataset.estado = estado;
+        aviso.append(antes, link, depois);
+        aviso.hidden = false;
+      }
+    };
+
+    /*
+     * Encenação para conferir os estados: `?formulario=sucesso|erro|falha|
+     * enviando`. Com qualquer um deles nada é enviado — nem no carregamento,
+     * nem no clique.
+     */
+    const encenado = new URLSearchParams(location.search).get('formulario');
+    const encenavel = ['sucesso', 'erro', 'falha', 'enviando'].includes(encenado ?? '');
+
+    const encenar = () => {
+      const primeiro = controles().find((c) => c.required);
+      if (encenado === 'erro' && primeiro) {
+        primeiro.closest<HTMLElement>('.campo')?.setAttribute('data-invalido', '');
+        aplicar('erro', nomeDoCampo[primeiro.name]);
+        primeiro.closest<HTMLElement>('.campo')?.setAttribute('data-invalido', '');
+      } else {
+        aplicar(encenado!);
+      }
+    };
+
+    if (encenavel) encenar();
+
+    forma.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+
+      if (encenavel) {
+        encenar();
+        return;
+      }
+
+      limpar();
+
+      // `checkValidity` já sabe de `required` e do formato de e-mail; não há
+      // por que reescrever isso à mão.
+      const invalido = controles().find((c) => !c.checkValidity());
+      if (invalido) {
+        invalido.closest<HTMLElement>('.campo')?.setAttribute('data-invalido', '');
+        aplicar('erro', nomeDoCampo[invalido.name] ?? invalido.name);
+        invalido.closest<HTMLElement>('.campo')?.setAttribute('data-invalido', '');
+        invalido.focus();
+        return;
+      }
+
+      aplicar('enviando');
+
+      const dados = new FormData(forma);
+      // Chaves em português porque viram os rótulos do e-mail que chega.
+      const corpo = {
+        _subject: envio.assunto,
+        _template: 'table',
+        _captcha: 'false',
+        Nome: dados.get('nome'),
+        'E-mail': dados.get('email'),
+        Telefone: dados.get('telefone') || '—',
+        'Telefone (E.164)': dados.get('telefoneE164') || '—',
+        'Área de atuação': dados.get('area') || '—',
+        Caso: dados.get('caso'),
+      };
+
+      try {
+        const resposta = await fetch(envio.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(corpo),
+        });
+        if (!resposta.ok) throw new Error(String(resposta.status));
+        aplicar('sucesso');
+        forma.reset();
+      } catch {
+        aplicar('falha');
+      }
+    });
+  }
+</script>
+
+<script>
+  /*
+   * Telefone: seletor de país com bandeira e máscara conforme o país.
+   *
+   * Quarta exceção ao "animação em CSS, sem JS" — e a primeira que não é
+   * animação. O critério é o mesmo: não existe em CSS (formatar enquanto se
+   * digita é lógica, e `<option>` não aceita imagem, então bandeira em
+   * `<select>` nativo está fora), e sem o script a página continua inteira — o
+   * botão de país nasce `hidden` e o campo segue um `type="tel"` comum, que é
+   * o que o Figma desenha.
+   *
+   * O formato vem do `libphonenumber-js` (metadados `min`, ~25 KB comprimidos):
+   * é a biblioteca do Google, a mesma que está por trás de qualquer campo de
+   * telefone decente. Escrever máscara à mão só cobriria os países que eu
+   * lembrasse, e erraria os planos de numeração que mudam.
+   *
+   * Os nomes dos países saem do `Intl.DisplayNames` do próprio navegador, em
+   * pt-BR — zero byte de tabela.
+   */
+  const celula = document.querySelector<HTMLElement>('.campo--telefone');
+
+  if (celula) {
+    /*
+     * A biblioteca entra por `import()` dinâmico, não no topo: são ~35 KB
+     * comprimidos para um campo que vive no fim de uma página longa. Assim o
+     * pedaço só é buscado quando o formulário chega perto da tela — ou no
+     * primeiro foco do campo, para quem chegar de Tab antes disso.
+     *
+     * Enquanto não carrega, o campo é um `type="tel"` comum. É o mesmo estado
+     * de quem está sem JS, então não há um terceiro comportamento para manter.
+     */
+    const disparo = celula.querySelector<HTMLInputElement>('.campo__telefone')!;
+    let montado = false;
+
+    const montar = async () => {
+      if (montado) return;
+      montado = true;
+      const [{ AsYouType, getCountries, getCountryCallingCode }, { bandeiras }] = await Promise.all([
+        import('libphonenumber-js/min'),
+        import('../data/bandeiras'),
+      ]);
+      iniciar(AsYouType, getCountries, getCountryCallingCode, bandeiras);
+    };
+
+    new IntersectionObserver(
+      (entradas, observador) => {
+        if (!entradas[0].isIntersecting) return;
+        observador.disconnect();
+        montar();
+      },
+      { rootMargin: '300px' },
+    ).observe(celula);
+
+    disparo.addEventListener('focus', montar, { once: true });
+
+    function iniciar(
+      AsYouType: typeof import('libphonenumber-js/min').AsYouType,
+      getCountries: typeof import('libphonenumber-js/min').getCountries,
+      getCountryCallingCode: typeof import('libphonenumber-js/min').getCountryCallingCode,
+      bandeiras: Record<string, number>,
+    ) {
+    const gatilho = celula!.querySelector<HTMLButtonElement>('.pais')!;
+    const bandeira = celula!.querySelector<HTMLElement>('.pais__bandeira')!;
+    const ddi = celula!.querySelector<HTMLElement>('.pais__ddi')!;
+    const entrada = celula!.querySelector<HTMLInputElement>('.campo__telefone')!;
+    const e164 = celula!.querySelector<HTMLInputElement>('.campo__e164')!;
+    const painel = celula!.querySelector<HTMLElement>('.paises')!;
+    const busca = celula!.querySelector<HTMLInputElement>('.paises__busca')!;
+    const lista = celula!.querySelector<HTMLElement>('.paises__lista')!;
+    const vazio = celula!.querySelector<HTMLElement>('.paises__vazio')!;
+
+    const PADRAO = 'BR';
+    const soDigitos = (t: string) => t.replace(/\D/g, '');
+    // Busca sem acento: quem digita "sao tome" tem que achar "São Tomé".
+    const simplificar = (t: string) =>
+      t.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+    const nomes = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
+    const comparar = new Intl.Collator('pt-BR');
+    const paises = getCountries()
+      .map((codigo) => ({
+        codigo,
+        nome: nomes.of(codigo) ?? codigo,
+        ddi: getCountryCallingCode(codigo),
+      }))
+      .sort((a, b) => comparar.compare(a.nome, b.nome));
+
+    let pais: string = PADRAO;
+    let ultimoBom = '';
+    let ativa = -1;
+    let visiveis: HTMLElement[] = [];
+    let destacada: HTMLElement | null = null;
+
+    /* --- Bandeira --- */
+
+    // O sprite tem uma fileira por país; `--i` é a fileira, e o CSS desce até
+    // ela. Andorra é a fileira 0, então país sem bandeira precisa APAGAR a
+    // imagem — deixar `--i` sem valor mostraria a bandeira errada.
+    const pintar = (alvo: HTMLElement, codigo: string) => {
+      const fileira = bandeiras[codigo];
+      if (fileira === undefined) {
+        alvo.style.backgroundImage = 'none';
+        return;
+      }
+      alvo.style.setProperty('--i', String(fileira));
+    };
+
+    /* --- A lista --- */
+
+    const opcoes = paises.map((p) => {
+      const item = document.createElement('li');
+      item.className = 'pais__opcao';
+      item.id = `pais-${p.codigo}`;
+      item.setAttribute('role', 'option');
+      item.dataset.codigo = p.codigo;
+      item.dataset.busca = `${simplificar(p.nome)} ${p.ddi} ${p.codigo.toLowerCase()}`;
+
+      const marca = document.createElement('span');
+      marca.className = 'pais__opcao-bandeira';
+      pintar(marca, p.codigo);
+
+      const nome = document.createElement('span');
+      nome.className = 'pais__opcao-nome';
+      nome.textContent = p.nome;
+
+      const codigo = document.createElement('span');
+      codigo.className = 'pais__opcao-ddi';
+      codigo.textContent = `+${p.ddi}`;
+
+      item.append(marca, nome, codigo);
+      return item;
+    });
+
+    lista.append(...opcoes);
+
+    const destacar = (indice: number) => {
+      if (destacada) delete destacada.dataset.ativa;
+      ativa = indice;
+      destacada = visiveis[indice] ?? null;
+      if (!destacada) {
+        busca.removeAttribute('aria-activedescendant');
+        return;
+      }
+      destacada.dataset.ativa = '';
+      busca.setAttribute('aria-activedescendant', destacada.id);
+      destacada.scrollIntoView({ block: 'nearest' });
+    };
+
+    const filtrar = (termo: string) => {
+      const alvo = simplificar(termo).trim();
+      visiveis = [];
+      for (const item of opcoes) {
+        const casa = !alvo || item.dataset.busca!.includes(alvo);
+        item.hidden = !casa;
+        if (casa) visiveis.push(item);
+      }
+      vazio.hidden = visiveis.length > 0;
+      destacar(visiveis.length ? 0 : -1);
+    };
+
+    /* --- Máscara --- */
+
+    // Formata no plano do país escolhido — ou no que o próprio texto disser,
+    // quando alguém cola um número internacional começando com "+".
+    const formatar = (bruto: string) => {
+      const internacional = bruto.trimStart().startsWith('+');
+      const maquina = internacional ? new AsYouType() : new AsYouType(pais as never);
+      const texto = maquina.input(bruto);
+      const detectado = maquina.getCountry();
+      if (internacional && detectado && detectado !== pais) escolherPais(detectado);
+      e164.value = maquina.getNumber()?.number ?? '';
+      return texto;
+    };
+
+    // Posição logo depois do n-ésimo dígito: é assim que o cursor volta para
+    // onde estava depois de o texto ser reescrito com os separadores.
+    const depoisDoDigito = (texto: string, n: number) => {
+      if (n <= 0) return 0;
+      let vistos = 0;
+      for (let i = 0; i < texto.length; i++) {
+        if (texto[i] >= '0' && texto[i] <= '9' && ++vistos === n) return i + 1;
+      }
+      return texto.length;
+    };
+
+    const escrever = (texto: string, digitosAntes: number) => {
+      entrada.value = texto;
+      ultimoBom = texto;
+      const posicao = depoisDoDigito(texto, digitosAntes);
+      entrada.setSelectionRange(posicao, posicao);
+    };
+
+    entrada.addEventListener('input', (evento) => {
+      const apagando = (evento as InputEvent).inputType?.startsWith('delete') ?? false;
+      const cursor = entrada.selectionStart ?? entrada.value.length;
+      let contados = soDigitos(entrada.value.slice(0, cursor)).length;
+
+      let bruto = entrada.value;
+      let texto = formatar(bruto);
+
+      /*
+       * Apagou um separador: os dígitos não mudaram, a máscara devolve o
+       * separador e a tecla parece travada. Some com um dígito junto, que é o
+       * que a pessoa quis dizer.
+       */
+      if (apagando && soDigitos(bruto) === soDigitos(ultimoBom)) {
+        bruto = soDigitos(bruto).slice(0, -1);
+        texto = formatar(bruto);
+        contados = Math.max(0, contados - 1);
+      }
+
+      /*
+       * Passou do plano de numeração do país: o formatador desiste e devolve os
+       * dígitos crus, e a máscara "some" na cara de quem digita. Recusar o
+       * dígito a mais é menos surpreendente. (Se o país não usa separador
+       * nenhum, `ultimoBom` já é só dígitos e a guarda não dispara.)
+       */
+      if (!apagando && ultimoBom && texto === soDigitos(texto) && ultimoBom !== soDigitos(ultimoBom)) {
+        escrever(ultimoBom, Math.max(0, contados - 1));
+        return;
+      }
+
+      escrever(texto, contados);
+    });
+
+    /* --- Estado do país --- */
+
+    function escolherPais(codigo: string) {
+      pais = codigo;
+      pintar(bandeira, codigo);
+      ddi.textContent = `+${getCountryCallingCode(codigo as never)}`;
+      for (const item of opcoes) {
+        item.setAttribute('aria-selected', String(item.dataset.codigo === codigo));
+      }
+    }
+
+    const selecionar = (codigo: string) => {
+      escolherPais(codigo);
+      fechar(false);
+      // Reaproveita os dígitos já digitados no plano do país novo.
+      escrever(formatar(soDigitos(entrada.value)), Number.MAX_SAFE_INTEGER);
+      entrada.focus();
+    };
+
+    /* --- Abrir e fechar --- */
+
+    const abrir = () => {
+      painel.hidden = false;
+      gatilho.setAttribute('aria-expanded', 'true');
+      busca.value = '';
+      filtrar('');
+      busca.focus();
+      const atual = visiveis.findIndex((item) => item.dataset.codigo === pais);
+      destacar(atual < 0 ? 0 : atual);
+    };
+
+    function fechar(devolverFoco = true) {
+      if (painel.hidden) return;
+      painel.hidden = true;
+      gatilho.setAttribute('aria-expanded', 'false');
+      busca.removeAttribute('aria-activedescendant');
+      if (devolverFoco) gatilho.focus();
+    }
+
+    gatilho.addEventListener('click', () => (painel.hidden ? abrir() : fechar()));
+
+    busca.addEventListener('input', () => filtrar(busca.value));
+
+    busca.addEventListener('keydown', (evento) => {
+      const ultimo = visiveis.length - 1;
+      switch (evento.key) {
+        case 'ArrowDown':
+          evento.preventDefault();
+          destacar(Math.min(ativa + 1, ultimo));
+          break;
+        case 'ArrowUp':
+          evento.preventDefault();
+          destacar(Math.max(ativa - 1, 0));
+          break;
+        case 'Home':
+          evento.preventDefault();
+          destacar(0);
+          break;
+        case 'End':
+          evento.preventDefault();
+          destacar(ultimo);
+          break;
+        case 'Enter': {
+          evento.preventDefault();
+          const alvo = visiveis[ativa];
+          if (alvo) selecionar(alvo.dataset.codigo!);
+          break;
+        }
+        case 'Escape':
+          evento.preventDefault();
+          fechar();
+          break;
+        case 'Tab':
+          fechar(false);
+          break;
+      }
+    });
+
+    lista.addEventListener('click', (evento) => {
+      const alvo = (evento.target as HTMLElement).closest<HTMLElement>('.pais__opcao');
+      if (alvo) selecionar(alvo.dataset.codigo!);
+    });
+
+    // `pointerdown` e não `click`: fecha antes de o clique chegar no que estava
+    // embaixo, então a lista não some depois de já ter engolido o gesto.
+    document.addEventListener('pointerdown', (evento) => {
+      if (!celula!.contains(evento.target as Node)) fechar(false);
+    });
+
+    /* --- Começa --- */
+
+      escolherPais(PADRAO);
+      filtrar('');
+      gatilho.hidden = false;
+    }
+  }
+</script>

@@ -1,0 +1,183 @@
+---
+import Assinatura from '../assets/logos/assinatura-horizontal-positivo.svg';
+import Whatsapp from '../assets/icones/whatsapp.svg';
+
+interface Props {
+  navegacao: { _key: string; texto: string; href: string }[];
+  whatsapp: string;
+  whatsappTexto: string;
+}
+
+const { navegacao, whatsapp, whatsappTexto } = Astro.props;
+---
+
+<header class="cabecalho">
+  <a class="cabecalho__marca" href="#" aria-label="Tobias Advogados — início">
+    <Assinatura class="cabecalho__assinatura" />
+  </a>
+
+  <nav class="cabecalho__nav" aria-label="Navegação principal">
+    {navegacao.map((item) => <a href={item.href}>{item.texto}</a>)}
+  </nav>
+
+  <a class="cabecalho__zap" href={whatsapp} target="_blank" rel="noopener noreferrer">
+    <Whatsapp class="cabecalho__icone" />
+    {/* Pedido do cliente, 2026-07-31: some no mobile, fica só o ícone — mas
+        continua lido por quem usa leitor de tela (`.sr-only`, e não
+        `display: none`, que apagaria o nome acessível do link). */}
+    <span class="cabecalho__zap-texto">{whatsappTexto}</span>
+  </a>
+</header>
+
+<style>
+  .cabecalho {
+    position: fixed;
+    /*
+     * A pilha da página vai subindo — hero 0, bloco branco 1, Sobre 2 — e cada
+     * seção nova entra acima da anterior. O header fica num patamar à parte,
+     * bem acima de todas: com 2 ele empatava com o Sobre e, empate desfeito
+     * pela ordem no DOM, o Sobre (que vem depois) tapava o header.
+     * Só a abertura (100) fica por cima.
+     */
+    z-index: 50;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem var(--gutter); /* 16px 64px */
+    font: var(--texto-menu);
+    letter-spacing: var(--texto-menu-ls);
+    color: var(--cor-preto);
+    /* Translúcido com desfoque: o conteúdo passa por baixo e continua legível. */
+    background: rgb(255 255 255 / 0.85);
+    border-bottom: 1px solid #e8e8e8;
+    /* 6px, e não os 12 que aparecem no Figma: o raio de lá equivale ao dobro
+       do desvio que o CSS usa, então 12 no arquivo = blur(6px) aqui. */
+    backdrop-filter: blur(6px);
+  }
+
+  .cabecalho__assinatura {
+    display: block;
+    width: 9rem; /* 144px */
+    height: auto;
+  }
+
+  .cabecalho__nav {
+    display: flex;
+    gap: 2rem; /* 32px */
+  }
+
+  .cabecalho__zap {
+    display: flex;
+    align-items: center;
+    gap: 0.6875rem; /* 11px */
+  }
+
+  .cabecalho__icone {
+    width: 0.9375rem; /* 15px */
+    height: auto;
+  }
+
+  /* `(hover: hover)`: sem a guarda, um toque em tela sensível deixava a
+     opacidade "grudada" até o próximo toque em outro lugar. */
+  @media (hover: hover) {
+    .cabecalho__nav a:hover,
+    .cabecalho__zap:hover {
+      opacity: 0.6;
+    }
+  }
+
+  /*
+   * Abaixo de 700px a navegação some do cabeçalho — logo + WhatsApp é tudo
+   * que sobra de largura sem espremer. É uma exceção pontual à regra de
+   * "sem media query": aqui não é ajuste de tamanho, é comportamento (a nav
+   * existe ou não), mesmo espírito das guardas `(hover: hover)` acima. Os
+   * mesmos links continuam alcançáveis pelo rodapé — página única, rolar já
+   * é a navegação principal.
+   */
+  @media (max-width: 700px) {
+    .cabecalho__nav {
+      display: none;
+    }
+
+    .cabecalho {
+      padding-inline: var(--gutter-mobile);
+    }
+
+    /* Some visualmente, continua acessível — mesma técnica do `.sr-only`
+       global (não reaproveitei a classe direto porque aqui é condicional,
+       só abaixo de 700px; a classe global vale sempre). */
+    .cabecalho__zap-texto {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Pedido do cliente, 2026-07-31: ícone do WhatsApp na mesma altura do
+       logo. Só `height`: o ícone é quadrado (viewBox 15×15) e a assinatura
+       tem razão própria (1920×295,02 ≈ 6,506:1) — casar as DUAS medidas
+       deformaria um dos dois. `9rem × (295,02 ÷ 1920)`, a mesma conta que dá
+       a altura renderizada da assinatura ao lado, então os dois acompanham
+       juntos se a largura do logo mudar algum dia. */
+    .cabecalho__icone {
+      width: auto;
+      height: 1.3829rem; /* 9rem × 295,02/1920 */
+    }
+  }
+
+  /*
+   * --- Entrada ---
+   *
+   * O header só aparece depois que o hero sai inteiro da tela. Como o hero é
+   * `sticky` e o conteúdo desliza por cima dele, isso acontece exatamente
+   * quando a página rolou a altura dele: 100svh.
+   *
+   * O estado normal é VISÍVEL, e a animação é que esconde no começo. Sem
+   * `animation-timeline` (Firefox hoje) o header fica sempre à mostra — um
+   * header comum, que é o pior caso aceitável. Se o escondido fosse a base,
+   * lá ele não apareceria nunca.
+   */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .cabecalho {
+        animation: cabecalho-descer ease-in-out both;
+        /* Fica escondido durante todo o hero e desce ao longo dos 128px
+           seguintes. Em 48px a descida cabia em meio giro de roda e parecia
+           um corte; 128px dá tempo de ver o movimento. */
+        animation-range: 100svh calc(100svh + 8rem);
+      }
+
+      /*
+       * Regra separada de propósito — não juntar com a de cima. O minificador
+       * funde `animation` + `animation-timeline` no atalho, e o navegador
+       * rejeita nome de timeline ali: a animação some no build e o header
+       * passa a aparecer desde o topo. Mesmo cuidado do hero e do manifesto.
+       */
+      body .cabecalho {
+        animation-timeline: scroll(root block);
+      }
+    }
+  }
+
+  @keyframes cabecalho-descer {
+    from {
+      /* `visibility` junto do resto: escondido de verdade, sem link clicável
+         nem alcançável por Tab enquanto o hero está na tela. */
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    to {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

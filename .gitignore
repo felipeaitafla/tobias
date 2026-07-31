@@ -1,0 +1,32 @@
+# build output
+dist/
+# generated types
+.astro/
+# runtime do Studio (studio/dist e studio/node_modules já caem nas regras abaixo)
+.sanity/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# fontes brutas que o cliente mandou — não são servidas pelo site (o vídeo já
+# foi convertido para public/video-hero.mp4; o PDF vem do Sanity, não daqui)
+# e são grandes demais pro repositório (692 MB e 66 MB).
+src/assets/video-hero.mov
+src/assets/Apresentação Institucional - Tobias ADV.pdf

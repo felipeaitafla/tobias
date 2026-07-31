@@ -1,0 +1,127 @@
+/*
+ * A montagem do símbolo — o leque de quatro barras que se abre.
+ *
+ * Mora aqui, e não dentro de um componente, porque desde 2026-07-31 são DOIS os
+ * lugares que a usam: o símbolo do manifesto e o do fim das áreas de atuação
+ * (pedido do cliente, "o mesmo hover"). Duplicar noventa linhas de pivô e
+ * keyframe entre os dois é o caminho mais curto para as duas montagens
+ * divergirem na primeira vez que alguém acertar uma só.
+ *
+ * Folha comum e não `<style>` de componente também resolve o escopo: o Astro
+ * carimba o atributo de escopo no que está no template, mas não nos polígonos
+ * que ele inlina de dentro do SVG — dentro de um componente cada regra daqui
+ * precisaria de `:global()`. Aqui não precisa de nenhuma.
+ *
+ * Quem usa dá o TAMANHO; esta folha não declara `width` nem `height`.
+ *
+ * Os pivôs, ângulos e translados saem da geometria do próprio
+ * `simbolo-positivo.svg`: cada barra gira em torno do meio da sua base, e o
+ * leque abre em passos exatos de 40°. (Na abertura os mesmos números aparecem
+ * arredondados à mão.)
+ */
+.simbolo-monta {
+  --giro: 0.55s;
+  --passo: 0.16s;
+  --t1: 0.15s; /* barra 4, a mais à direita, abre a sequência */
+  --t2: calc(var(--t1) + var(--passo));
+  --t3: calc(var(--t2) + var(--passo));
+  --t4: calc(var(--t3) + var(--passo));
+}
+
+/* view-box para `transform-origin` falar em unidades do viewBox. */
+.simbolo-monta polygon {
+  transform-box: view-box;
+}
+
+.simbolo-monta polygon:nth-of-type(1) {
+  transform-origin: 1058.73px 1223.96px;
+}
+
+.simbolo-monta polygon:nth-of-type(2) {
+  --dx: -39.07px;
+  --dy: 130.66px;
+  --angulo: -40deg;
+  transform-origin: 1097.8px 1093.3px;
+}
+
+.simbolo-monta polygon:nth-of-type(3) {
+  --dx: -157.66px;
+  --dy: 208.33px;
+  --angulo: -80deg;
+  transform-origin: 1216.39px 1015.63px;
+}
+
+.simbolo-monta polygon:nth-of-type(4) {
+  --dx: -303.75px;
+  --dy: 190.66px;
+  --angulo: -120deg;
+  transform-origin: 1362.48px 1033.3px;
+}
+
+/*
+ * Dois gatilhos, mesma montagem: o `:hover` e a classe que o observador do
+ * manifesto põe na primeira vez que o símbolo aparece na tela. Os seletores
+ * andam sempre em par — se um ganhar regra que o outro não tem, a montagem sai
+ * diferente dependendo de quem disparou.
+ *
+ * Passar o mouse refaz a montagem da abertura, só as barras — sem o letreiro e
+ * sem o deslize, que lá existem para virar assinatura. Roda uma vez e para;
+ * para ver de novo, tem que sair e voltar. Isso sai de graça ao pendurar a
+ * animação no `:hover`: ela nasce quando o ponteiro entra, termina no estado
+ * normal e é descartada quando ele sai — sem repetir e sem sobressalto.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* `both` para o estado deitado valer JÁ no atraso: sem isso a barra fica no
+     lugar até chegar a vez dela e só então salta para trás. */
+  .simbolo-monta:hover polygon,
+  .simbolo-monta--montando polygon {
+    animation: simbolo-abrir var(--giro) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* A barra 1 é a referência do leque: já está no lugar, só reaparece. */
+  .simbolo-monta:hover polygon:nth-of-type(1),
+  .simbolo-monta--montando polygon:nth-of-type(1) {
+    animation-name: simbolo-surgir;
+    animation-duration: 0.3s;
+    animation-delay: var(--t4);
+  }
+
+  .simbolo-monta:hover polygon:nth-of-type(2),
+  .simbolo-monta--montando polygon:nth-of-type(2) {
+    animation-delay: var(--t3);
+  }
+
+  .simbolo-monta:hover polygon:nth-of-type(3),
+  .simbolo-monta--montando polygon:nth-of-type(3) {
+    animation-delay: var(--t2);
+  }
+
+  .simbolo-monta:hover polygon:nth-of-type(4),
+  .simbolo-monta--montando polygon:nth-of-type(4) {
+    animation-delay: var(--t1);
+  }
+}
+
+/* Sai deitada na base da barra 1 e gira até o próprio ângulo. */
+@keyframes simbolo-abrir {
+  from {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--angulo));
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes simbolo-surgir {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

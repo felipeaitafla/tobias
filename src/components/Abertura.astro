@@ -1,0 +1,312 @@
+---
+/*
+ * Animação de abertura.
+ *
+ * Sequência:
+ *  1. Tela cheia em azul petróleo, símbolo centralizado.
+ *  2. As quatro barras entram da direita para a esquerda. Cada uma nasce
+ *     deitada na posição da barra 1 (a horizontal da esquerda) e gira em torno
+ *     da própria base até o seu ângulo. A barra 1 não gira — já está no lugar.
+ *  3. O símbolo desliza para a esquerda até sua posição na assinatura, e o
+ *     letreiro é revelado da esquerda para a direita, saindo de trás dele.
+ *  4. Pausa e revelação do hero.
+ *
+ * Os números de base/ângulo vêm da geometria do próprio SVG (logo-hero.svg):
+ * cada barra tem ~36 unidades e o leque abre em passos de ~40°.
+ *
+ * É CSS puro de propósito: sem JS, a animação roda igual, e o hero já está no
+ * DOM por baixo desde o início — nada de conteúdo bloqueado por script.
+ */
+---
+
+<div class="abertura" aria-hidden="true">
+  <div class="abertura__cortina">
+    <div class="abertura__painel">
+      <svg class="abertura__logo" viewBox="0 0 361 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g class="abertura__simbolo">
+      <path
+        class="barra barra--1"
+        d="M1.88025 47.1053L3.00273 44.6387L39.663 44.6732L38.5406 47.1398L1.88025 47.1053Z"
+        fill="white"
+      />
+      <path
+        class="barra barra--2"
+        d="M11.0463 18.3198L14.6657 16.5903L42.2991 40.3062L38.6797 42.0376L11.0463 18.3198Z"
+        fill="white"
+      />
+      <path
+        class="barra barra--3"
+        d="M35.9835 1.91943L41.1334 3.31877L47.2723 39.0586L42.1243 37.6573L35.9835 1.91943Z"
+        fill="white"
+      />
+      <path
+        class="barra barra--4"
+        d="M65.4858 5.30542L69.3158 10.8701L51.7979 41.7804L47.9679 36.2157L65.4858 5.30542Z"
+        fill="white"
+      />
+    </g>
+
+    <g class="abertura__letreiro">
+      {/* Fixa a caixa de referência do clip-path em 0 0 361 50. Sem isto o
+          inset() mediria contra o bbox das letras, que muda se o desenho mudar. */}
+      <rect x="0" y="0" width="361" height="50" fill="none" />
+      <path
+        d="M230.39 26.0423C214.148 13.335 224.835 7.25196 232.384 10.4384C235.067 11.5709 237.089 13.1776 237.67 13.6862L237.286 8.88356C219.018 3.77185 212.257 14.9896 220.643 24.3876C223.737 27.8543 238.634 37.2447 232.04 43.9765C225.619 50.5317 218.157 43.1357 216.69 41.8554L217.074 46.6581C218.836 46.9978 233.035 51.5413 238.177 42.293C241.874 35.6438 232.213 27.4685 230.391 26.0423H230.39Z"
+        fill="white"
+      />
+      <path d="M109.229 8.37866H85.1772V10.8932H94.6197V47.1398H99.7883V10.8932H109.229V8.37866Z" fill="white" />
+      <path d="M182.444 8.37866H177.276V47.1398H182.444V8.37866Z" fill="white" />
+      <path
+        d="M162.529 23.6428V23.591C167.463 22.9614 168.388 21.944 169.26 21.0879C169.924 20.4372 170.4 19.7193 170.689 18.938C170.979 18.1568 171.123 17.3564 171.123 16.5406C171.123 15.3063 170.898 14.1853 170.447 13.1775C169.995 12.1698 169.298 11.3098 168.352 10.5977C167.408 9.88553 166.199 9.33846 164.727 8.95456C163.255 8.57257 161.497 8.38062 159.455 8.38062H146.544V47.1417H159.658C162.364 47.1417 164.644 46.8423 166.5 46.2434C168.356 45.6445 169.858 44.8229 171.007 43.7806C172.156 42.7383 172.985 41.5137 173.496 40.1047C174.008 38.6977 174.262 37.1851 174.262 35.5689C174.262 32.3364 173.305 29.7258 171.389 27.7353C169.475 25.7447 166.543 24.234 162.525 23.6428H162.529ZM151.714 10.9336H156.315C157.849 10.9336 159.229 11.0238 160.455 11.2023C161.683 11.3808 162.725 11.6841 163.584 12.1103C164.443 12.5364 165.101 13.1027 165.562 13.8091C166.022 14.5154 166.252 15.3888 166.252 16.4292C166.252 17.5541 165.996 18.4985 165.485 19.2663C164.973 20.0322 164.274 20.6503 163.385 21.1186C162.495 21.587 161.448 21.9287 160.241 22.1417C159.034 22.3548 157.725 22.4604 156.315 22.4604H151.714V10.9336ZM167.32 39.0835C166.842 40.2583 166.15 41.2565 165.244 42.0742C164.338 42.8938 163.212 43.5157 161.865 43.9438C160.519 44.3719 158.977 44.5849 157.238 44.5849H151.714V24.7696H153.51C155.715 24.7696 157.716 24.975 159.511 25.3838C161.307 25.7927 162.834 26.4165 164.097 27.2535C165.359 28.0904 166.331 29.1634 167.013 30.4706C167.696 31.7797 168.036 33.323 168.036 35.1044C168.036 36.5824 167.797 37.9088 167.322 39.0835H167.32Z"
+        fill="white"
+      />
+      <path
+        d="M125.213 7.59937C114.712 7.59937 106.405 15.2007 106.405 28.1595C106.405 40.4003 114.319 48.0804 124.585 48.0804C133.752 48.0804 143.469 41.84 143.469 27.5203C143.469 15.6806 136.103 7.59937 125.211 7.59937H125.213ZM139.743 26.0672C138.855 33.8605 134.177 42.3487 126.354 44.5062C114.969 47.6255 108.148 37.9798 110.475 27.1287C111.568 21.992 114.163 16.982 118.254 13.6977C122.159 10.567 128.087 9.38453 132.681 11.5766C136.699 13.4962 139.16 17.698 139.718 22.0938C139.886 23.4125 139.841 24.7043 139.747 26.025L139.743 26.0653V26.0672Z"
+        fill="white"
+      />
+      <path
+        d="M198.21 8.37866H192.236L194.617 13.6305L185.184 47.1398H187.833L189.55 40.7074H193.272L206.906 40.7113L209.822 47.1398H215.662L198.212 8.37866H198.21ZM190.161 38.4002L195.976 16.6211L205.857 38.4002H190.162H190.161Z"
+        fill="white"
+      />
+      <path
+        d="M274.163 8.37866H268.189L270.569 13.6305L261.136 47.1398H263.786L265.502 40.7074H269.225L282.859 40.7113L285.775 47.1398H291.615L274.164 8.37866H274.163ZM266.113 38.4002L271.929 16.6211L281.809 38.4002H266.115H266.113Z"
+        fill="white"
+      />
+      <path
+        d="M327.288 27.7199C327.288 30.4303 326.816 32.964 325.87 35.3174C324.926 37.6727 323.526 39.7266 321.67 41.4829C319.814 43.2374 317.513 44.6194 314.764 45.6272C312.015 46.635 308.835 47.1398 305.227 47.1398H294.35V8.37866H305.227C308.835 8.37866 312.015 8.8835 314.764 9.88933C317.513 10.8971 319.816 12.2753 321.67 14.0202C323.526 15.7669 324.924 17.817 325.87 20.1723C326.816 22.5275 327.288 25.0421 327.288 27.718V27.7199ZM321.365 27.8255C321.365 25.4625 321.1 23.4028 320.574 21.6484C320.045 19.8939 319.331 18.3909 318.428 17.1394C317.526 15.8879 316.471 14.859 315.262 14.0509C314.053 13.2428 312.776 12.6093 311.432 12.1486C310.088 11.6879 308.704 11.3712 307.282 11.1965C305.861 11.0238 304.477 10.9355 303.133 10.9355H299.942V44.5868H303.133C304.477 44.5868 305.861 44.5004 307.282 44.3258C308.704 44.153 310.088 43.8344 311.432 43.3737C312.776 42.913 314.053 42.2834 315.262 41.4848C316.471 40.6863 317.526 39.6651 318.428 38.4213C319.331 37.1793 320.045 35.6879 320.574 33.9507C321.1 32.2135 321.365 30.1711 321.365 27.8255Z"
+        fill="white"
+      />
+      <path
+        d="M344.618 43.6174L346.047 47.1398H340.021L324.855 8.37866H330.727L343.356 40.3351L356.519 8.37866H359.12L344.637 43.5714L344.618 43.6174Z"
+        fill="white"
+      />
+      </g>
+      </svg>
+    </div>
+
+    {/* Rastro da paleta: acompanha a borda direita do painel e encolhe junto
+        com o movimento, como nos slides 2→4 do Figma. */}
+    <div class="abertura__faixas">
+      <span class="faixa faixa--terracota"></span>
+      <span class="faixa faixa--bege"></span>
+      <span class="faixa faixa--cinza"></span>
+      <span class="faixa faixa--branco"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .abertura {
+    /* Tempos concentrados aqui para facilitar ajuste fino. */
+    --giro: 0.55s;
+    --passo: 0.16s;
+    --t1: 0.15s; /* barra 4, a mais à direita, abre a sequência */
+    --t2: calc(var(--t1) + var(--passo));
+    --t3: calc(var(--t2) + var(--passo));
+    --t4: calc(var(--t3) + var(--passo));
+    --montagem: 1.25s; /* símbolo pronto → começa a deslocar */
+    --deslize: 0.75s;
+    --espera: 0.5s;
+    --transicao: 1.1s; /* cortina saindo para a esquerda */
+    --fim: calc(var(--montagem) + var(--deslize) + var(--espera));
+    --curva: cubic-bezier(0.65, 0, 0.35, 1);
+
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    /* Sem fundo próprio: quem cobre a tela é o painel. Assim, conforme a
+       cortina sai, o hero aparece por baixo sem precisar de fade. */
+    overflow: hidden;
+    animation: abertura-encerrar 0s linear calc(var(--fim) + var(--transicao))
+      forwards;
+  }
+
+  .abertura__cortina {
+    display: flex;
+    width: max-content;
+    height: 100%;
+    animation: cortina-sair var(--transicao) var(--curva) var(--fim) forwards;
+  }
+
+  .abertura__painel {
+    display: grid;
+    place-items: center;
+    width: 100vw;
+    height: 100%;
+    background: var(--cor-petroleo);
+  }
+
+  /*
+   * Encolhe pelo container, não faixa a faixa. Duas razões: o Figma reduz as
+   * quatro na mesma proporção (×0,428 do slide 2 para o 3), que é o que uma
+   * escala uniforme faz; e scaleX roda na GPU, enquanto animar `width` em
+   * quatro elementos forçaria layout a cada quadro.
+   * A origem à esquerda mantém as faixas coladas na borda do painel.
+   */
+  .abertura__faixas {
+    display: flex;
+    height: 100%;
+    transform-origin: left center;
+    animation: faixas-encolher var(--transicao) var(--curva) var(--fim) forwards;
+  }
+
+  .faixa {
+    height: 100%;
+    /* Larguras na proporção do slide 2 do Figma (262:221:157:92). */
+  }
+
+  .faixa--terracota {
+    width: 18.1vw;
+    background: #c1503b;
+  }
+
+  .faixa--bege {
+    width: 15.3vw;
+    background: var(--cor-bege);
+  }
+
+  .faixa--cinza {
+    width: 10.9vw;
+    background: var(--cor-cinza-claro);
+  }
+
+  .faixa--branco {
+    width: 6.4vw;
+    background: var(--cor-branco);
+  }
+
+  .abertura__logo {
+    /* 800px na largura de projeto (1446). A proporção é a do próprio arquivo:
+       só a largura muda, a altura acompanha. */
+    width: min(50rem, 86vw);
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Pedido do cliente, 2026-07-31: logo menor no mobile, com 32px de respiro
+     de cada lado — os 86vw de cima (322px numa tela de 375px, só 26px de
+     folga) davam pouco espaço. */
+  @media (max-width: 700px) {
+    .abertura__logo {
+      width: calc(100vw - 64px);
+    }
+  }
+
+  /* O símbolo nasce centralizado na tela: deslocado para a direita pela
+     distância entre o centro do símbolo (x≈35,6) e o centro da assinatura
+     (x=180,5). Depois volta a zero, que é seu lugar definitivo. */
+  .abertura__simbolo {
+    transform: translateX(144.9px);
+    animation: simbolo-encaixar var(--deslize) cubic-bezier(0.65, 0, 0.35, 1)
+      var(--montagem) forwards;
+  }
+
+  .barra {
+    transform-box: view-box;
+    opacity: 0;
+    animation: barra-abrir var(--giro) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Cada barra gira em torno da própria base e parte da posição da barra 1:
+     o translate leva sua base até a base da barra 1, o rotate a deita. */
+  .barra--4 {
+    transform-origin: 49.89px 39px;
+    transform: translate(-10.79px, 6.91px) rotate(-119.54deg);
+    animation-delay: var(--t1);
+  }
+
+  .barra--3 {
+    transform-origin: 44.7px 38.36px;
+    transform: translate(-5.6px, 7.55px) rotate(-80.25deg);
+    animation-delay: var(--t2);
+  }
+
+  .barra--2 {
+    transform-origin: 40.49px 41.18px;
+    transform: translate(-1.39px, 4.73px) rotate(-40.65deg);
+    animation-delay: var(--t3);
+  }
+
+  /* A barra 1 é a referência: já está deitada no lugar certo, só aparece. */
+  .barra--1 {
+    transform-origin: 39.1px 45.91px;
+    animation-name: barra-surgir;
+    animation-duration: 0.3s;
+    animation-delay: var(--t4);
+  }
+
+  /*
+   * O letreiro sai de trás do símbolo. A borda ESQUERDA do corte acompanha
+   * exatamente a borda direita do símbolo (que vai de 214,22 a 69,32 conforme
+   * ele desliza), enquanto a borda DIREITA avança até o fim da assinatura.
+   * Por isso mesma duração, atraso e curva do deslize — se divergirem, as
+   * letras aparecem por cima das barras.
+   *
+   *   início: faixa de largura zero em x=214,22 (borda direita do símbolo)
+   *   fim...: x de 69,32 a 361 (assinatura inteira)
+   */
+  .abertura__letreiro {
+    clip-path: inset(0 146.78px 0 214.22px);
+    animation: letreiro-revelar var(--deslize) cubic-bezier(0.65, 0, 0.35, 1)
+      var(--montagem) forwards;
+  }
+
+  @keyframes barra-abrir {
+    from {
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    to {
+      opacity: 1;
+      transform: translate(0, 0) rotate(0deg);
+    }
+  }
+
+  @keyframes barra-surgir {
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes simbolo-encaixar {
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes letreiro-revelar {
+    to {
+      /* 69,32 é onde o símbolo para; não corta letra nenhuma (começam em 85,18). */
+      clip-path: inset(0 0 0 69.32px);
+    }
+  }
+
+  @keyframes cortina-sair {
+    to {
+      /* 100vw tira o painel da tela; a sobra cobre as faixas, que a essa
+         altura já encolheram a zero. */
+      transform: translateX(-105vw);
+    }
+  }
+
+  @keyframes faixas-encolher {
+    to {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes abertura-encerrar {
+    to {
+      visibility: hidden;
+    }
+  }
+
+  /* Sem animação: mostra o hero direto, sem tela intermediária. */
+  @media (prefers-reduced-motion: reduce) {
+    .abertura {
+      display: none;
+    }
+  }
+</style>

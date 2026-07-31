@@ -1,0 +1,248 @@
+---
+/*
+ * Faixa sangrada, de ponta a ponta da tela. São DUAS no site, e desde a revisão
+ * de 2026-07-30 elas não são mais vizinhas:
+ *
+ *   - a verde (#161:433, petróleo) entra ENTRE os dois grupos de Áreas;
+ *   - a vermelha (#194:158 → #194:159) abre a camada do contato.
+ *
+ * Por isso o componente desenha UMA faixa e recebe qual: antes as duas moravam
+ * juntas aqui dentro, com 128px de respiro entre elas. Agora cada uma traz os
+ * seus 64px de padding, que é o respiro do frame de cada uma no arquivo.
+ *
+ * DIVERGE DO FIGMA de propósito: no arquivo a vermelha é #C1503B, um tijolo mais
+ * claro que não existe em nenhum outro lugar do site. Aqui ela usa a terracota
+ * da marca (#7A3225, a mesma da faixa do Thiago no Sobre).
+ *
+ * As duas cores estão dentro dos SVGs, e não em `--cor-petroleo` /
+ * `--cor-terracota`: o SVG entra como `background-image`, e imagem externa não
+ * herda `currentColor` nem enxerga variável de CSS. Se um token de cor mudar,
+ * o arquivo tem que ser editado junto.
+ *
+ * Cada arquivo traz seis cópias do leque de barras colocadas à mão, com passo
+ * variando de 375,6 a 384,1px. Aqui cada uma vira um ladrilho de uma cópia só,
+ * no passo da primeira para a segunda (382,912px), repetido em `repeat-x`.
+ *
+ * Ladrilhar em vez de esticar o arquivo inteiro, porque a faixa vai de ponta a
+ * ponta da tela e a tela quase nunca tem 1446px: em `width: 100%` a inclinação
+ * das barras mudaria com a largura da janela. O arquivo já vem batizado de
+ * "divisória-loop", então o desenho pede repetição, não escala.
+ *
+ * O ladrilho traz a cópia duas vezes (em 0 e em -382,912) porque a figura tem
+ * 402,92px e transborda a célula em ~20px. A emenda só fecha se o que sai por
+ * um lado já estiver desenhado do outro.
+ */
+interface Props {
+  cor: 'verde' | 'vermelha';
+}
+
+const { cor } = Astro.props;
+---
+
+{/* Ornamento: não há informação aqui que um leitor de tela precise anunciar. */}
+<div class:list={['divisoria', `divisoria--${cor}`]} aria-hidden="true">
+  <div class="divisoria__esteira"></div>
+</div>
+
+<style>
+  .divisoria {
+    /*
+     * O passo do ladrilho, em rem para acompanhar a escala fluida. É a mesma
+     * medida em três lugares — tamanho da célula, largura extra da esteira e
+     * distância do laço —, e é por isso que a emenda nunca aparece.
+     */
+    --passo: 23.932rem; /* 382,912px */
+    /*
+     * Tempo de um passo na velocidade de repouso. Continua 9s mesmo com o
+     * desenho 45% maior, de propósito: o passo cresceu junto com o leque, então
+     * o que se vê passar por segundo é o MESMO número de barras de antes
+     * (6,05 a cada 9s nos dois casos). É o ritmo que devia ficar de pé, não o
+     * px/s.
+     */
+    --duracao-passo: 9s;
+    /* Só a tinta tem 300px: o respiro do frame do Figma vira padding, porque ele
+       precisa ficar de fora do recorte. */
+    height: 18.75rem; /* 300px */
+    padding-block: 4rem; /* 64px */
+    /* A esteira é mais larga que a tela de propósito — aqui é onde a sobra
+       some. */
+    overflow: hidden;
+    background-color: var(--cor-branco);
+    /* `content-box` porque a altura declarada é a da tinta; o padding é respiro
+       por fora dela, como no arquivo. */
+    box-sizing: content-box;
+  }
+
+  /*
+   * Um passo a mais de largura é o que permite o laço: a esteira desliza de 0 a
+   * -1 passo e, em qualquer ponto do caminho, ainda cobre a tela inteira. Ao
+   * fim do ciclo o desenho está exatamente onde estava — o ladrilho tem
+   * justamente esse período.
+   */
+  .divisoria__esteira {
+    width: calc(100% + var(--passo));
+    height: 100%;
+    background-repeat: repeat-x;
+    /* Largura e altura declaradas juntas (e as duas em rem) para o ângulo das
+       barras não depender da altura calculada da faixa. */
+    background-size: var(--passo) 18.75rem;
+  }
+
+  .divisoria--verde .divisoria__esteira {
+    background-image: url('../assets/elementos/divisoria-verde-loop.svg');
+  }
+
+  .divisoria--vermelha .divisoria__esteira {
+    background-image: url('../assets/elementos/divisoria-vermelho-loop.svg');
+  }
+
+  /*
+   * Movimento infinito, em sentidos opostos: a verde puxa para a esquerda, a
+   * vermelha volta para a direita (é a mesma animação com `reverse`, para as
+   * duas terem exatamente o mesmo período).
+   *
+   * `linear` obrigatoriamente: qualquer curva faz um laço contínuo parecer que
+   * engasga a cada volta.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .divisoria__esteira {
+      animation: divisoria-correr var(--duracao-passo) linear infinite;
+    }
+
+    .divisoria--vermelha .divisoria__esteira {
+      animation-direction: reverse;
+    }
+  }
+
+  @keyframes divisoria-correr {
+    to {
+      transform: translateX(calc(var(--passo) * -1));
+    }
+  }
+</style>
+
+<script>
+  /*
+   * A rolagem acelera as esteiras, e elas voltam ao passo normal com o mesmo
+   * pouso do Lenis.
+   *
+   * Terceira exceção ao "animação em CSS, sem JS", pelo mesmo critério das
+   * outras duas: não existe em CSS (nenhuma propriedade lê a VELOCIDADE da
+   * rolagem — `animation-timeline` amarra a animação à POSIÇÃO, e aí o
+   * movimento pararia junto com a pessoa, que é o oposto do pedido), e sem o
+   * script a faixa continua inteira, correndo na velocidade de repouso.
+   *
+   * O CSS é quem anima; aqui só se mexe no `playbackRate`. Por isso o
+   * degradê é limpo: sem JS, taxa 1 para sempre.
+   *
+   * UM CONTROLADOR POR FAIXA. O Astro empacota este bloco uma vez e roda uma
+   * vez, mesmo com o componente repetido — então quem varre a página é o
+   * `querySelectorAll` aqui embaixo. Com as duas faixas em pontos distantes,
+   * um controlador só (um `IntersectionObserver` na primeira) deixaria a
+   * vermelha acelerando fora da tela e dormindo quando fosse a vez dela.
+   */
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    /*
+     * Amortecimento em `damp`, independente de frame rate — e assimétrico de
+     * propósito.
+     *
+     * Na DESCIDA vale o λ do Lenis (lerp 0.09 × 60): a inércia que sobra
+     * depois que a roda para ainda é rolagem, ainda é medida aqui, e as duas
+     * assentam no mesmo ritmo. É o pouso.
+     *
+     * Na SUBIDA o λ é alto de propósito. A velocidade que eu meço JÁ vem
+     * suavizada pelo Lenis; amortecer de novo com o mesmo λ empilharia dois
+     * atrasos e a esteira responderia depois da página. Aqui o damp serve só
+     * para filtrar o tremor entre quadros (τ ≈ 0,07s), então a aceleração
+     * acompanha o gesto.
+     */
+    const SOBE = 14;
+    const DESCE = 0.09 * 60;
+    /* Teto: mais que isso e o leque vira borrão. */
+    const TETO = 8;
+    /*
+     * Quanto a esteira ganha por px/s de rolagem. Subiu de 0.002 para 0.004 em
+     * 2026-07-31, a pedido do cliente: a faixa tinha que correr mais enquanto a
+     * página anda.
+     *
+     * Duas medidas do mesmo gesto de 6 cliques da roda: **2,25× antes, 3,89×
+     * depois**. Parte do aumento repõe o que a rolagem pesada tirou — a esteira
+     * lê VELOCIDADE, e a página passou a andar 70% do que andava por clique
+     * (ver o `wheelMultiplier` no Base.astro), o que sozinho já derrubara o
+     * pico de 2,62 para 2,25.
+     *
+     * Agora ~1000px/s dobra e meia a velocidade e o teto chega perto de
+     * 1750px/s, que é um gesto decidido mas nem tanto — daí o TETO acima
+     * passar a ser alcançável de verdade, e ser ele quem impede o borrão.
+     */
+    const GANHO = 0.004;
+    /* Abaixo disso a diferença não é visível — serve para o laço poder
+       dormir em vez de girar à toa. */
+    const REPOUSO = 0.02;
+
+    const acelerar = (faixa: Element) => {
+      const animacoes = [...faixa.querySelectorAll('.divisoria__esteira')].flatMap((e) =>
+        e.getAnimations(),
+      );
+      if (!animacoes.length) return;
+
+      let taxa = 1;
+      let aplicada = 1;
+      let ultimoY = window.scrollY;
+      let ultimoT = 0;
+      let laco = 0;
+      let visivel = false;
+
+      const aplicar = (valor: number) => {
+        // `updatePlaybackRate` e não `playbackRate =`: a animação roda no
+        // compositor, e só esta versão troca a velocidade sem dar um salto.
+        for (const animacao of animacoes) animacao.updatePlaybackRate(valor);
+        aplicada = valor;
+      };
+
+      const quadro = (agora: number) => {
+        const dt = ultimoT ? Math.min((agora - ultimoT) / 1000, 0.05) : 1 / 60;
+        ultimoT = agora;
+
+        const y = window.scrollY;
+        const velocidade = Math.abs(y - ultimoY) / dt;
+        ultimoY = y;
+
+        const alvo = Math.min(1 + velocidade * GANHO, TETO);
+        const lambda = alvo > taxa ? SOBE : DESCE;
+        taxa += (alvo - taxa) * (1 - Math.exp(-lambda * dt));
+
+        if (Math.abs(taxa - aplicada) > 0.01) aplicar(taxa);
+
+        if (visivel && (velocidade > 1 || Math.abs(taxa - 1) > REPOUSO)) {
+          laco = requestAnimationFrame(quadro);
+        } else {
+          // Assentou: volta ao passo exato e some — nada de rAF girando com a
+          // página parada.
+          laco = 0;
+          ultimoT = 0;
+          taxa = 1;
+          aplicar(1);
+        }
+      };
+
+      const acordar = () => {
+        if (laco || !visivel) return;
+        ultimoT = 0;
+        ultimoY = window.scrollY;
+        laco = requestAnimationFrame(quadro);
+      };
+
+      addEventListener('scroll', acordar, { passive: true });
+
+      // Fora da tela nem faz sentido calcular: o laço só existe enquanto ESTA
+      // faixa está à vista.
+      new IntersectionObserver((entradas) => {
+        visivel = entradas[0].isIntersecting;
+        if (visivel) acordar();
+      }).observe(faixa);
+    };
+
+    for (const faixa of document.querySelectorAll('.divisoria')) acelerar(faixa);
+  }
+</script>

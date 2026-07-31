@@ -1,0 +1,12 @@
+# Só existe para a Netlify. Na Vercel, `api/apresentacao.ts` já responde em
+# `/api/apresentacao` sozinho — o redirecionamento abaixo é o que faz o mesmo
+# caminho valer aqui, para o navegador não precisar saber onde o site está.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/api/apresentacao"
+  to = "/.netlify/functions/apresentacao"
+  status = 200

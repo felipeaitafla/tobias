@@ -1,0 +1,132 @@
+/*
+ * Design tokens — Tobias Advogados
+ * Extraídos do Figma: hJuV9y2PAHLZdOsrrW0n5X (frame "One Page" #51:12)
+ * As cores batem com as variações dos SVGs em _context/logos/.
+ */
+
+/*
+ * --- Escala fluida ---
+ * O Figma foi desenhado em 1446px com base 16px. 16 ÷ 1446 = 1.1065vw, então
+ * essa razão reproduz as proporções exatas do arquivo em qualquer largura:
+ * tipografia, espaçamento e dimensões (todos em rem) crescem juntos.
+ *
+ *   1280px (720p) →  14.2px      1920px → 21.2px
+ *   1446px (Figma) → 16.0px      2560px (2K) → 28.0px
+ *
+ * Os limites do clamp estão em rem de propósito: assim respeitam o tamanho de
+ * fonte configurado no navegador, e o zoom continua funcionando. Com limites em
+ * px isso quebraria.
+ */
+:root {
+  font-size: clamp(0.75rem, 1.1065vw, 1.75rem);
+}
+
+:root {
+  /* --- Cores da marca --- */
+  --cor-petroleo: #3c757c; /* seção Marjorye, tela de carregamento, ornamento do formulário */
+  --cor-terracota: #7a3225; /* seção Thiago */
+  --cor-bege: #bca780; /* footer */
+  --cor-menta: #eef6f4; /* fundos alternados (história, contato) */
+  --cor-cinza-claro: #dce4e2; /* bordas do grid de clientes */
+  --cor-cinza-borda: #bdbdbd; /* divisórias dos campos do formulário */
+  --cor-branco: #ffffff;
+  /*
+   * Preto puro em todo texto e traço escuro.
+   *
+   * DIVERGE DO FIGMA de propósito: no arquivo o corpo usa #031E21 (petróleo
+   * escuro) e só o header e o footer usam preto. A decisão foi unificar em
+   * preto — por isso não existe mais `--cor-petroleo-escuro`. Se algum dia o
+   * petróleo voltar, ele volta como token novo; não reaproveite este.
+   */
+  --cor-preto: #000000;
+
+  /* Ponto de partida da revelação do manifesto — o mesmo preto a 20%. Era
+     rgba(3, 30, 33, .2), o petróleo escuro; acompanhou a troca para não deixar
+     um resto de verde aparecendo no trecho ainda apagado do texto. */
+  --cor-texto-fraco: rgba(0, 0, 0, 0.2);
+  --cor-texto-footer: rgba(0, 0, 0, 0.5);
+  --cor-borda-sutil: rgba(0, 0, 0, 0.15);
+
+  /* --- Tipografia ---
+   * --fonte-display e --fonte-corpo são geradas pela API de fontes do Astro
+   * (ver astro.config.mjs). Não declarar @font-face à mão.
+   */
+  --fonte-display: var(--fonte-display-astro);
+  --fonte-corpo: var(--fonte-corpo-astro);
+
+  /* Escala display (Noto Serif KR) — o valor de line-height e letter-spacing
+   * varia por tamanho no Figma, por isso cada degrau carrega os três juntos. */
+  --texto-hero: 400 4.75rem / 1.03 var(--fonte-display); /* 76px */
+  --texto-hero-ls: -0.05em;
+
+  --texto-hero-aparte: 500 1.125rem / 1.5 var(--fonte-corpo); /* 18px */
+  --texto-hero-link: 500 1.125rem / 1.2 var(--fonte-corpo); /* 18px */
+
+  --texto-d2: 500 3rem / 1.1 var(--fonte-display); /* 48px — nomes dos sócios */
+  --texto-d2-ls: -0.05em;
+
+  --texto-d3: 500 2rem / 1.25 var(--fonte-display); /* 32px display */
+  --texto-d3-ls: -0.04em;
+
+  /* 24px — título dos cartões das áreas (#105:77). Entrelinha 1.24, e não a
+     1.25 do d3: o arquivo traz os dois valores, cada um no seu degrau. */
+  --texto-d4: 500 1.5rem / 1.24 var(--fonte-display);
+  --texto-d4-ls: -0.04em;
+
+  /*
+   * Título de seção — 58px/110%/-7%, pedido do cliente em 2026-07-31.
+   * Um token só para os títulos de Sobre, Áreas de Atuação (os dois grupos),
+   * Fale conosco e Formulário: antes eram dois tokens (`--texto-d1` a 64px
+   * para Áreas/Fale conosco, este a 40px só para o Sobre) e o Formulário
+   * escrevia o próprio valor solto; os quatro convergem para o mesmo degrau.
+   */
+  --texto-titulo-secao: 500 3.625rem / 1.1 var(--fonte-display); /* 58px */
+  --texto-titulo-secao-ls: -0.07em;
+
+  /* O manifesto é Inter, não a serifada: no Figma (#62:3) o estilo base do nó
+     diz Noto Serif KR, mas todos os runs sobrescrevem a família para Inter,
+     então a serifada nunca chega a ser pintada. O peso, esse, os runs NÃO
+     sobrescrevem — fica o Medium 500 do estilo base. */
+  --texto-manifesto: 500 2rem / 1.25 var(--fonte-corpo); /* 32px */
+
+  /* Texto de apoio das colunas laterais — a chamada do manifesto (#105:228) e o
+     rótulo dos clientes (#152:369) usam exatamente o mesmo estilo, sempre a
+     0.83 de opacidade. Entrelinha apertada porque são uma ou duas linhas. */
+  --texto-apoio: 500 1.25rem / 1.1 var(--fonte-corpo); /* 20px */
+  --texto-apoio-ls: -0.05em;
+  --opacidade-apoio: 0.83;
+
+  /* Menu do header (#155:419) */
+  --texto-menu: 500 0.875rem / 1.2 var(--fonte-corpo); /* 14px */
+  --texto-menu-ls: -0.04em;
+
+  /* Escala de corpo (Inter) */
+  --texto-c1: 500 1.5rem / 1.5 var(--fonte-corpo); /* 24px — história */
+  /* 18px — corpo do Sobre e das bios. Regular; a frase de abertura de cada bio
+     é o único trecho em 600 (é run próprio no Figma, não o estilo base). */
+  --texto-c2: 400 1.125rem / 1.5 var(--fonte-corpo);
+  --peso-destaque: 600;
+  --texto-c3: 400 1.125rem / 1.2 var(--fonte-corpo); /* 18px — links do footer */
+  --texto-corpo-ls: -0.04em;
+
+  /* --- Layout ---
+   * O Figma foi desenhado em 1446px. O gutter de 64px e o respiro vertical
+   * de 128px se repetem em praticamente todas as seções.
+   */
+  --largura-design: 1446px;
+  --gutter: 4rem; /* 64px */
+  --respiro-secao: 8rem; /* 128px */
+  /*
+   * Padrão de respiro lateral no mobile, pedido do cliente em 2026-07-31 —
+   * `px`, não `rem`: abaixo da largura de projeto o clamp trava a fonte-raiz
+   * em 12px, e `--gutter` (4rem) vira 48px físicos em vez dos 64 do desenho.
+   * Sem um valor próprio, cada seção ficava com o respiro que sobrava da
+   * conta errada — daí o pedido de padronizar. Usado só dentro de
+   * `@media (max-width: 700px)`, a mesma exceção pontual das outras.
+   */
+  --gutter-mobile: 32px;
+  /* O hero ocupa a altura da tela (100svh), não os 856px fixos do Figma.
+     As três faixas do Sobre, essas sim, têm altura do arquivo — em rem, para
+     acompanharem a escala junto com o texto que vive dentro delas. */
+  --altura-faixa-sobre: 50.625rem; /* 810px */
+}

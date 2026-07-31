@@ -1,0 +1,267 @@
+---
+import LogoHero from '../assets/logos/logo-hero.svg';
+import Selo from '../assets/logos/selo-20-anos-cinza-claro.svg';
+import Seta from '../assets/icones/seta-hero.svg';
+import { imagem } from '../lib/imagem';
+import type { Pagina } from '../lib/conteudo';
+
+interface Props {
+  hero: NonNullable<Pagina>['hero'];
+}
+
+const { hero } = Astro.props;
+
+const foto = imagem(hero.foto, { larguras: [640, 1024, 1440, 2048], sizes: '100vw' });
+
+/*
+ * O aparte vem como Portable Text de um bloco só: os trechos fortes são marcas
+ * DENTRO da frase, não itens de uma lista. Percorrer os `children` do bloco é
+ * tudo que a renderização precisa aqui — sem `astro-portabletext`, porque um
+ * decorador só não justifica a dependência.
+ */
+const trechos = hero.aparte?.[0]?.children ?? [];
+---
+
+<section class="hero">
+  <img
+    src={foto.src}
+    srcset={foto.srcset}
+    sizes={foto.sizes}
+    width={foto.width}
+    height={foto.height}
+    alt=""
+    class="hero__foto"
+    loading="eager"
+    fetchpriority="high"
+  />
+
+  {/*
+    Pedido do cliente, 2026-07-31: vídeo no lugar da foto. A foto continua no
+    DOM, embaixo — é o quadro que aparece antes do vídeo carregar e o que fica
+    para quem prefere sem movimento (`prefers-reduced-motion`, ver o style: o
+    vídeo some e a foto mostra por baixo, sem JS nenhum). Convertido do
+    ProRes original (692 MB, 4K) para H.264 1080p com `ffmpeg`: 4 MB.
+    `muted` é obrigatório para o autoplay funcionar em qualquer navegador, e
+    `playsinline` evita o iOS abrir em tela cheia sozinho.
+  */}
+  <video
+    class="hero__video"
+    autoplay
+    muted
+    loop
+    playsinline
+    aria-hidden="true"
+  >
+    <source src="/video-hero.mp4" type="video/mp4" />
+  </video>
+
+  <div class="hero__veu"></div>
+
+  {/*
+    Cabeçalho exclusivo do hero (logo grande + selo). O header padrão do site
+    é outro componente e só aparece a partir da próxima seção.
+  */}
+  <header class="hero__topo">
+    <LogoHero class="hero__logo" />
+    <Selo class="hero__selo" />
+  </header>
+
+  <div class="hero__base">
+    <h1 class="hero__titulo">{hero.titulo}</h1>
+
+    <div class="hero__aparte">
+      <p class="hero__resumo">
+        {
+          trechos.map((trecho) =>
+            trecho.marks?.includes('strong') ? <strong>{trecho.text}</strong> : trecho.text,
+          )
+        }
+      </p>
+
+      <a class="hero__link" href={hero.link.href}>
+        <Seta class="hero__seta" />
+        <span>{hero.link.texto}</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    /* svh em vez de vh: no mobile o vh conta a barra do navegador e corta
+       o conteúdo de baixo quando ela recolhe. */
+    min-height: 100svh;
+    padding: 2rem var(--gutter) var(--gutter);
+    color: var(--cor-branco);
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  /* Pedido do cliente, 2026-07-31: menos respiro lateral no mobile — só os
+     lados, o respiro de cima e de baixo continuam os do arquivo. Padrão de
+     32px (`--gutter-mobile`) igual ao resto do site. */
+  @media (max-width: 700px) {
+    .hero {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  .hero__foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * Mesma caixa da foto, por cima dela (mesmo `z-index`, mas depois no DOM —
+   * quem vem depois pinta por cima). Escondido por padrão e só revelado sem
+   * `prefers-reduced-motion`, ao contrário do resto do site (onde o estado
+   * visível é a base e a animação é quem esconde): aqui não tem
+   * `animation-timeline` nenhum sustentando a troca, então o vídeo já nasce
+   * escondido é o jeito mais simples de garantir que quem pediu sem
+   * movimento nunca o veja rodar, nem por um quadro.
+   */
+  .hero__video {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__video {
+      display: block;
+    }
+  }
+
+  .hero__veu {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.53) 0%, rgba(0, 0, 0, 1) 100%);
+  }
+
+  /* --- Cabeçalho --- */
+  .hero__topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gutter);
+  }
+
+  .hero__logo {
+    width: 22.5625rem; /* 361px */
+    height: auto;
+  }
+
+  .hero__selo {
+    width: 3.5625rem; /* 57px */
+    height: auto;
+  }
+
+  /* Pedido do cliente, 2026-07-31: o selo some no mobile. */
+  @media (max-width: 700px) {
+    .hero__selo {
+      display: none;
+    }
+  }
+
+  /*
+   * O selo gira devagar: uma volta a cada 30s, o que dá ~6px/s na borda de um
+   * disco de 57px. É para dar sinal de vida, não para chamar atenção.
+   *
+   * `linear` obrigatoriamente — qualquer curva faz um giro contínuo parecer que
+   * está engasgando a cada volta. E `rotate` em vez de `transform` para não
+   * disputar a propriedade com nada que venha depois (o freio do parallax já
+   * usa `transform` em elemento vizinho).
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__selo {
+      animation: selo-girar 30s linear infinite;
+    }
+  }
+
+  @keyframes selo-girar {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /* --- Base --- */
+  .hero__base {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    /* Sem media query: quando título e aparte não cabem lado a lado, o flex
+       quebra sozinho. A quebra acompanha a escala, não uma largura fixa. */
+    flex-wrap: wrap;
+    gap: var(--gutter);
+    padding-top: var(--gutter);
+  }
+
+  .hero__titulo {
+    flex: 1 1 30rem;
+    max-width: 53.125rem; /* 850px */
+    font: var(--texto-hero);
+    letter-spacing: var(--texto-hero-ls);
+    /* O min() só age em telas estreitas: em 1446px 4.75rem (76px) vence,
+       e a proporção do Figma fica intacta de 720p a 2K. Abaixo disso o
+       11vw impede que a palavra mais longa estoure a tela. */
+    font-size: min(4.75rem, 11vw);
+  }
+
+  .hero__aparte {
+    display: flex;
+    /* O Figma marca 337px, mas nessa largura o parágrafo quebra em 4 linhas no
+       Chrome em vez das 3 do desenho — o texto ocupa 2,88 linhas e a quebra
+       gulosa desperdiça o resto. Vira em 343px; 348px dá margem para variação
+       entre navegadores. Diferença de 3% em relação ao arquivo. */
+    flex: 0 1 21.75rem; /* 348px */
+    flex-direction: column;
+    gap: 2rem; /* 32px */
+  }
+
+  .hero__resumo {
+    font: var(--texto-hero-aparte);
+    letter-spacing: var(--texto-corpo-ls);
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .hero__resumo strong {
+    font-weight: 600;
+  }
+
+  .hero__link {
+    display: flex;
+    align-items: center;
+    gap: 0.6875rem; /* 11px */
+    color: rgba(255, 255, 255, 0.5);
+    font: var(--texto-hero-link);
+    letter-spacing: var(--texto-corpo-ls);
+    transition: color 0.2s ease;
+  }
+
+  /* `(hover: hover)`: sem a guarda, um toque em tela sensível deixava a cor
+     "grudada" até o próximo toque em outro lugar. */
+  @media (hover: hover) {
+    .hero__link:hover {
+      color: var(--cor-branco);
+    }
+  }
+
+  .hero__seta {
+    width: 0.9375rem; /* 15px */
+    height: auto;
+    flex-shrink: 0;
+  }
+</style>

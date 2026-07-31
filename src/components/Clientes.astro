@@ -1,0 +1,541 @@
+---
+import { imagem } from '../lib/imagem';
+import { textos } from '../lib/interface';
+import type { Config } from '../lib/conteudo';
+
+interface Props {
+  rotulo: string;
+  clientes: NonNullable<Config>['clientes'];
+  idioma: string;
+}
+
+const { rotulo, clientes, idioma } = Astro.props;
+const t = textos(idioma);
+
+/*
+ * A grade é 3×3, e os grupos saem daqui — não do CMS.
+ *
+ * No Sanity os clientes são UMA lista, na ordem em que aparecem: agrupar seria
+ * pedir ao cliente que pensasse em "slide", que é apresentação. Fatiando de 9 em
+ * 9 aqui, o 37º cliente cria um quinto grupo e uma quinta divisória sozinho.
+ */
+const POR_GRUPO = 9;
+const grupos = Array.from({ length: Math.ceil((clientes?.length ?? 0) / POR_GRUPO) }, (_, i) =>
+  clientes.slice(i * POR_GRUPO, (i + 1) * POR_GRUPO),
+);
+
+/*
+ * Ritmo da passagem. Cada grupo fica 5s na tela e cruza com o próximo por
+ * 1.2s; a divisória correspondente se enche nesses mesmos 5s e volta a zero
+ * quando o próximo assume.
+ *
+ * Os keyframes são montados aqui, e não escritos à mão no CSS, porque as
+ * paradas são frações do ciclo inteiro — mudam junto com a quantidade de
+ * grupos. Assim, quando chegarem mais (ou menos) logos, o ritmo acompanha
+ * sozinho. Continua tudo em CSS: nada aqui roda no navegador.
+ */
+const SEGUNDOS_POR_GRUPO = 5;
+const SEGUNDOS_DE_FADE = 1.2;
+const ciclo = grupos.length * SEGUNDOS_POR_GRUPO;
+const parada = (segundos: number) => `${((segundos / ciclo) * 100).toFixed(4)}%`;
+
+/*
+ * O 100% no fim de cada bloco não é enfeite: sem ele o navegador inventa um
+ * keyframe com o valor que o elemento tem no CSS normal, e o grupo apagado
+ * volta a acender sozinho no resto do ciclo (o primeiro grupo, que nasce
+ * visível, reaparecia devagarinho por trás dos outros). Já aconteceu.
+ */
+const ritmo = `
+@keyframes clientes-passar {
+  0% { opacity: 0 }
+  ${parada(SEGUNDOS_DE_FADE)} { opacity: 1 }
+  ${parada(SEGUNDOS_POR_GRUPO)} { opacity: 1 }
+  ${parada(SEGUNDOS_POR_GRUPO + SEGUNDOS_DE_FADE)} { opacity: 0 }
+  100% { opacity: 0 }
+}
+
+@keyframes clientes-preencher {
+  0% { transform: scaleX(0) }
+  ${parada(SEGUNDOS_POR_GRUPO)} { transform: scaleX(1) }
+  /* Corte seco: a divisória apaga no instante em que a seguinte começa. */
+  ${parada(SEGUNDOS_POR_GRUPO + 0.001)} { transform: scaleX(0) }
+  100% { transform: scaleX(0) }
+}`;
+---
+
+{/* Os mesmos números vão como variável de CSS (para as animações) e como `data`
+    (para o script do pulo saber onde cravar a linha do tempo). */}
+<section
+  class="clientes secao"
+  id="clientes"
+  style={`--ciclo:${ciclo}s; --por-grupo:${SEGUNDOS_POR_GRUPO}s`}
+  data-ciclo={ciclo}
+  data-por-grupo={SEGUNDOS_POR_GRUPO}
+  data-fade={SEGUNDOS_DE_FADE}
+>
+  {/* A grade vem primeiro: no Figma ela está à esquerda e o rótulo à direita. */}
+  <div class="clientes__trilho">
+    {
+      grupos.map((grupo, i) => (
+        <ul class="clientes__grade" style={`--i:${i}`}>
+          {grupo.map((cliente) => {
+            /* 2× a largura de exibição, para telas densas — é a mesma conta que
+               o `widths` fazia antes de a CDN entrar. */
+            const logo = imagem(cliente.logo, {
+              larguras: [Math.round(cliente.largura * 16), Math.round(cliente.largura * 32)],
+              sizes: `${cliente.largura}rem`,
+            });
+            return (
+              <li class="clientes__celula">
+                <img
+                  src={logo.src}
+                  srcset={logo.srcset}
+                  sizes={logo.sizes}
+                  width={logo.width}
+                  height={logo.height}
+                  alt={cliente.nome}
+                  class="clientes__logo"
+                  style={`--largura:${cliente.largura}rem; ${
+                    cliente.ajusteOptico ? `--ajuste:${cliente.ajusteOptico}` : ''
+                  }`}
+                  loading="lazy"
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ))
+    }
+  </div>
+
+  <div class="clientes__aparte">
+    <h2 class="clientes__rotulo">{rotulo}</h2>
+
+    {/*
+      `passagem`, e não `barra`: a abertura já usa `.barra` para as barras do
+      símbolo. O escopo do Astro impede o estilo de vazar, mas o nome repetido
+      confunde qualquer `querySelector` — já confundiu.
+
+      Os traços são `<button>` porque desde 2026-07-31 clicar num deles pula para
+      o grupo correspondente. Mas eles nascem INERTES — `aria-hidden` no
+      container e `tabindex="-1"` em cada um — e é o script que os promove a
+      controle de verdade. Sem JS não há para onde pular, e botão morto anunciado
+      pelo leitor de tela é pior que enfeite nenhum: aí eles voltam a ser só o
+      espelho da passagem, que é o que sempre foram.
+    */}
+    <div class="passagem" aria-hidden="true">
+      {
+        grupos.map((_, i) => (
+          <button
+            class="passagem__divisao"
+            type="button"
+            tabindex="-1"
+            data-slide={i}
+            data-rotulo={t['clientes.grupo'](i + 1, grupos.length)}
+          >
+            <span class="passagem__preenchimento" style={`--i:${i}`} />
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style set:html={ritmo} is:global></style>
+
+<style>
+  .clientes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Sem isto a coluna lateral (que não encolhia) esmagava a esteira de
+       logos a quase zero de largura abaixo da largura de projeto — a parede
+       inteira ficava invisível. */
+    flex-wrap: wrap;
+    gap: var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  .clientes__aparte {
+    display: flex;
+    /* `0 1`, não `0 0`: precisa encolher para o `flex-wrap` acima ter efeito. */
+    flex: 0 1 20.625rem; /* 330px */
+    flex-direction: column;
+    gap: 1rem; /* 16px */
+    /* stretch em vez de altura fixa: o rótulo alinha com o topo da grade sem
+       precisar repetir os 444px dela aqui. */
+    align-self: stretch;
+  }
+
+  /* Pedido do cliente, 2026-07-31, só no MOBILE: o rótulo e os traços da
+     passagem sobem para ANTES da grade de logos (no desktop o desenho
+     original continua com a grade primeiro, rótulo à direita — ver o
+     comentário no template). `order`, não reordenar o HTML: a grade
+     continua vindo primeiro no DOM (é o conteúdo), só a exibição inverte. */
+  @media (max-width: 700px) {
+    .clientes__aparte {
+      order: -1;
+    }
+  }
+
+  .clientes__rotulo {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-preto);
+    opacity: var(--opacidade-apoio);
+  }
+
+  /* --- Barra de passagem --- */
+  .passagem {
+    display: flex;
+    /* `center`, e não o `stretch` padrão: o traço tem altura própria agora, e
+       esticado ele comeria o próprio miolo (ver o `content-box` abaixo). */
+    align-items: center;
+    gap: 0.375rem; /* 6px */
+    width: 15.0625rem; /* 241px */
+    height: 0.25rem; /* 4px */
+  }
+
+  /*
+   * O desenho continua sendo um traço de 4px, mas o alvo de clique não pode ter
+   * 4px de altura. O respiro vertical vira área clicável e some do layout:
+   * `content-box` deixa a tinta pintar só o miolo, e a altura fixa da `.passagem`
+   * segura a fileira nos 4px do arquivo enquanto o botão transborda para os dois
+   * lados. Sem `box-sizing: content-box` o reset (border-box) descontaria o
+   * padding da altura e o traço sumiria.
+   */
+  .passagem__divisao {
+    box-sizing: content-box;
+    flex: 1;
+    height: 0.25rem; /* 4px */
+    /* `max()` trava o alvo em 24px físicos (10+10+4) mesmo abaixo da largura
+       de projeto — em `rem` puro o piso do clamp reduzia isso a ~18px. */
+    padding: max(0.625rem, 10px) 0; /* 10px → alvo de 24px */
+    border: 0;
+    background-color: color-mix(in srgb, var(--cor-petroleo) 15%, transparent);
+    background-clip: content-box;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Só quando o script promoveu os traços a controle — sem JS não há para onde
+     pular, e mão de clique em cima de enfeite é promessa falsa. */
+  .passagem--interativa .passagem__divisao {
+    cursor: pointer;
+  }
+
+  .passagem--interativa .passagem__divisao:is(:hover, :focus-visible) {
+    background-color: color-mix(in srgb, var(--cor-petroleo) 40%, transparent);
+  }
+
+  .passagem__divisao:focus-visible {
+    outline: 2px solid var(--cor-petroleo);
+    outline-offset: 0.25rem;
+  }
+
+  .passagem__preenchimento {
+    display: block;
+    height: 100%;
+    background: var(--cor-petroleo);
+    /* Vazio é o estado normal; quem enche é a animação. */
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  /* --- Grade de logos --- */
+  .clientes__trilho {
+    /* Uma célula só: os grupos ficam empilhados e trocam por opacidade. */
+    display: grid;
+    flex: 0 1 54.25rem; /* 868px */
+  }
+
+  .clientes__grade {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 9.25rem; /* 148px */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    /* Bordas colapsadas: cada célula desenha topo e esquerda, e o container
+       fecha só embaixo — evita linha dupla entre células.
+       Sem `border-right` de propósito: no Figma as células das pontas perdem a
+       borda de fora (`strokeWeight` 0 à esquerda na 1ª coluna e à direita na
+       3ª), então a grade fica aberta nas laterais e fechada em cima e embaixo. */
+    border-bottom: 1px solid var(--cor-cinza-claro);
+  }
+
+  /*
+   * Estado parado — vale também para quem pediu movimento reduzido: o primeiro
+   * grupo aparece e sua divisória fica cheia. Nunca deixe o apagado como base,
+   * senão sem animação a seção fica vazia.
+   */
+  .clientes__grade + .clientes__grade {
+    opacity: 0;
+  }
+
+  .passagem__divisao:first-child .passagem__preenchimento {
+    transform: scaleX(1);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .clientes__grade {
+      animation: clientes-passar var(--ciclo) infinite;
+      animation-delay: calc(var(--i) * var(--por-grupo));
+    }
+
+    .passagem__preenchimento {
+      /* linear: é medida de tempo, qualquer curva mentiria sobre quanto falta. */
+      animation: clientes-preencher var(--ciclo) linear infinite;
+      animation-delay: calc(var(--i) * var(--por-grupo));
+    }
+
+    /*
+     * WCAG 2.2.2 pede um jeito de parar o que se move sozinho por mais de 5s.
+     * `prefers-reduced-motion` acima atende quem já configurou o sistema; isto
+     * atende quem só quer olhar um logo com calma.
+     *
+     * O alvo é a grade, e não a seção. Com `.clientes:hover` a zona de pausa
+     * era a faixa inteira — 1430×693 contra 858×440 da grade —, incluindo os
+     * 128px de respiro de cima e de baixo e todo o terço da direita, onde só
+     * mora o rótulo. Bastava o ponteiro ficar parado no meio da tela enquanto
+     * a página rolava para a passagem congelar sem ninguém ter pedido, e o
+     * sintoma era exatamente esse: "trava em alguns momentos".
+     *
+     * A barra de passagem não está dentro da grade, daí o `~`: ela é irmã
+     * seguinte.
+     */
+    .clientes__trilho:hover .clientes__grade,
+    .clientes__trilho:hover ~ .clientes__aparte .passagem__preenchimento {
+      animation-play-state: paused;
+    }
+
+    /*
+     * A pausa por teclado, e é `:has(:focus-visible)` por necessidade desde que
+     * os traços viraram botões: clicar num deles com o mouse dá foco ao botão, e
+     * com `:focus-within` a passagem ficaria parada PARA SEMPRE depois do
+     * primeiro clique — o pulo funcionaria uma vez e a barra nunca mais andaria.
+     * `:focus-visible` só casa com foco vindo do teclado, que é exatamente quem
+     * precisa da pausa.
+     *
+     * Regra separada de propósito, e não mais um item da lista acima: se algum
+     * navegador não entender `:has()`, cai só esta — a pausa por ponteiro, que é
+     * a que quase todo mundo usa, continua de pé. Junto na mesma lista, a
+     * declaração inteira iria embora.
+     */
+    .clientes:has(:focus-visible) :is(.clientes__grade, .passagem__preenchimento) {
+      animation-play-state: paused;
+    }
+
+    /*
+     * A passagem espera a visita chegar (pedido do cliente, 2026-07-31): sem
+     * isto ela roda desde a carga da página e, quando alguém enfim desce até
+     * aqui, já está no terceiro grupo — os nove primeiros logos nunca foram
+     * vistos.
+     *
+     * A classe é posta pelo SCRIPT e tirada pelo `IntersectionObserver`, e a
+     * ordem importa: sem JS a classe nunca entra e a passagem roda como sempre
+     * rodou. É a mesma escolha do botão de país e da gaveta do download — a
+     * melhoria some, a página fica inteira.
+     */
+    .clientes--espera :is(.clientes__grade, .passagem__preenchimento) {
+      animation-play-state: paused;
+    }
+  }
+
+  .clientes__celula {
+    display: grid;
+    place-items: center;
+    border-top: 1px solid var(--cor-cinza-claro);
+    border-left: 1px solid var(--cor-cinza-claro);
+  }
+
+  /* Primeira coluna: sem a borda de fora (ver acima). */
+  .clientes__celula:nth-child(3n + 1) {
+    border-left: none;
+  }
+
+  /*
+   * Exceção pontual à regra de "sem media query" (a mesma do cabeçalho, das
+   * Áreas e do rodapé): pedido do cliente, 2026-07-31 — 3 colunas deixavam os
+   * logos pequenos demais no celular. Cada grupo perde o último logo (9 → 8) e
+   * vira uma grade 2×4; a borda esquerda, que marcava a 1ª de 3 colunas
+   * (`3n + 1`, acima), passa a marcar a 1ª de 2 (`2n + 1`).
+   *
+   * ARMADILHA: a célula 4 é `3n + 1` (3×1+1) E a 2ª coluna do par (par) ao
+   * mesmo tempo — as duas regras de mobile abaixo, se escritas como "zera
+   * tudo e tira de novo" (`.clientes__celula { border-left: 1px }` seguido de
+   * `:nth-child(2n + 1) { none }`), perdem para `:nth-child(3n + 1)` ali em
+   * cima: mesma especificidade (uma classe + um pseudo), e `:nth-child(3n+1)`
+   * também bate na célula 4, então quem decide não é mais a ordem no arquivo.
+   * A saída é escrever a regra positiva com a MESMA especificidade
+   * (`:nth-child(2n)`, não a classe pura) — aí sim a ordem no arquivo desempata
+   * a favor de baixo. Óbvio só depois de medir: a borda central sumia na 2ª
+   * fileira e em nenhuma outra.
+   */
+  @media (max-width: 700px) {
+    .clientes__grade {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .clientes__celula:last-child {
+      display: none;
+    }
+
+    .clientes__celula:nth-child(2n) {
+      border-left: 1px solid var(--cor-cinza-claro);
+    }
+
+    .clientes__celula:nth-child(2n + 1) {
+      border-left: none;
+    }
+  }
+
+  .clientes__logo {
+    width: var(--largura);
+    height: auto;
+    /* Só o Oderich define --ajuste; os demais ficam no centro exato. */
+    transform: translate(var(--ajuste, 0, 0));
+  }
+</style>
+
+<script>
+  /*
+   * Clicar num traço da passagem pula para o grupo correspondente.
+   *
+   * QUEM ANIMA CONTINUA SENDO O CSS. O script não desenha nem cronometra nada:
+   * ele move o PONTEIRO da linha do tempo que já existe. Por isso a passagem
+   * continua correndo sozinha depois do pulo, a barra de progresso acompanha sem
+   * uma linha a mais, e o cruzamento entre os grupos é o mesmo de sempre — é o
+   * mesmo critério da divisória, onde o script só mexe no `playbackRate`.
+   *
+   * A conta que faz isso funcionar: as animações dos quatro grupos são a MESMA,
+   * separadas por `animation-delay` de um grupo cada. O `currentTime` de uma
+   * animação de CSS conta desde o começo do atraso, e as quatro começaram
+   * juntas — então todas têm o mesmo `currentTime`, e o grupo `i` está no
+   * instante `currentTime − i × porGrupo` da própria animação. Cravar todas em
+   * `i × porGrupo` põe o grupo `i` no quadro zero, ou seja, entrando.
+   *
+   * O ciclo inteiro somado na frente não é enfeite: sem ele, pular para o
+   * primeiro grupo levaria o último para o tempo negativo, onde ele ainda está
+   * no atraso e não pinta quadro nenhum — o grupo que devia sair da frente
+   * simplesmente não estaria lá, e no lugar do cruzamento apareceria um
+   * surgimento do branco. Uma volta adiantada mantém todo mundo na fase ativa.
+   */
+  const secao = document.querySelector<HTMLElement>('.clientes');
+  const passagem = secao?.querySelector<HTMLElement>('.passagem');
+  const botoes = [...(passagem?.querySelectorAll<HTMLButtonElement>('.passagem__divisao') ?? [])];
+  const grades = [...(secao?.querySelectorAll<HTMLElement>('.clientes__grade') ?? [])];
+
+  if (secao && passagem && botoes.length && grades.length) {
+    const porGrupo = Number(secao.dataset.porGrupo);
+    const ciclo = Number(secao.dataset.ciclo);
+    const fade = Number(secao.dataset.fade);
+    const reduz = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const enchimentos = [...secao.querySelectorAll<HTMLElement>('.passagem__preenchimento')];
+
+    const irPara = (i: number) => {
+      /*
+       * Com movimento reduzido não existe animação para buscar — o CSS mostra o
+       * primeiro grupo e pronto. O pulo continua valendo, e aqui ele é o que
+       * sempre foi nesse modo: trocar quem está aceso, sem transição. Sem isto o
+       * controle existiria e não faria nada justamente para quem mais depende
+       * dele para ver os outros 27 logos.
+       */
+      if (reduz.matches) {
+        grades.forEach((g, n) => (g.style.opacity = n === i ? '1' : '0'));
+        enchimentos.forEach((e, n) => (e.style.transform = n === i ? 'scaleX(1)' : 'scaleX(0)'));
+        return;
+      }
+
+      /*
+       * Onde cravar depende de a passagem estar correndo ou parada, e isso não
+       * é firula: parada, o quadro NÃO avança sozinho. Cravar no começo do
+       * cruzamento deixaria o grupo pedido em opacidade zero e o anterior ainda
+       * aceso — congelados assim, para sempre. O sintoma é o pior possível: o
+       * clique parece não fazer nada, ou pior, mostra o grupo errado.
+       *
+       * Então: correndo, crava no começo e o cruzamento de sempre acontece;
+       * parada, crava no fim dele e o grupo pedido aparece na hora.
+       *
+       * Na prática isso separa ponteiro de teclado, que é justamente o certo. A
+       * pausa por ponteiro é do `.clientes__trilho`, onde os logos estão — os
+       * traços moram na outra coluna, então quem clica com o mouse não pausou
+       * nada e ganha o cruzamento. Quem chegou de Tab pausou (é o pedido da
+       * WCAG 2.2.2) e ganha a resposta imediata.
+       */
+      const parada = getComputedStyle(grades[0]).animationPlayState === 'paused';
+      const alvo = (ciclo + i * porGrupo + (parada ? fade : 0)) * 1000;
+
+      for (const el of [...grades, ...enchimentos]) {
+        for (const animacao of el.getAnimations()) animacao.currentTime = alvo;
+      }
+    };
+
+    /*
+     * A passagem só arranca quando a seção aparece.
+     *
+     * Segurar é a primeira coisa que o script faz, antes de qualquer outra:
+     * quanto mais tarde a classe entrar, mais quadros a passagem já terá
+     * corrido. Na prática são os poucos ms entre o HTML ser lido e o módulo
+     * rodar, e o `irPara(0)` na largada zera o que tiver passado — a visita
+     * pega o primeiro grupo no quadro zero, que é o pedido.
+     *
+     * Só a PRIMEIRA entrada conta: quem já viu a parede e volta não quer a
+     * contagem reiniciada no meio de um logo (e `disconnect` ainda desliga o
+     * observador em vez de deixá-lo escutando a página toda).
+     */
+    secao.classList.add('clientes--espera');
+
+    /*
+     * E o primeiro grupo fica ACESO na espera. Parada no quadro zero, a
+     * animação vale pelo próprio `from` — que é opacidade 0 nos quatro grupos —,
+     * e a parede ficaria em branco até alguém chegar. `irPara(0)` com a
+     * passagem parada crava logo depois do cruzamento de entrada, que é o
+     * primeiro grupo inteiro na tela.
+     *
+     * Ao chegar, a classe sai e a animação segue DALI: o grupo 1 tem o tempo
+     * dele pela frente e o cruzamento acontece na hora certa. Cravar de novo
+     * no zero faria a parede apagar e reacender na cara de quem acabou de
+     * chegar.
+     */
+    irPara(0);
+
+    new IntersectionObserver(
+      (entradas, observador) => {
+        if (!entradas[0].isIntersecting) return;
+        observador.disconnect();
+        secao.classList.remove('clientes--espera');
+      },
+      /* Um quinto da seção à vista: menos que isso dispara com a parede ainda
+         na borda de baixo, e o primeiro grupo passaria fora do campo de visão. */
+      { threshold: 0.2 },
+    ).observe(secao);
+
+    // Promove os traços a controle: eles nascem inertes no HTML de propósito,
+    // porque sem este script não há para onde pular.
+    passagem.removeAttribute('aria-hidden');
+    passagem.classList.add('passagem--interativa');
+
+    botoes.forEach((botao, i) => {
+      botao.removeAttribute('tabindex');
+      /* O rótulo vem pronto do servidor, no `data-rotulo`: ele muda de idioma, e
+         montá-lo aqui traria a frase em português para dentro do bundle. */
+      botao.setAttribute('aria-label', botao.dataset.rotulo ?? '');
+      botao.addEventListener('click', () => irPara(i));
+    });
+
+    /*
+     * Trocar de modo no meio da visita deixaria pendurado o resto do outro
+     * caminho: os estilos em linha do modo reduzido congelariam a passagem
+     * animada, e a animação sobreviveria por cima do modo reduzido. Limpar os
+     * dois lados na virada é mais barato que tentar adivinhar o estado.
+     */
+    reduz.addEventListener('change', () => {
+      for (const el of [...grades, ...enchimentos]) {
+        el.style.opacity = '';
+        el.style.transform = '';
+      }
+    });
+  }
+</script>

@@ -1,0 +1,12 @@
+---
+/*
+ * O português, na raiz.
+ *
+ * `prefixDefaultLocale: false` no `astro.config.mjs` põe o idioma padrão aqui,
+ * sem prefixo. O inglês vira `src/pages/en/index.astro`, com esta mesma linha e
+ * outro `idioma` — a composição inteira mora no layout.
+ */
+import Site from '../layouts/Site.astro';
+---
+
+<Site idioma="pt-BR" />

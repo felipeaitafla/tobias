@@ -1,0 +1,605 @@
+---
+import SetaTopo from '../assets/icones/seta-topo.svg';
+import SetaExterna from '../assets/icones/seta-externa.svg';
+/* Mesma história do Fale conosco: o nome da camada anuncia cinza-claro, o
+   arquivo pinta preto. Vale o que o Figma desenha. */
+import Selo from '../assets/logos/selo-20-anos-positivo.svg';
+/*
+ * A assinatura do rodapé (#157:427) é um bloqueio próprio: nem a horizontal nem
+ * a completa têm essa proporção (7,7 contra 6,5 e 7,4), e ela escreve "TOBIAS
+ * ADV" — nove letras, quatro barras, treze paths. Sem sufixo de cor no nome
+ * porque os fills viraram `currentColor`.
+ */
+import Assinatura from '../assets/logos/assinatura-rodape.svg';
+import { textos } from '../lib/interface';
+import type { Config, Pagina } from '../lib/conteudo';
+
+interface Props {
+  rodape: NonNullable<Pagina>['rodape'];
+  config: NonNullable<Config>;
+  idioma: string;
+}
+
+const { rodape, config, idioma } = Astro.props;
+const t = textos(idioma);
+
+/* O rodapé usa o OUTRO telefone — os dois divergem no Figma e a escolha entre
+   eles continua sendo bloqueio de lançamento. */
+const contato = [
+  { texto: config.email, href: `mailto:${config.email}` },
+  { texto: config.telefoneRodape.texto, href: `tel:${config.telefoneRodape.href}` },
+];
+
+/* "LinkedIn" com o I maiúsculo: o arquivo escreve "Linkedin", e nome de marca
+   escrito errado no rodapé de um escritório de advocacia lê como descuido. */
+const redes = [
+  { texto: 'Instagram', href: config.instagram },
+  { texto: 'LinkedIn', href: config.linkedin },
+];
+---
+
+{/*
+  O palco existe para recortar: quem se move é o rodapé lá dentro, e sem o
+  recorte ele apareceria por cima da seção anterior. `clip` e não `hidden` —
+  `hidden` criaria um contêiner de rolagem.
+*/}
+<div class="rodape-palco">
+  <footer class="rodape">
+    <div class="rodape__colunas">
+      <nav class="rodape__nav" aria-label={t['rodape.aria']}>
+        <ul class="rodape__nav-lista">
+          {
+            rodape.navegacao.map((item) => (
+              <li class="rodape__nav-item">
+                <a class="rodape__nav-link" href={item.href}>
+                  {item.texto}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <div class="rodape__coluna">
+        <div class="rodape__bloco">
+          <h2 class="rodape__titulo">{rodape.contatoTitulo}</h2>
+          <ul class="rodape__lista">
+            {
+              contato.map((link) => (
+                <li>
+                  <a class="rodape__link" href={link.href}>
+                    {link.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        {/*
+          Termos de Uso e Políticas de Privacidade — desenho original do
+          Figma (#52:21): empilhados aqui, junto do bloco de contato. Pedido
+          do cliente, 2026-07-31: no MOBILE eles saem daqui e vão para a
+          coluna de Redes, lado a lado, acima do copyright — ver
+          `.rodape__lista--legais-mobile` mais abaixo. É uma segunda cópia da
+          lista, não a mesma reposicionada por CSS: os dois destinos são pais
+          diferentes (colunas diferentes), e isso CSS sozinho não muda —
+          mesmo padrão do rótulo das Áreas (sticky no desktop, chapéu no
+          mobile).
+        */}
+        <ul class="rodape__lista rodape__lista--legais rodape__lista--legais-desktop">
+          {
+            rodape.legais.map((item) => (
+              <li>
+                <a class="rodape__link" href={item.href}>
+                  {item.texto}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="rodape__coluna">
+        <div class="rodape__bloco">
+          <h2 class="rodape__titulo">{rodape.redesTitulo}</h2>
+          <ul class="rodape__lista">
+            {
+              redes.map((link) => (
+                <li>
+                  <a
+                    class="rodape__link rodape__link--seta"
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <SetaExterna class="rodape__seta rodape__seta--externa" aria-hidden="true" />
+                    {link.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        {/* Copyright sozinho aqui — desenho original. No mobile fica
+            escondido; quem aparece é a cópia dentro de `.rodape__rodape`,
+            junto de Termos/Políticas. */}
+        <p class="rodape__copyright rodape__copyright-desktop">{rodape.copyright}</p>
+
+        {/* Pedido do cliente, 2026-07-31, só no MOBILE: Termos/Políticas e
+            copyright juntos, lado a lado com o copyright embaixo. */}
+        <div class="rodape__rodape">
+          <ul class="rodape__lista rodape__lista--legais rodape__lista--legais-mobile">
+            {
+              rodape.legais.map((item) => (
+                <li>
+                  <a class="rodape__link" href={item.href}>
+                    {item.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          <p class="rodape__copyright rodape__copyright-mobile">{rodape.copyright}</p>
+        </div>
+      </div>
+
+      <div class="rodape__coluna rodape__coluna--fim">
+        <a class="rodape__link rodape__link--seta rodape__topo" href="#topo">
+          <SetaTopo class="rodape__seta" aria-hidden="true" />
+          {rodape.topo}
+        </a>
+
+        {/* Ornamento de marca, igual ao do Fale conosco. Desenho original:
+            link à esquerda da fatia, só o selo empurrado pra borda direita —
+            ver `.rodape__coluna--fim` no style. */}
+        <Selo class="rodape__selo" aria-hidden="true" />
+      </div>
+    </div>
+
+    {/* Pedido do cliente, 2026-07-31, só no MOBILE: "Voltar ao topo" e o
+        selo saem da última coluna da grade (que some abaixo de 700px) e
+        formam uma linha própria, cada um numa ponta do rodapé inteiro. */}
+    <div class="rodape__fim">
+      <a class="rodape__link rodape__link--seta rodape__topo" href="#topo">
+        <SetaTopo class="rodape__seta" aria-hidden="true" />
+        {rodape.topo}
+      </a>
+
+      <Selo class="rodape__selo" aria-hidden="true" />
+    </div>
+
+    <Assinatura class="rodape__assinatura" role="img" aria-label={rodape.marca} />
+  </footer>
+</div>
+
+<style>
+  /*
+   * --- A revelação ---
+   *
+   * O rodapé não entra empurrado pela página: ele já está ali embaixo e o
+   * formulário é que sai da frente. Quem faz isso é o par recorte + contra-
+   * deslocamento, a mesma conta do hero e das camadas (ver index.astro):
+   *
+   *   - o palco recorta e é ele quem publica a linha do tempo. A faixa `entry`
+   *     dura exatamente a altura do rodapé, e termina no fim do documento —
+   *     o rodapé é o último elemento, então "a base dele encosta na base da
+   *     tela" e "a página chegou ao fim" são o mesmo instante;
+   *   - o rodapé começa 65% acima e desce até zero nesse intervalo. Andando
+   *     65% enquanto a página anda 100%, ele sobe a 35% da velocidade dela —
+   *     os mesmos 35% do hero.
+   *
+   * O recorte é o que vende o efeito: a parte que ainda não chegou fica
+   * escondida acima da borda do palco, como se estivesse debaixo do
+   * formulário. E a área visível nunca fica vazia — em qualquer ponto da
+   * faixa, o que está pintado cobre a parte do palco que já apareceu.
+   *
+   * Sem `animation-timeline` (Firefox hoje) o rodapé nasce no lugar certo:
+   * o estado normal é o final, e a animação só existe dentro do `@supports`.
+   */
+  .rodape-palco {
+    overflow: clip;
+    view-timeline-name: --rodape;
+    view-timeline-axis: block;
+    /* O fundo repetido aqui é seguro contra arredondamento: se o recorte e o
+       deslocamento discordarem em meio pixel, o que aparece é bege, não branco. */
+    background: var(--cor-bege);
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .rodape {
+        animation: rodape-revelar linear both;
+        animation-range: entry;
+      }
+
+      /* Regra separada de propósito — o minificador funde `animation` com
+         `animation-timeline` no atalho, o navegador rejeita nome de timeline
+         ali e a declaração inteira cai. Mesmo cuidado do hero e do manifesto. */
+      .rodape-palco > .rodape {
+        animation-timeline: --rodape;
+      }
+    }
+  }
+
+  /* Os dois quadros escritos: quando um `@keyframes` não fecha em 100%, o
+     navegador inventa esse quadro com o valor que o elemento tem na cascata —
+     é o certo aqui, mas escrito não depende disso. */
+  @keyframes rodape-revelar {
+    from {
+      transform: translateY(-65%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /*
+   * --- O desenho ---
+   *
+   * Gutter de 32px, e não os 64 do resto do site (#52:21): a assinatura
+   * gigante pede a largura toda. 46px em cima porque é onde a primeira divisa
+   * da navegação começa.
+   */
+  .rodape {
+    display: flex;
+    flex-direction: column;
+    /* 54,74px entre o fim das colunas e o topo da assinatura. */
+    gap: 3.4375rem;
+    padding: 2.875rem 2rem 2rem;
+    background: var(--cor-bege);
+  }
+
+  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
+     `--gutter-mobile` em tokens.css. Os 2rem acima já dão 32px na largura de
+     projeto, mas caem para 24px físicos abaixo dela (piso do clamp); esta
+     regra crava o padrão em qualquer largura. */
+  @media (max-width: 700px) {
+    .rodape {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+
+  /*
+   * As quatro colunas são fatias da largura, então vão em `fr`: 482, 338, 357
+   * e 205 do arquivo, medidas de divisa a divisa. Em `rem` elas parariam de
+   * acompanhar a tela assim que o `clamp` saturasse.
+   *
+   * A altura é a distância do topo da navegação até o pé do selo (368px). É
+   * ela que faz o `space-between` de cada coluna cair onde o arquivo desenha.
+   */
+  .rodape__colunas {
+    display: grid;
+    grid-template-columns: 482fr 338fr 357fr 205fr;
+    min-height: 23rem; /* 368px */
+  }
+
+  /*
+   * Exceção pontual à regra de "sem media query" (a mesma do cabeçalho e das
+   * Áreas): as 4 colunas em `fr` já são fluidas e não vazam sozinhas, mas
+   * abaixo da largura de projeto cada uma sobra tão estreita (~50-110px) que
+   * o texto quebra mal. Empilhar em 1 coluna lê melhor — e é aqui, sem coluna
+   * vizinha vazia para sangrar por cima, que o `width` fixo do copyright
+   * (ver adiante) precisa virar `max-width`.
+   */
+  @media (max-width: 700px) {
+    .rodape__colunas {
+      grid-template-columns: 1fr;
+      /* Pedido do cliente, 2026-07-31: empilhadas, as 4 colunas (nav,
+         contato, redes, voltar ao topo) ficavam coladas — a grade nunca
+         teve `gap` porque não precisava de um lado a lado. */
+      gap: 40px;
+    }
+  }
+
+  /*
+   * `min-width: 0` nas fatias porque uma trilha em `fr` não encolhe abaixo do
+   * conteúdo por padrão: o copyright, que é mais largo que a fatia de propósito
+   * (ver adiante), empurrava as quatro colunas 38px para a esquerda.
+   */
+  .rodape__colunas > * {
+    min-width: 0;
+  }
+
+  .rodape__coluna {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    /* As três colunas da direita começam 12px abaixo da navegação (#52:129 e
+       vizinhos em y=58, contra y=46 do primeiro traço). */
+    padding-top: 0.75rem;
+  }
+
+  /* Pedido do cliente, 2026-07-31, só no MOBILE: mínimo de 32px entre o
+     bloco (Redes sociais) e o grupo Termos/Políticas/Copyright — a dupla que
+     só existe empilhada dessa forma abaixo de 700px (ver `.rodape__rodape`).
+     `space-between` sozinho só distribui o que sobrar, sem garantir piso
+     nenhum. No desktop as duas colunas mantêm o desenho original, só com
+     `space-between` mesmo. */
+  @media (max-width: 700px) {
+    .rodape__coluna {
+      gap: 32px;
+    }
+  }
+
+  /* Nesta coluna o link fica à esquerda da fatia (x=1209) e só o selo vai
+     para a borda direita — desenho original do Figma (#52:21). Some no
+     mobile: "Voltar ao topo" e o selo viram uma linha própria fora da
+     grade, ver `.rodape__fim`. */
+  .rodape__coluna--fim {
+    align-items: flex-start;
+  }
+
+  @media (max-width: 700px) {
+    .rodape__coluna--fim {
+      display: none;
+    }
+  }
+
+  /* --- Navegação --- */
+
+  .rodape__nav-lista {
+    padding: 0;
+    list-style: none;
+    /* 321px: a largura do bloco de navegação (#52:48), que é o alcance das
+       divisas. O resto da coluna é respiro do desenho. */
+    max-width: 20.0625rem;
+  }
+
+  /*
+   * 16px em cima e 15 embaixo, e não 16 dos dois lados: no Figma o traço fica
+   * POR DENTRO da medida do frame, então a fileira toda mede 72,8 com a linha
+   * incluída. Com 16+16+1 cada fileira ganharia 1px e as cinco empurrariam a
+   * navegação 5px para baixo.
+   */
+  .rodape__nav-item {
+    padding: 1rem 0 0.9375rem;
+    border-bottom: 1px solid var(--cor-borda-sutil);
+  }
+
+  .rodape__nav-link {
+    display: block;
+    /* 34px — degrau que só existe aqui, por isso não virou token. */
+    font: 500 2.125rem / 1.2 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    /* Cor, não opacidade — ver o hover, mais abaixo. */
+    transition: color 0.2s ease;
+  }
+
+  /* --- Colunas de texto --- */
+
+  .rodape__bloco {
+    display: flex;
+    flex-direction: column;
+    /* 14px entre o título e a primeira linha (58+29 → 101). */
+    gap: 0.875rem;
+  }
+
+  .rodape__titulo {
+    /* 24px — outro degrau de uso único. */
+    font: 500 1.5rem / 1.2 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  .rodape__lista {
+    display: flex;
+    flex-direction: column;
+    /* 11px entre as linhas (101 → 134 com 22 de altura). */
+    gap: 0.6875rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Termos e Políticas ficam colados: 17px de uma linha para a outra (383 →
+     400), e a caixa de 12px já ocupa 14,4 deles. Desenho original — vale só
+     para a cópia do desktop (`.rodape__lista--legais-desktop`, que herda
+     isto); a do mobile sobrescreve tudo abaixo. */
+  .rodape__lista--legais {
+    gap: 0.1625rem; /* 2,6px */
+    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  /* Some no mobile — quem aparece é `.rodape__lista--legais-mobile`, dentro
+     de `.rodape__rodape`. */
+  @media (max-width: 700px) {
+    .rodape__lista--legais-desktop {
+      display: none;
+    }
+  }
+
+  /*
+   * Pedido do cliente, 2026-07-31, só no MOBILE: Termos e Políticas lado a
+   * lado (eram empilhados), logo acima do copyright — ver `.rodape__rodape`
+   * abaixo. Fonte um degrau maior que os 12px originais (mesmo pedido do
+   * copyright).
+   */
+  .rodape__lista--legais-mobile {
+    flex-direction: row;
+    gap: 1.5rem; /* 24px — respiro de lado a lado, não mais o de empilhado */
+    /* `max()`, não `0.8125rem` puro: abaixo da largura de projeto o piso do
+       clamp reduz a fonte-raiz a 12px, e 0.8125rem caía para 9,75px —
+       ilegível. `max()` crava 13px físicos ali e continua livre para crescer
+       fluido dali para cima. */
+    font: 400 max(0.8125rem, 13px) / 1.2 var(--fonte-corpo); /* 13px, era 12px */
+  }
+
+  /* Pedido do cliente, 2026-07-31: 12px de respiro em cima de Termos de Uso
+     e Políticas de Privacidade (o link é quem recebe o padding, não o `<li>`,
+     porque é ele que tem `display: inline-flex` e altura de verdade). `px`,
+     não `rem`: abaixo da largura de projeto `0.75rem` cairia para 9px. */
+  .rodape__lista--legais-mobile .rodape__link {
+    padding-top: 12px;
+  }
+
+  /*
+   * Agrupa Termos/Políticas com o copyright — pedido do cliente, 2026-07-31,
+   * para os dois lerem como um bloco só, logo acima da assinatura da coluna.
+   * Gap pequeno de propósito: o padding-top de 12px de cada peça (acima e no
+   * copyright, abaixo) já é o respiro entre elas.
+   */
+  /* Agrupa Termos/Políticas com o copyright, só no MOBILE — no desktop some
+     (o desenho original mantém as duas peças separadas, cada uma na sua
+     coluna). */
+  .rodape__rodape {
+    display: none;
+    flex-direction: column;
+  }
+
+  @media (max-width: 700px) {
+    .rodape__rodape {
+      display: flex;
+    }
+  }
+
+  .rodape__link {
+    display: inline-flex;
+    align-items: center;
+    /* O visual medido no arquivo, tanto na seta de subir quanto na diagonal. */
+    gap: 0.6875rem;
+    color: var(--cor-texto-footer);
+    transition: color 0.2s ease;
+  }
+
+  /* Os links apagados saem da névoa; os que já são pretos (navegação e "Voltar
+     ao topo") clareiam, que é o mesmo hover do header. */
+  .rodape__link:hover,
+  .rodape__link:focus-visible {
+    color: var(--cor-preto);
+  }
+
+  /*
+   * SÓ COR, e não `opacity` (pedido do cliente, 2026-07-31: "remova o movimento
+   * do hover, deixa apenas a troca de cor").
+   *
+   * O que ele viu como movimento não era transform nenhum — não há nem havia um
+   * aqui. É o que a opacidade faz com o texto: um elemento com `opacity < 1`
+   * ganha camada própria e perde a suavização por subpixel, então os 34px do
+   * menu do rodapé mudam de espessura e as letras parecem se assentar de novo.
+   * Trocar a opacidade por uma cor com alfa pinta o mesmo cinza sem tirar o
+   * texto da camada de fundo, e o efeito colateral some.
+   */
+  .rodape__nav-link:hover,
+  .rodape__nav-link:focus-visible,
+  .rodape__topo:hover,
+  .rodape__topo:focus-visible {
+    /* Os mesmos 60% de preto que a opacidade pintava sobre o bege. */
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  /*
+   * O "Voltar ao topo" é o único link do rodapé em preto e no corpo de 24px —
+   * no arquivo ele tem o peso de um título de coluna, não de um link.
+   */
+  /*
+   * Pedido do cliente, 2026-07-31, só no MOBILE: "Voltar ao topo" e o selo
+   * saem da última coluna da grade (que some abaixo de 700px, ver
+   * `.rodape__coluna--fim`) e formam uma linha própria, cada um numa ponta
+   * do rodapé inteiro. Filho direto de `.rodape`, herda o mesmo respiro
+   * lateral das colunas e da assinatura (nenhum padding próprio aqui de
+   * propósito). No desktop o desenho original continua valendo — "Voltar ao
+   * topo" e o selo ficam dentro da 4ª coluna, sem alinhar entre si.
+   */
+  .rodape__fim {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 700px) {
+    .rodape__fim {
+      display: flex;
+    }
+  }
+
+  .rodape__topo {
+    font: 500 1.5rem / 1.2 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-preto);
+    transition: color 0.2s ease;
+  }
+
+  /*
+   * 15px é a tinta da seta de subir, e é também o tamanho do nó. Já a diagonal
+   * mede 12 de tinta contra os 21,21 que o nó anuncia — o nó é a caixa de um
+   * quadrado girado 45°, e o desenho mora dentro dela. Medido no render.
+   *
+   * `flex: none` porque SVG em flex estica: a caixa cresce, o desenho não, e
+   * ele acaba centralizado numa caixa que não é a dele.
+   */
+  .rodape__seta {
+    flex: none;
+    width: 0.9375rem; /* 15px */
+    height: auto;
+  }
+
+  .rodape__seta--externa {
+    width: 0.75rem; /* 12px */
+  }
+
+  .rodape__copyright {
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-texto-footer);
+    white-space: pre-line;
+    /* O `pretty` do reset reequilibraria as duas linhas e mudaria a quebra. */
+    text-wrap: wrap;
+  }
+
+  /*
+   * A quebra é do arquivo (#52:148), não da largura: são duas frases, e a
+   * segunda é mais longa que a primeira. Daí `pre-line` em vez de deixar o
+   * navegador escolher.
+   *
+   * `width`, e não `max-width`: os 439px do arquivo passam da fatia de 357 em
+   * que o bloco mora e avançam por baixo do "Voltar ao topo", onde não há nada
+   * (o selo só começa em 1364). Preso à fatia, o texto quebrava em quatro
+   * linhas em vez de duas. Desenho original — some no mobile, onde não há
+   * mais coluna vizinha vazia pra sangrar por cima (quem aparece lá é
+   * `.rodape__copyright-mobile`, abaixo).
+   */
+  .rodape__copyright-desktop {
+    width: 27.4375rem; /* 439px */
+    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+  }
+
+  @media (max-width: 700px) {
+    .rodape__copyright-desktop {
+      display: none;
+    }
+  }
+
+  /* Pedido do cliente, 2026-07-31, só no MOBILE: 12px de respiro acima do
+     copyright (`px`, não `rem`, pelo mesmo motivo dos links legais) e fonte
+     um degrau maior com entrelinha 1.5 — "tá muito grudado" nas duas linhas
+     do texto, que aqui ocupam a largura cheia da coluna (sem o `width` fixo
+     do desktop, que dependia da coluna vizinha vazia para sangrar). */
+  .rodape__copyright-mobile {
+    padding-top: 12px;
+    font: 400 max(0.8125rem, 13px) / 1.5 var(--fonte-corpo);
+  }
+
+  .rodape__selo {
+    height: 3.25rem; /* 52px */
+    width: auto;
+  }
+
+  /* Sem isto a coluna estica a caixa do SVG e o selo vai parar no meio dela —
+     desenho original. Só a cópia do desktop: a do mobile mora em
+     `.rodape__fim`, uma linha (não coluna), onde este ajuste não faz
+     sentido. */
+  .rodape__coluna--fim .rodape__selo {
+    align-self: flex-end;
+  }
+
+  /*
+   * A assinatura ocupa a largura inteira entre os gutters — é fração da tela,
+   * não medida de conteúdo, então `100%` e não os 1382px do arquivo. A altura
+   * vem sozinha, pela proporção do SVG.
+   */
+  .rodape__assinatura {
+    width: 100%;
+    height: auto;
+  }
+</style>

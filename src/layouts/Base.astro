@@ -1,0 +1,182 @@
+---
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+
+import { IDIOMAS, IDIOMA_PADRAO } from '../lib/interface';
+
+interface Props {
+  titulo: string;
+  descricao: string;
+  idioma: string;
+}
+
+const { titulo, descricao, idioma } = Astro.props;
+
+/*
+ * O português mora na raiz e o inglês em `/en/` (`prefixDefaultLocale: false`).
+ *
+ * `hreflang` e canonical NÃO são enfeite nesse arranjo: sem eles as duas versões
+ * competem entre si no buscador, que é exatamente o caso de borda pelo qual a
+ * documentação da Sanity prefere prefixar os dois idiomas. Aqui a escolha foi a
+ * raiz limpa, e estas tags são o preço dela.
+ *
+ * `x-default` aponta para o português: é a versão a servir a quem o buscador não
+ * sabe classificar.
+ */
+const caminhoDe = (id: string) => (id === IDIOMA_PADRAO ? '/' : `/${id}/`);
+const urlDe = (id: string) => new URL(caminhoDe(id), Astro.site).href;
+const ogLocale = idioma.replace('-', '_');
+---
+
+<!doctype html>
+<html lang={idioma}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <title>{titulo}</title>
+    <meta name="description" content={descricao} />
+
+    <link rel="canonical" href={urlDe(idioma)} />
+    {IDIOMAS.map((id) => <link rel="alternate" hreflang={id} href={urlDe(id)} />)}
+    <link rel="alternate" hreflang="x-default" href={urlDe(IDIOMA_PADRAO)} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descricao} />
+    <meta property="og:url" content={urlDe(idioma)} />
+    <meta property="og:locale" content={ogLocale} />
+    {/* TODO: gerar og:image (1200×630) a partir do hero */}
+
+    {/*
+      `preload` precisa ser filtrado. O provider do Google emite todos os
+      subsets da Noto Serif KR (373 @font-face); com `preload` booleano o
+      navegador baixaria os ~6 MB, hangul incluído. Filtrando por subset
+      latino e peso 400 sobram só as duas faces usadas acima da dobra —
+      o resto é buscado sob demanda via unicode-range.
+    */}
+    <Font cssVariable="--fonte-display-astro" preload={[{ subset: 'latin', weight: 400 }]} />
+    <Font cssVariable="--fonte-corpo-astro" preload={[{ subset: 'latin', weight: 400 }]} />
+  </head>
+  <body>
+    <slot />
+
+    <script>
+      import Lenis from 'lenis';
+
+      /*
+       * Rolagem suave.
+       *
+       * É a segunda exceção ao "animação em CSS, sem JS" — e a maior, porque
+       * roda em rAF o tempo todo. Vale porque não dá em CSS: o navegador não
+       * expõe a inércia da roda do mouse.
+       *
+       * Não quebra o parallax porque o Lenis rola **de verdade**: o `setScroll`
+       * dele chama `wrapper.scrollTo({ behavior: 'instant' })` a cada quadro, em
+       * vez de transladar o body como as bibliotecas antigas faziam. A posição
+       * de rolagem real muda, então `position: sticky` e `animation-timeline`
+       * continuam lendo o valor certo. Se algum dia trocar de biblioteca,
+       * confira isso ANTES — quem translada o body derruba a página inteira.
+       *
+       * Sem JS a rolagem nativa assume e nada mais muda: os âncoras voltam a
+       * usar o `scroll-behavior: smooth` do reset.
+       */
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const lenis = new Lenis({
+          // Ele mesmo mantém o laço de rAF; não precisamos escrever um.
+          autoRaf: true,
+          /*
+           * Amortecimento, não duração fixa: `damp` com λ = lerp × 60, então a
+           * rolagem começa a responder no primeiro quadro e vai desacelerando.
+           * Duração fixa faria cada clique da roda virar um tween de tamanho
+           * igual — é isso que dá a sensação de travar.
+           *
+           * O tempo para assentar é 3 ÷ (lerp × 60). A escada útil:
+           *
+           *   0.15 → 0.33s   seco, quase nativo
+           *   0.12 → 0.42s
+           *   0.09 → 0.56s   ← aqui
+           *   0.06 → 0.83s   começa a parecer atraso, não peso
+           */
+          lerp: 0.09,
+          /*
+           * Rolagem mais pesada, a pedido do cliente (2026-07-31): cada clique
+           * da roda anda MENOS do que o navegador andaria sozinho — 70px onde
+           * o padrão são 100 (medido: 99px por clique antes, 69 depois).
+           *
+           * É `wheelMultiplier`, e não `lerp`, porque as duas coisas parecem a
+           * mesma e não são: `lerp` muda o TEMPO de assentar (a sensação de
+           * inércia), `wheelMultiplier` muda a DISTÂNCIA por gesto. O pedido
+           * era de distância. Mexer no `lerp` ainda arrastaria junto a esteira
+           * da divisória, que se amortece com o λ daqui para pousar junto com a
+           * página (ver Divisoria.astro).
+           *
+           * Só a roda. O toque continua em 1:1 (`touchMultiplier` intocado):
+           * dedo que arrasta 100px e página que anda 70 não parece peso, parece
+           * defeito — no toque a página é o objeto que a mão segura.
+           */
+          wheelMultiplier: 0.7,
+        });
+
+        /*
+         * --- Os âncoras do menu ---
+         *
+         * O `anchors: true` do Lenis saiu daqui em 2026-07-31, e por um motivo
+         * que só aparece nesta página: **o alvo se move enquanto a rolagem
+         * acontece**.
+         *
+         * As camadas do parallax são freadas por `transform` ligado à rolagem
+         * (ver Site.astro). Clicando "Manifesto" no rodapé, o manifesto está
+         * pintado 65vh abaixo do lugar dele no layout, porque a camada está
+         * deslocada; o Lenis mira ali e começa a rolar — e conforme a página
+         * sobe, o freio se desfaz e o alvo sobe junto. A rolagem termina onde
+         * o alvo ESTAVA. Medido antes da correção: o manifesto parava 502px
+         * abaixo do topo dele (ou seja, mostrando os clientes) e o Sobre, 585px
+         * — exatamente os 65vh de uma tela de 900.
+         *
+         * A correção é mirar no LAYOUT, que nenhum transform altera: somar os
+         * `offsetTop` da cadeia. E é o destino certo porque, quando a seção
+         * chega ao topo da tela, a camada dela ainda não começou a ser coberta
+         * — o freio vale zero justamente ali.
+         *
+         * Só existe com o Lenis ligado: com `prefers-reduced-motion` não há
+         * freio nenhum (ele mora dentro de `@media no-preference`), então o
+         * âncora nativo já cai no lugar certo.
+         */
+        const posicaoNoLayout = (elemento: HTMLElement) => {
+          let y = 0;
+          for (let no: HTMLElement | null = elemento; no; no = no.offsetParent as HTMLElement) {
+            y += no.offsetTop;
+          }
+          return y;
+        };
+
+        document.addEventListener('click', (evento) => {
+          // Clique com modificador é "abrir em outra aba": não é nosso.
+          if (evento.defaultPrevented || evento.button !== 0) return;
+          if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
+
+          const link = (evento.target as HTMLElement)?.closest?.('a[href^="#"]');
+          const hash = link?.getAttribute('href');
+          if (!hash || hash === '#') return;
+
+          const alvo = document.querySelector<HTMLElement>(hash);
+          if (!alvo) return;
+
+          evento.preventDefault();
+          /*
+           * Rente ao topo da seção, sem desconto para o header fixo — testei
+           * com 72px de respiro e ficou pior: no manifesto, que começa
+           * exatamente onde o hero acaba, o desconto deixava uma faixa da foto
+           * do hero aparecendo por cima. E desconto nenhum não esconde nada:
+           * o header é translúcido e toda seção abre com respiro ou fundo,
+           * então o que fica sob ele é margem, não texto.
+           */
+          lenis.scrollTo(posicaoNoLayout(alvo));
+          history.pushState(null, '', hash);
+        });
+      }
+    </script>
+  </body>
+</html>

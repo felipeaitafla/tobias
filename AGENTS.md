@@ -33,7 +33,15 @@ A página está inteira. **Faltam as duas páginas que o rodapé aponta**,
 O formulário **envia** (FormSubmit, ver a seção dele) e tem as três faixas de
 estado do arquivo. O destino de hoje é de teste.
 
-O repositório ainda **não tem nenhum commit**.
+O repositório está no ar em
+[github.com/felipeaitafla/tobias](https://github.com/felipeaitafla/tobias) —
+primeiro commit em 2026-07-31. Dois arquivos que o cliente mandou ficaram de
+fora, os dois no `.gitignore`: o vídeo bruto da Hero
+(`src/assets/video-hero.mov`, 692 MB — o convertido é que vai pro ar, ver a
+seção da Hero) e o PDF original da apresentação institucional
+(`src/assets/Apresentação Institucional - Tobias ADV.pdf`, 66 MB — não é o que
+o site serve, esse vem do Sanity). Nenhum dos dois é referenciado em código;
+conferido com `grep` antes de excluir.
 
 ### Bloqueios de lançamento
 
@@ -49,8 +57,11 @@ antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
   dos clientes): o Eko Residence aparece duas vezes no slide 3, a Ambev aparece
   no slide 1 e de novo no slide 3 (no arquivo do Cargnelutti, que é co-marcado),
   e Sayerlack e Minuano vêm com fundo colorido, lendo como azulejo na grade;
-- **WhatsApp, Instagram e LinkedIn** apontam para URLs de exemplo, com TODO em
-  [`site.ts`](src/data/site.ts);
+- **Instagram e LinkedIn ainda apontam para URLs de exemplo**
+  (`instagram.com/`, `linkedin.com/`, sem o perfil) — o WhatsApp já foi
+  corrigido para o número real em algum momento da migração. Os três vivem em
+  `configuracoes` no Sanity agora, não em código — é o cliente (ou quem edita
+  o Studio) quem troca, não é mais um TODO de desenvolvedor;
 - **`OAB/RS 00.000` no copyright do rodapé** é marcador do designer, não número
   de inscrição. O CNPJ ao lado, esse, parece real;
 - **a apresentação institucional tem 63 MB.** É o arquivo que o cliente mandou, e
@@ -158,6 +169,41 @@ segurança.
 
 Os idiomas vivem em `studio/idiomas.ts` e no bloco `i18n` do `astro.config.mjs`.
 **Os dois têm que concordar**: é o que faz `pagina.language` casar com a rota.
+
+### Editar conteúdo sem abrir o Studio: rascunho antes, publicar depois
+
+Para os ajustes de texto pedidos direto no chat (o título do formulário, tirar
+a quebra de linha do copyright), abrir o Studio manualmente seria o caminho
+óbvio — mas dá para editar pela **API HTTP de mutação**
+(`https://b4ibcfka.api.sanity.io/v2024-01-01/data/mutate/production`) com o
+`SANITY_WRITE_TOKEN` do `.env`, o mesmo token que a migração inicial usou.
+Ele nunca entra no site: a leitura do build continua sem token (ACL pública,
+ver acima), este token só serve para escrever.
+
+O padrão, em duas etapas nunca fundidas numa só:
+
+1. **rascunho.** Busca o documento publicado inteiro, clona como
+   `drafts.<id>` via `createOrReplace` com o campo pedido já trocado. Isso
+   não muda nada no ar — o build só lê documentos publicados, e um
+   `drafts.*` é invisível para ele. É o momento de mostrar a mudança e
+   pedir confirmação;
+2. **publicar**, só com confirmação explícita do cliente (na prática, do
+   usuário no chat — "publica o sanity", nunca automático). Busca o
+   rascunho de volta (autenticado) e faz `createOrReplace` **sobre o `_id`
+   publicado**; o `drafts.<id>` correspondente some sozinho quando isso
+   acontece, porque Sanity nunca deixa um documento e seu rascunho
+   coexistirem com o mesmo conteúdo.
+
+Nunca mutar o documento publicado direto, nem em um passo só — o rascunho é
+o que dá ao usuário uma chance de ver e recusar antes de qualquer coisa
+ficar visível no site.
+
+Vale notar por que essa rota existiu: a ferramenta MCP do Sanity estava com
+a própria autenticação quebrada nesta sessão (`Unauthorized - Session not
+found` / "bearer token is invalid or expired"). Se isso for só desta
+máquina ou desta sessão, o caminho normal (`mcp__Sanity__patch_documents` /
+`publish_documents`) volta a ser mais simples que montar a chamada HTTP à
+mão — vale testar primeiro antes de repetir este workaround.
 
 ### Roteamento i18n
 
@@ -290,6 +336,88 @@ em qualquer largura.
 Detalhe que morde junto: `%` em item de flex mede a **caixa de conteúdo do
 container**. Se a faixa tiver `padding` ou `gap`, os 50% já não são meia tela —
 o respiro tem que morar dentro da coluna de texto.
+
+### A exceção do mobile: um breakpoint, e só onde é comportamento
+
+A regra acima ("sem breakpoint") vale para a faixa que o cliente pediu — 720p
+a 2K, todos os valores em `rem` acompanhando o `clamp()`. Ela nunca foi pensada
+para celular, e isso apareceu na prática em 2026-07-31: abaixo de **~1084px**
+de viewport (onde `1.1065vw` cruza os `0.75rem` do piso), o `clamp()` **para
+de encolher** — um tablet de 1000px e um iPhone de 375px renderizam com o
+mesmo `rem` em pixel físico, porque nada mais na conta depende da largura da
+tela. Medido com CDP (`Emulation.setDeviceMetricsOverride` em 375px, viewport
+real, não simulação de DevTools): 269px de estouro horizontal só no
+cabeçalho, a parede de 36 logos dos clientes esmagada a 2px de largura
+(efetivamente invisível), a dupla telefone/e-mail do formulário inteira fora
+da tela.
+
+A correção não é abandonar a regra — é uma exceção pontual, documentada em
+cada lugar que a usa: **um único breakpoint, `max-width: 700px`**, reservado
+para comportamento que muda (nav que some, coluna que vira empilhada, grade
+de 3 colunas que vira 2, rótulo grudado que vira chapéu inline), nunca só
+para "ajustar tamanho" — isso continua resolvido com `flex-wrap` e
+`min()`/`max()` fluidos, como sempre foi. A maioria dos ajustes do celular,
+de fato, não precisou do breakpoint: `flex-wrap: wrap` nas seções que tinham
+colunas fixas lado a lado (Manifesto, Clientes, Fale conosco, Formulário)
+resolveu sozinho, e `max()` resolveu onde um piso físico importava mais que
+a proporção (toque, legibilidade — ver adiante).
+
+`--gutter-mobile: 32px` (`tokens.css`) é o único token novo: o respiro
+lateral padrão dentro do breakpoint. **`px`, não `rem`** — dentro de
+`max-width: 700px` a fonte-raiz já está travada no piso do clamp (12px), e um
+`rem` ali só reproduziria o mesmo problema que o breakpoint existe para
+resolver. A mesma lógica vale para qualquer valor exato pedido pelo cliente
+nessa faixa (toque de 24px, respiro de 32px): `px` cru, nunca `rem`.
+
+#### Quatro armadilhas que morderam de verdade
+
+- **`flex-wrap` não resolve item com `flex: 1` puro.** `flex: 1` é
+  `flex-basis: 0%` — um item de base zero nunca "transborda" a ponto de
+  precisar quebrar linha, só encolhe ou cresce para caber. A dupla
+  telefone/e-mail do formulário (`.campos__dupla`, dois `.campo--metade` com
+  `flex: 1`) ficava lado a lado, espremida, em QUALQUER largura, porque o
+  `wrap` nunca tinha o que fazer. A correção é `flex-direction: column`
+  dentro do breakpoint — força o empilhamento independente da base dos
+  filhos;
+
+- **Item de flex sem `min-width: 0` não encolhe abaixo do próprio
+  conteúdo — e se o ancestral tiver `overflow: hidden`, a sobra não vira
+  barra de rolagem, some cortada, sem aviso.** `.campos` (o card do
+  formulário) parava de encolher assim que o script do telefone revelava o
+  botão de país (`flex-shrink: 0`); abaixo de ~360px o card ficava mais
+  largo que a tela, e como `.formulario` tem `overflow: hidden`, o pedaço
+  que sobrava simplesmente desaparecia — sem scroll, sem erro no console,
+  só conteúdo perdido. `min-width: 0` no `.campos` resolveu. Sempre que um
+  filho de flex tiver um ancestral com `overflow: hidden`, vale checar isso
+  antes de confiar que "encolheu";
+
+- **Dois seletores de mesma especificidade, um dentro do breakpoint e um
+  fora: quem vem depois no arquivo é quem vale — mas só se a posição no DOM
+  não coincidir por acidente com as duas fórmulas ao mesmo tempo.** Em
+  `Clientes.astro`, a borda esquerda que marca a 1ª coluna de 3
+  (`:nth-child(3n + 1)`, regra de sempre) e a que devia marcar a 1ª coluna
+  de 2 no mobile (`:nth-child(2n + 1)`, dentro do breakpoint) têm a MESMA
+  especificidade — e a célula 4 bate nas duas fórmulas (4 = 3×1+1, e também
+  é par). Escrever a regra mobile como "zera tudo, tira de novo"
+  (`.clientes__celula { border-left: 1px }` seguido de `:nth-child(2n+1) {
+  none }`) perde para a regra de sempre nessa célula específica, mesmo
+  vindo depois no arquivo — porque a classe pura sozinha tem especificidade
+  MENOR que `:nth-child(3n+1)`. A saída é escrever a regra positiva com a
+  mesma especificidade (`:nth-child(2n)`, não a classe pura): aí sim a
+  ordem no arquivo desempata a favor de quem vem depois. Só apareceu porque
+  o cliente reparou que faltava uma borda numa fileira específica — não
+  dava para prever só lendo o CSS;
+
+- **`0` sem unidade é inválido dentro de `calc()` somado a uma
+  porcentagem — e o navegador descarta a declaração INTEIRA, não só o
+  termo.** O ornamento do formulário usa `translate: calc(-50% +
+  var(--ornamento-x, 0))`; o fallback `0` (sem `px`) é válido como valor
+  solto de `translate`, mas dentro do `calc()` somado a uma `%` não é — a
+  regra inteira cai, e o elemento renderiza como se o `translate` nunca
+  tivesse sido escrito (sem o `-50%`, sem centralizar nada). Só acontece
+  antes do primeiro movimento do ponteiro, quando o script ainda não
+  escreveu a variável — em produção, é o estado inicial de QUALQUER visita.
+  `var(--x, 0px)`, com a unidade dentro do fallback, resolve.
 
 ## Fontes — não trocar o provider
 
@@ -592,6 +720,51 @@ Três detalhes para não tropeçar:
   no template, mas não os polígonos que ele inlina de dentro do arquivo — sem o
   `:global` a regra não casa com nada.
 
+### O vídeo de fundo do hero
+
+Pedido do cliente, 2026-07-31: vídeo no lugar da foto estática
+(`Hero.astro`). **Zero JS** — nem entra na lista das sete exceções ao
+"sem JS", porque o mecanismo inteiro é `<video autoplay muted loop
+playsinline>` mais uma media query.
+
+O arquivo de origem, `src/assets/video-hero.mov`, é ProRes 4K de 692 MB
+e ~10s — grande demais para o repositório e cru demais para servir.
+Convertido com
+
+```
+ffmpeg -i video-hero.mov -vf "scale=1920:1080:flags=lanczos" \
+  -c:v libx264 -preset slow -crf 26 -pix_fmt yuv420p \
+  -profile:v high -level 4.1 -movflags +faststart -an video-hero.mp4
+```
+
+para **1080p H.264, 4 MB, sem trilha de áudio** (o vídeo é só fundo,
+`aria-hidden`, e o site já não tinha som em lugar nenhum — `-an` evita
+carregar bytes que ninguém vai ouvir). O `.mov` de origem fica de fora
+do git (ver a nota no `.gitignore`, junto do PDF de 66 MB da
+apresentação) e o `.mp4` gerado vai para `public/`, não `src/assets/`:
+é vídeo, não imagem — o pipeline do Astro não o toca, e ele precisa
+sair do build exatamente como está, igual ao PDF da matéria.
+
+O `<video>` ocupa a **mesma caixa** que `<img class="hero__foto">`
+(`position: absolute; inset: 0; z-index: -2`), e a foto **continua no
+DOM**, por baixo: é o quadro que aparece antes do vídeo terminar de
+carregar e o que sobra para quem prefere sem movimento.
+
+A troca por `prefers-reduced-motion` aqui é **ao contrário** do resto
+do site. Em toda outra animação da página o estado visível é a base e
+é a animação que esconde — sem suporte, o texto ou a camada continuam
+lá (ver "Nunca deixe o estado apagado como base", abaixo). Aqui é o
+inverso: o vídeo nasce com `display: none` e só vira `display: block`
+dentro de `@media (prefers-reduced-motion: no-preference)`. A razão é
+que não existe nenhum `animation-timeline` sustentando essa troca — sem
+JS e sem timeline, a única forma de garantir que quem pediu sem
+movimento nunca veja o vídeo rodar, nem por um quadro, é ele nascer
+escondido e a media query é que precisa se esforçar para revelar, não o
+contrário.
+
+`muted` é obrigatório — sem ele nenhum navegador libera `autoplay` — e
+`playsinline` evita o iOS abrir o vídeo em tela cheia sozinho.
+
 ### Parallax e revelação por rolagem
 
 Usam `animation-timeline` (`scroll()` no hero, `view()` no manifesto). Sem suporte
@@ -841,21 +1014,22 @@ fica **cravada em 1,00**.
 
 ## A parede de clientes ([`Clientes.astro`](src/components/Clientes.astro))
 
-Os 36 logos reais chegaram em **2026-07-31**, já separados por slide — uma pasta
-cada, `src/assets/clientes/slide-1` a `slide-4`. Até então o mesmo grupo de nove
-aparecia 4× só para a passagem rodar.
+Os 36 logos reais chegaram em **2026-07-31**. Migraram direto para
+`configuracoes.clientes` no Sanity — uma lista achatada, sem os quatro
+grupos (ver "A divisa que sustenta o i18n", acima): cada item traz `logo`
+(a imagem), `nome` (que dobra de `alt`), `largura` (em rem, ver a seção
+abaixo) e, quando precisa, `ajusteOptico`. Até a migração, o mesmo grupo de
+nove aparecia 4× só para a passagem rodar.
 
-Duas coisas mudaram no componente por causa disso:
+O componente recebe a lista pronta por prop e fatia de 9 em 9 (`POR_GRUPO`)
+**aqui**, não no CMS: agrupar pediria ao cliente que pensasse em "slide",
+que é apresentação, não conteúdo — o 37º cliente cria um quinto grupo e uma
+quinta divisória sozinho, sem editar nada além da lista.
 
-- **o glob varre pastas e extensões**: `../assets/clientes/*/*.{png,jpg,jpeg,webp}`.
-  Cada empresa mandou o logo no formato que tinha, e reconverter tudo para um só
-  perderia transparência num e qualidade noutro. Por isso o `id` do `site.ts` vem
-  **sem extensão** (`slide-2/santa-clara`) e um `Map` resolve o arquivo;
-- **cinco arquivos foram renomeados** para o nome da empresa, porque vieram com o
-  nome do download: `logo.png` era Santa Clara, `logo.webp` era Brasimet,
-  `images.png` era MD Serviços de Segurança, `igreja.jpg` era a Igreja Episcopal
-  Anglicana do Brasil, e o ThyssenKrupp trazia o nome inteiro do arquivo da
-  Wikipédia. O `alt` é o nome da empresa, então ele precisa existir.
+`src/assets/clientes/slide-1` a `slide-4` ainda existem no disco — são os
+arquivos originais que a migração leu para subir ao Sanity — mas **nenhum
+código os referencia mais**: nem glob, nem import, nem script. Ficaram como
+histórico da migração, não como fonte do site.
 
 ### A largura é a do arquivo, mas quem manda é a tinta
 
@@ -978,15 +1152,47 @@ Três consequências que valem lembrar antes de mexer:
 - **o respiro é assimétrico e espelhado.** O primeiro bloco abre com 128 e fecha
   com 64; o segundo faz o inverso. Somados aos 64+64 da faixa, é isso que dá o
   ritmo do arquivo. Nenhum dos dois usa o `.secao` padrão;
-- **o rótulo grudado percorre só o primeiro grupo.** O frame dele (`154:384`)
-  vive dentro de `areas-1`, e o segundo bloco não tem coluna à esquerda. Quem
-  segura os 980px no lugar certo lá é o `justify-content: flex-end` da seção —
-  sem ele o segundo grupo encostaria à esquerda e as duas grades sairiam
-  desalinhadas. Conferido: as duas colunas começam em x = 402,03;
+- **o rótulo grudado, no desktop, percorre os dois grupos — não só o
+  primeiro.** No arquivo o frame dele (`154:384`) vive só dentro de `areas-1`,
+  mas o cliente pediu em 2026-07-31 que o segundo grupo tivesse o mesmo
+  tratamento (sticky, à esquerda), em vez do chapéu que uma correção anterior
+  havia posto nos dois — ver a seção do chapéu mobile, abaixo, para o motivo
+  de existirem os dois. Quem segura os 980px no lugar certo, nos dois grupos,
+  é o `justify-content: flex-end` da seção — sem ele o grupo encostaria à
+  esquerda e as duas grades sairiam desalinhadas. Conferido: as duas colunas
+  começam em x = 402,03;
 - **a marcação dos cartões fica em um lugar só.** As duas seções saem do mesmo
-  laço, e o que os índices decidem é o que existe em cada ponta (rótulo e âncora
-  no primeiro, faixa antes do segundo). Quando o Sanity entrar, é um ponto de
-  troca, não dois.
+  laço, e o que os índices decidem é o que existe em cada ponta (rótulo e
+  âncora no primeiro, faixa antes do segundo). Quando o Sanity entrar, é um
+  ponto de troca, não dois.
+
+### O rótulo é sticky nos dois grupos; o chapéu é só do mobile
+
+O `<h2 class="areas__rotulo">` sai do laço junto com `<Divisoria>` e
+`<article class="grupo">` — cada grupo desenha o seu, incondicionalmente,
+não só o primeiro. **No desktop os dois se comportam de forma idêntica**:
+sticky, à esquerda, grudando a 128px do topo. É o resultado de uma correção
+em cima de uma correção, e vale registrar a volta:
+
+1. antes de 2026-07-31 só o primeiro grupo tinha a coluna grudada, como no
+   Figma;
+2. a primeira leva de ajustes mobile trocou o rótulo por um "chapéu" —
+   texto de apoio comum, acima do título, dentro de `.grupo__cabecalho` —
+   nos **dois** grupos, achando que resolvia tanto o mobile quanto a
+   assimetria do Figma;
+3. o cliente corrigiu: o chapéu é comportamento **só de mobile**; no
+   desktop os dois grupos precisam do sticky lateral, igual, sem exceção
+   para o segundo.
+
+A solução final são as **duas marcações, sempre presentes, alternando por
+media query** — o mesmo padrão de outras seções (ver "Strings de interface"
+e o rótulo do Fale conosco): `.areas__rotulo` (sticky, desktop) fica com
+`display: none` abaixo de 700px; `.grupo__chapeu` (texto de apoio comum,
+dentro do cabeçalho do `<article>`) nasce com `display: none` e só vira
+`display: block` no mesmo breakpoint. Nunca os dois ao mesmo tempo — cada
+um é a versão do outro para a largura em que está ativo, e os dois leem o
+mesmo `areasAtuacao.rotulo`, então trocar o texto no Sanity troca os dois
+juntos.
 
 ### As descrições dos cartões se alinham pelo topo
 
@@ -1018,6 +1224,27 @@ no canto inferior direito (`105:219`) — medido, ele fica rente à borda direit
 Isso mudou em 2026-07-30. Antes a linha atravessava, e era a célula que a
 desenhava; se alguém puser de volta um `border-top` ali, a grade volta a divergir
 do arquivo.
+
+**Correção em 2026-07-31**: faltava a linha embaixo do cartão "Cível", que
+fica na mesma fileira que a célula vazia (2ª coluna). `.cartao` desenha o
+próprio `border-top`, mas `.grupo__vazio` não desenhava nenhum — então o lado
+direito da fileira ficava sem a divisa que o lado esquerdo (o cartão) tinha.
+A correção é dar à célula vazia o mesmo `border-top` do cartão; ela não ganha
+`border-bottom` porque, como o resto da última fileira, quem fecha embaixo é
+`.cartao:nth-last-child(-n + 2)`, e a célula vazia sempre é a última do laço.
+
+No mobile a célula empilha embaixo do cartão "Outsourcing de Apoio" (a grade
+vira 1 coluna, ver abaixo) e ganha `margin-top: 32px` — em `px` cru, não
+`2rem`, pelo mesmo motivo do resto desta seção: dentro do breakpoint a
+fonte-raiz já está no piso do clamp (12px), e `2rem` daria só 24px físicos.
+
+Duas outras exceções pontuais de `max-width: 700px` vivem nesta seção, e as
+duas são a mesma armadilha do card por trás: `.grupo__grade` vira 1 coluna
+(2 colunas de ~140px não sobram espaço depois do padding do cartão) e
+`.cartao:nth-child(odd) { border-right: none }` some — o `nth-child` conta
+posição no DOM, não coluna visual, e sem a exceção metade dos cartões
+empilhados ficava com um traço solto à direita, sobra de quando dividiam duas
+colunas.
 
 ## O card do Fale conosco (rotulado "Localização")
 
@@ -1061,8 +1288,20 @@ faz o rótulo trocar de lado é a ordem dos dois filhos no HTML, e o `text-align
 
 **Um ponto continua em aberto e é bloqueio de lançamento:** o arquivo traz **dois
 telefones diferentes** — `51 3076 3466` no card (`181:24`) e `+55 (51) 3396-6800`
-no rodapé (`52:131`). Os dois estão em `site.ts` como estão lá; escolher por
-conta própria seria inventar.
+no rodapé (`52:131`). Os dois moram em `configuracoes` no Sanity, em campos
+separados (`telefonePrincipal` para este card, `telefoneRodape` para o
+rodapé — ver o comentário em `Rodape.astro`), exatamente como estão lá;
+escolher por conta própria seria inventar.
+
+### O rótulo é sticky no desktop; o chapéu é só do mobile
+
+Mesmo padrão das Áreas (ver a seção lá para o histórico da correção): a coluna
+grudada (`.fale-conosco__lateral` → `.fale-conosco__rotulo`, sticky, à
+direita) e o chapéu (`.fale-conosco__chapeu`, texto de apoio comum acima do
+título) **coexistem sempre** na marcação, e a media query decide qual dos
+dois se mostra. Abaixo de 700px a coluna lateral vira `display: none` e o
+chapéu vira `display: block`; acima, o inverso. Os dois leem
+`faleConosco.rotulo` — o mesmo texto do Sanity, nunca duplicado à mão.
 
 ### O mapa é o embed do Maps, não a captura do Figma
 
@@ -1070,9 +1309,12 @@ O Figma desenha uma **captura de tela** do Google Maps, e publicar captura do
 Maps em site comercial fere os termos de uso do Google. Desde 2026-07-30 o que
 está no ar é o **embed oficial** — "Compartilhar › Incorporar um mapa", que não
 pede chave de API —, com a URL que o cliente mandou do perfil do escritório
-(`Tobias ADV`). Ela mora em `faleConosco.mapa.src`, no `site.ts`, junto do
-`titulo` que vira o nome acessível do iframe; o PNG que servia de placeholder foi
-apagado.
+(`Tobias ADV`). Ela mora em `config.mapaEmbed`, dentro de `configuracoes` no
+Sanity (não traduz — é a mesma URL nos dois idiomas). O `title` do iframe é
+outra história: vem de `faleConosco.mapaTitulo`, dentro de `pagina` (traduz —
+é texto que o leitor de tela lê), exatamente o caso que a divisa do i18n
+avisa para não confundir com dado de contato. O PNG que servia de
+placeholder foi apagado.
 
 Três coisas a saber antes de mexer nele:
 
@@ -1227,9 +1469,10 @@ no clique.
 Site estático não manda e-mail sozinho. O **FormSubmit** foi escolhido por ser o
 único que funciona sem criar conta: o endereço vai na URL e o primeiro envio
 dispara um e-mail de ativação para ele. Destino, endpoint e os textos das faixas
-estão em `formulario.envio` e `formulario.estados`, no `site.ts` — trocar de
-provedor é trocar uma string, porque o script só faz POST de JSON e olha se a
-resposta veio OK.
+estão em `formulario.envio` e `formulario.estados`, dentro de `configuracoes`
+no Sanity (não traduz — é o mesmo destino e a mesma decisão de provedor nos
+dois idiomas) — trocar de provedor é trocar uma string, porque o script só
+faz POST de JSON e olha se a resposta veio OK.
 
 Três coisas a resolver antes do lançamento estão anotadas lá: o destino é de
 teste, o endereço fica visível no HTML (coletor de spam) e passar dado de quem
@@ -1464,6 +1707,62 @@ máximo de **0,4px**.
   ficam rentes à borda da coluna; no arquivo a diagonal fica 5px para dentro,
   sobra da rotação, e alinhar as duas vale mais que copiar a sobra.
 
+### No mobile o desktop não muda — e por isso a marcação dobra
+
+Pedido explícito do cliente, 2026-07-31, depois de uma primeira rodada de
+ajustes mobile ter mexido no rodapé inteiro: **"o rodapé do desktop deve
+permanecer da forma que estava originalmente, as alterações feitas antes
+eram apenas para o mobile."** A correção não foi ajustar a media query — foi
+duplicar a marcação onde CSS sozinho não bastava, e reservar a media query
+só para trocar qual das duas cópias aparece.
+
+O motivo de precisar duplicar, e não só reposicionar por CSS: os dois pares
+abaixo pertencem a **colunas diferentes da grade** no desenho original —
+`order` ou `grid-column` movem um elemento dentro do mesmo pai, não para o
+pai de outra coluna, e a página não tem JS para arrancar um nó de um lugar e
+recolocar em outro.
+
+- **Termos/Políticas + copyright.** No desktop (desenho original) eles ficam
+  **separados**: os links legais empilhados na coluna de contato
+  (`.rodape__lista--legais-desktop`), o copyright sozinho na coluna de redes
+  (`.rodape__copyright-desktop`), cada um com `display: none` no mobile. A
+  cópia mobile — `.rodape__rodape`, dentro da coluna de redes — agrupa os
+  dois num bloco só, com os links lado a lado (`flex-direction: row`) acima
+  do copyright, e nasce com `display: none`, virando `flex` só abaixo de
+  700px;
+- **"Voltar ao topo" + selo.** No desktop os dois vivem dentro da quarta
+  coluna da grade (`.rodape__coluna--fim`), sem alinhar entre si — desenho
+  original, link à esquerda e só o selo empurrado para a borda direita da
+  fatia. Essa coluna some inteira no mobile. A cópia mobile —
+  `.rodape__fim`, filho direto de `.rodape`, fora da grade — põe o link e o
+  selo na mesma linha com `justify-content: space-between`, um em cada
+  ponta do rodapé inteiro (pedido do cliente: alinhados horizontalmente,
+  cada um numa extremidade).
+
+Três números que só existem porque, uma vez empilhado, o mobile precisou de
+respiro que o desenho original nunca teve — e todos em `px` cru, nunca
+`rem`, pelo motivo de sempre nesta faixa: a fonte-raiz já está travada no
+piso do clamp (12px), e `rem` daria um valor menor que o pedido:
+
+- `.rodape__colunas` ganha `gap: 40px` só no mobile — a grade nunca teve
+  `gap` porque as 4 colunas nunca precisaram de um lado a lado; empilhadas,
+  ficavam coladas;
+- `.rodape__coluna` ganha `gap: 32px` só no mobile — mínimo entre o bloco
+  de Redes e o grupo Termos/Políticas/Copyright que só existe empilhado
+  dessa forma abaixo de 700px; no desktop as colunas continuam só com
+  `space-between`, sem gap fixo;
+- os links legais e o copyright mobile ganham `padding-top: 12px` cada —
+  "tá muito grudado", pedido do cliente depois de ver o resultado da
+  primeira rodada.
+
+E dois ajustes de leitura, só na cópia mobile: a fonte de Termos, Políticas
+e copyright sobe de 12px para `max(0.8125rem, 13px)` (o `max()` também
+trava o piso, do mesmo jeito que os `px` acima), e o copyright ganha
+`line-height: 1.5` — no desktop ele continua em 12px e na entrelinha
+original do arquivo, porque lá o `width: 27.4375rem` fixo sangra por cima
+da coluna vizinha vazia (ver "Detalhes do desenho", acima) e aumentar a
+fonte ali reabriria essa conta.
+
 ### A navegação não é a do header
 
 Desde 2026-07-30 ela tem lista e ordem próprias (`52:48`): **Manifesto, Sobre,
@@ -1556,8 +1855,9 @@ três pontos enquanto o conteúdo subia a 35%.
 - Assets de marca em `src/assets/` (não `public/`), para o Astro otimizar. Vale
   também para SVG: dentro de `src/` ele é inlinado como componente, e aí um
   `fill="currentColor"` deixa a cor vir do token em vez de ficar escrita no
-  arquivo. `public/` hoje tem só os favicons e o PDF da matéria — coisas para
-  servir como estão.
+  arquivo. `public/` hoje tem os favicons, o PDF da matéria e o vídeo do hero
+  (`video-hero.mp4`, ver a seção do Hero) — coisas para servir como estão,
+  sem o Astro reprocessar.
 
 ## Desenvolvimento
 

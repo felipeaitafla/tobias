@@ -24,10 +24,13 @@ const { rodape, config, idioma } = Astro.props;
 const t = textos(idioma);
 
 /* O rodapé usa o OUTRO telefone — os dois divergem no Figma e a escolha entre
-   eles continua sendo bloqueio de lançamento. */
+   eles continua sendo bloqueio de lançamento. Pedido do cliente, 2026-08-05:
+   telefone antes do e-mail, e leva ao WhatsApp. */
+const msgWhatsapp = encodeURIComponent('Olá! Gostaria de conversar com a equipe da Tobias Advogados.');
+const whatsappHref = `https://wa.me/${config.telefoneRodape.href.replace(/\D/g, '')}?text=${msgWhatsapp}`;
 const contato = [
+  { texto: config.telefoneRodape.texto, href: whatsappHref, externo: true },
   { texto: config.email, href: `mailto:${config.email}` },
-  { texto: config.telefoneRodape.texto, href: `tel:${config.telefoneRodape.href}` },
 ];
 
 /* "LinkedIn" com o I maiúsculo: o arquivo escreve "Linkedin", e nome de marca
@@ -67,7 +70,11 @@ const redes = [
             {
               contato.map((link) => (
                 <li>
-                  <a class="rodape__link" href={link.href}>
+                  <a
+                    class="rodape__link"
+                    href={link.href}
+                    {...(link.externo ? { target: '_blank', rel: 'noopener' } : {})}
+                  >
                     {link.texto}
                   </a>
                 </li>

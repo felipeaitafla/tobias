@@ -327,10 +327,10 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
   }
 
   .sobre__titulo {
-    /* 468px no Figma: mais estreito que a coluna, para a frase quebrar em três
-       linhas mesmo com espaço de sobra ao lado. Continua quebrando em três
-       depois da troca para 58px (2026-07-31, ver tokens.css). */
-    max-width: 29.25rem;
+    /* 444px no Figma (atualizado 2026-08-05, antes era 468): mais estreito que a
+       coluna, para a frase quebrar em três linhas mesmo com espaço de sobra ao
+       lado. Continua quebrando em três depois da troca para 58px. */
+    max-width: 27.75rem;
     font: var(--texto-titulo-secao);
     letter-spacing: var(--texto-titulo-secao-ls);
     /*
@@ -438,7 +438,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
      * faixa mais os 32 do padding da própria coluna; aqui a faixa começa na
      * borda da tela, então os dois viram um número só.
      */
-    padding: 1.5rem 6rem; /* 24px 96px */
+    padding: 3rem 6rem; /* 48px 96px */
     /* 0.8 é a cor da chamada (#185:104). O ícone é um passo mais apagado e tem
        cor própria, lá embaixo. */
     color: rgba(255, 255, 255, 0.8);
@@ -486,17 +486,13 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
 
   .materia__chamada {
     /*
-     * 232px, e não os 219px do arquivo: nos 219 o Chrome joga "gaúchas." para
-     * uma terceira linha e a faixa engorda de 83px para 100px. Vira em 224 —
-     * os 8px a mais são a folga de sempre para a diferença de medida entre
-     * Chrome e Figma (a mesma história dos 348px do hero).
-     *
-     * A virada foi conferida de novo depois de o peso subir para 500: continua
-     * em 224, porque a quebra cai num limite de palavra e alguns pixels a mais
-     * de largura não mudam onde ela acontece.
+     * 350px no Figma (atualizado 2026-08-05, antes era 232): com a fonte menor
+     * e o novo texto da chamada, a largura que cabia antes não cabe mais — e a
+     * faixa preta ficava com 3 linhas em vez das 2 do arquivo. O valor certo é
+     * o que sobra depois do logo e do gap no Frame 84 (468 − 86 − 32 = 350).
      */
-    max-width: 14.5rem;
-    font: 500 0.875rem / 1.26 var(--fonte-corpo); /* 14px Medium */
+    max-width: 21.875rem;
+    font: 500 0.8125rem / 1.26 var(--fonte-corpo); /* 13px Medium */
     letter-spacing: var(--texto-corpo-ls);
   }
 
@@ -589,7 +585,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     /* Os mesmos 96 da faixa da matéria, e pelo mesmo motivo: é o que alinha o
        bloco com a coluna de texto logo acima (64 de respiro da faixa + 32 do
        padding da coluna, que aqui viram um número só). */
-    padding: 1.5rem 6rem; /* 24px 96px */
+    padding: 3rem 6rem; /* 48px 96px */
     color: rgba(255, 255, 255, 0.8);
     background: var(--cor-preto);
   }
@@ -616,7 +612,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 2rem;
+    gap: 0.625rem; /* 10px (#212:77 Frame 83) */
   }
 
   .apresentacao__texto {
@@ -724,10 +720,12 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     .apresentacao__gaveta {
       grid-template-rows: minmax(0, 0fr);
       margin-top: 0;
+      margin-bottom: 0;
       opacity: 0;
       transition:
         grid-template-rows 0.3s ease 0.4s,
         margin-top 0.3s ease 0.4s,
+        margin-bottom 0.3s ease 0.4s,
         opacity 0.2s ease 0.4s;
     }
 
@@ -743,6 +741,10 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     .apresentacao:has(.apresentacao__estado:not([hidden])) .apresentacao__gaveta {
       grid-template-rows: minmax(0, 1fr);
       margin-top: 2rem;
+      /* 16px a mais embaixo do bloco: Figma pede pB=64 na variante ask-email
+         (#212:79), contra os 48 do Default. A diferença vira margem, para não
+         interferir no padding da faixa inteira. */
+      margin-bottom: 1rem; /* 16px */
       opacity: 1;
       transition-delay: 0s;
     }

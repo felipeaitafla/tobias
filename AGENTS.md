@@ -48,7 +48,9 @@ conferido com `grep` antes de excluir.
 Nada aqui é defeito de código — é conteúdo que depende de resposta do cliente
 antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
 
-- **dois telefones diferentes** no arquivo (ver a seção do Fale conosco, abaixo);
+- ~~**dois telefones diferentes** no arquivo~~ — **resolvido em 2026-08-05:**
+  os dois campos (`telefonePrincipal` e `telefoneRodape`) agora apontam para
+  o mesmo número (`+55 51 8194-6082`), e os dois links levam ao WhatsApp;
 - **o formulário envia para `felipe@aita.studio`**, que é endereço de teste do
   desenvolvedor, via FormSubmit — um serviço gratuito de terceiros. Trocar o
   destino é uma string; decidir se dado de quem procura advogado pode passar por
@@ -189,10 +191,24 @@ O padrão, em duas etapas nunca fundidas numa só:
    pedir confirmação;
 2. **publicar**, só com confirmação explícita do cliente (na prática, do
    usuário no chat — "publica o sanity", nunca automático). Busca o
-   rascunho de volta (autenticado) e faz `createOrReplace` **sobre o `_id`
-   publicado**; o `drafts.<id>` correspondente some sozinho quando isso
-   acontece, porque Sanity nunca deixa um documento e seu rascunho
-   coexistirem com o mesmo conteúdo.
+   rascunho de volta (autenticado), faz `createOrReplace` **sobre o `_id`
+   publicado** e **apaga o `drafts.<id>`** — são duas mutações, não uma.
+
+**O rascunho não some sozinho, e esta seção afirmou o contrário até
+2026-08-04.** Quem apaga o rascunho ao publicar é a ação de publicar do
+Studio, não a API de mutação: `createOrReplace` sobre o `_id` publicado é
+uma escrita comum, e o `drafts.*` fica exatamente onde estava. Conferido na
+troca do logo da Gedore — logo depois de publicar,
+`defined(*[_id=="drafts.configuracoes"][0]._id)` ainda respondia `true`.
+Quem seguir o texto antigo deixa rascunho órfão para trás a cada edição.
+Mande as duas na mesma transação:
+
+```json
+{"mutations": [
+  {"createOrReplace": {"_id": "configuracoes", "...": "..."}},
+  {"delete": {"id": "drafts.configuracoes"}}
+]}
+```
 
 Nunca mutar o documento publicado direto, nem em um passo só — o rascunho é
 o que dá ao usuário uma chance de ver e recusar antes de qualquer coisa
@@ -504,6 +520,23 @@ Dois detalhes do ajuste:
 - `html.lenis-smooth { scroll-behavior: auto }` no reset. O `smooth` continua
   sendo a base para o caso sem JS, mas com os dois ligados uma URL com hash faz
   o navegador iniciar a própria rolagem suave na carga, brigando com o rAF.
+
+### Atualização do Sobre via API REST do Figma (2026-08-05)
+
+Ajustes de padding, gap e tipografia sincronizados com o Figma `hJuV9y2PAHLZdOsrrW0n5X`
+usando a **API REST** (não o MCP, que estava com JSON inválido na config):
+
+- **título da história** (`.sobre__titulo`): `max-width` de 468→444px (27.75rem);
+- **faixa preta da matéria** (`.materia`): padding vertical de 24→48px (3rem);
+- **chamada da matéria** (`.materia__chamada`): fonte de 14→13px (0.8125rem),
+  `max-width` de 232→350px (21.875rem). Texto no Sanity também atualizado:
+  *"Representando a Sulpetro, Thiago Tobias Bezerra colabora para reduzir
+  carga de ICMS-ST de empresas gaúchas."*;
+- **bloco da apresentação** (`.apresentacao`): padding vertical de 24→48px;
+- **chamada da apresentação** (`.apresentacao__chamada`): `gap` de 32→10px;
+- **gaveta aberta** (variante ask-email): `margin-bottom: 1rem` (16px extra
+  embaixo, que é a diferença entre pB=48 do Default e pB=64 das variantes com
+  gaveta).
 
 ### Hover que revela algo interativo: graça na saída
 
@@ -1250,19 +1283,15 @@ colunas.
 
 > O rótulo da seção virou **"Localização"** em 2026-07-31, a pedido do cliente —
 > o componente e o id continuam `FaleConosco`/`#contato`, e é o texto do Sanity
-> que mudou. O "Localização" do rodapé passou a apontar para `#contato`, a seção
-> inteira, em vez de `#localizacao`, que é o mapa e cai no meio dela.
-
+> que mudou. O "Localização" do rodapé aponta para `#contato`, a seção inteira.
 
 O designer refez o card (`161:446`) em 2026-07-30: o recado que pedia dados de
-exemplo saiu, e no lugar entraram três blocos de ícone + texto (`181:26`) e um
-mapa (`181:22`). O traço é **só em cima** (`strokeWeight: 1px 0px 0px`) — não é
-caixa fechada nem par de réguas, é uma régua só, abrindo o bloco embaixo do
-título; embaixo quem fecha é a borda do próprio mapa.
+exemplo saiu, e no lugar entraram três blocos de ícone + texto (`181:26`).
+O traço é **só em cima** (`strokeWeight: 1px 0px 0px`) — não é caixa fechada
+nem par de réguas, é uma régua só, abrindo o bloco embaixo do título.
 
 O padding acompanha: só 32px em cima. O recuo lateral que era do card inteiro
-passou a ser da fileira de dados (`padding-left` de 32), e o **mapa vai à
-largura cheia** da coluna (980px, não os 916 de antes). Os três ícones também
+passou a ser da fileira de dados (`padding-left` de 32). Os três ícones também
 foram redesenhados e cresceram — 40,4px de altura no endereço (`194:157`) e no
 horário (`194:151`), 37,59 na agenda (`194:153`) —, e passaram a viver no mesmo
 0.7 de opacidade do texto, em vez da cor cheia. Só a **altura** é declarada: os
@@ -1273,6 +1302,28 @@ Mais duas coisas mudaram na segunda leva do mesmo dia:
 - o título virou **"Como nos encontrar"** (era "Estamos prontos para servir.");
 - **os blocos trocaram de ordem**: endereço → horário → canais. Antes o horário
   fechava a fileira.
+
+### O mapa foi removido (2026-08-05)
+
+Pedido do cliente: o mapa do Google Maps que ficava embaixo dos dados de contato
+foi removido do `FaleConosco.astro`. O campo `config.mapaEmbed` continua no
+Sanity (não foi apagado), mas o componente não o renderiza mais. O CSS da
+classe `.cartao-info__mapa` foi removido junto. Com isso saiu também o
+`id="localizacao"` que o rodapé mirava — o link "Localização" agora aponta
+para `#contato`, a seção inteira.
+
+### Os telefones agora são WhatsApp (2026-08-05)
+
+Pedido do cliente: **os dois campos de telefone** (`telefonePrincipal` e
+`telefoneRodape`) apontam para o mesmo número (`+55 51 8194-6082`), e os dois
+links levam ao WhatsApp (`wa.me/…?text=…`), não ao discador (`tel:`). A
+mensagem pré-preenchida é "Olá! Gostaria de conversar com a equipe da Tobias
+Advogados." e é construída no frontmatter de cada componente com
+`encodeURIComponent`. Os links abrem em nova aba (`target="_blank"`,
+`rel="noopener"`).
+
+Isso resolveu o bloqueio de lançamento dos "dois telefones diferentes" — agora
+são o mesmo número nos dois lugares.
 
 ### O rótulo mudou de lado
 
@@ -1286,13 +1337,6 @@ O `position: sticky` e o `top: var(--respiro-secao)` não mudam com isso — o q
 faz o rótulo trocar de lado é a ordem dos dois filhos no HTML, e o `text-align`
 é que o encosta na margem da seção em vez da divisa com o card.
 
-**Um ponto continua em aberto e é bloqueio de lançamento:** o arquivo traz **dois
-telefones diferentes** — `51 3076 3466` no card (`181:24`) e `+55 (51) 3396-6800`
-no rodapé (`52:131`). Os dois moram em `configuracoes` no Sanity, em campos
-separados (`telefonePrincipal` para este card, `telefoneRodape` para o
-rodapé — ver o comentário em `Rodape.astro`), exatamente como estão lá;
-escolher por conta própria seria inventar.
-
 ### O rótulo é sticky no desktop; o chapéu é só do mobile
 
 Mesmo padrão das Áreas (ver a seção lá para o histórico da correção): a coluna
@@ -1302,40 +1346,6 @@ título) **coexistem sempre** na marcação, e a media query decide qual dos
 dois se mostra. Abaixo de 700px a coluna lateral vira `display: none` e o
 chapéu vira `display: block`; acima, o inverso. Os dois leem
 `faleConosco.rotulo` — o mesmo texto do Sanity, nunca duplicado à mão.
-
-### O mapa é o embed do Maps, não a captura do Figma
-
-O Figma desenha uma **captura de tela** do Google Maps, e publicar captura do
-Maps em site comercial fere os termos de uso do Google. Desde 2026-07-30 o que
-está no ar é o **embed oficial** — "Compartilhar › Incorporar um mapa", que não
-pede chave de API —, com a URL que o cliente mandou do perfil do escritório
-(`Tobias ADV`). Ela mora em `config.mapaEmbed`, dentro de `configuracoes` no
-Sanity (não traduz — é a mesma URL nos dois idiomas). O `title` do iframe é
-outra história: vem de `faleConosco.mapaTitulo`, dentro de `pagina` (traduz —
-é texto que o leitor de tela lê), exatamente o caso que a divisa do i18n
-avisa para não confundir com dado de contato. O PNG que servia de
-placeholder foi apagado.
-
-Três coisas a saber antes de mexer nele:
-
-- **`display: block` no iframe.** Ele nasce `inline`, e o reset do
-  [`global.css`](src/styles/global.css) só endireita `img/picture/svg/video`. Como
-  linha de texto ele ganharia o descender embaixo — uma fresta bem onde a borda do
-  mapa é quem fecha o card. Conferido: com a regra, a base do iframe e a do
-  `.cartao-info` caem no mesmo pixel;
-- **as medidas do trecho que o Maps entrega ficam de fora.** O `width="600"`,
-  o `height="450"` e o `style="border:0"` não entram: tamanho mora no CSS e em
-  `rem`, senão o mapa sai da escala fluida. Medido: 979,98 × 224,98, os 980×225
-  do arquivo;
-- **a roda do mouse sobre o mapa é do iframe**, então o Lenis não vê o gesto e a
-  página anda pelo scroll nativo, sem a inércia — uma faixa de 225px onde a
-  rolagem muda de textura. É o padrão de qualquer embed do Maps, e evitar isso
-  custaria JS (mapa inerte até o primeiro clique). Decisão do cliente,
-  2026-07-30: fica o nativo.
-
-Fica de fora, e some junto com o destino do formulário: o embed carrega scripts
-e cookies do Google no navegador de quem visita, que é assunto do aviso de
-privacidade quando a `/politica-de-privacidade` entrar.
 
 O rótulo tem a coluna inteira para passear: o **selo dos 20 anos saiu** nessa
 mesma revisão. No Figma o frame
@@ -1349,9 +1359,6 @@ A coluna do rótulo é `align-self: stretch`, e não os 524px fixos do arquivo:
 esses 524 eram a altura que posicionava o selo, e sobraram ~31px maiores que o
 conteúdo ao lado. Sem selo para apoiar, reproduzi-los seria congelar espaço
 morto — a seção fecha com os 128 de padding e mais nada.
-
-O mapa carrega `id="localizacao"`: é o alvo do "Localização" do rodapé, e a
-única âncora da página que não é uma seção inteira.
 
 O traço antes do telefone e do e-mail (`181:73`) é SVG no arquivo e `::before`
 aqui: 14×1,09 de retângulo não justifica um arquivo, e em CSS ele acompanha a
@@ -1656,6 +1663,11 @@ que o Figma, então a caixa do manifesto tem 702px em vez dos 697px do arquivo (
 Fora do `main` e **último no documento** — a revelação dele depende disso.
 Gutter de 32px, e não os 64 do resto do site: a assinatura gigante (`157:427`)
 ocupa a largura toda entre as margens.
+
+Pedido do cliente, 2026-08-05: no bloco "Entre em contato" o **telefone vem
+antes do e-mail** (era o contrário). Os dois links de telefone — aqui e no
+FaleConosco — levam ao **WhatsApp** (`wa.me/…?text=…`), não ao discador.
+Ver a seção do Fale conosco para detalhes.
 
 ### A revelação: recorte mais contra-deslocamento
 

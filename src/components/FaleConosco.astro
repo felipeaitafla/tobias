@@ -15,12 +15,16 @@ const { faleConosco, config, idioma } = Astro.props;
 const t = textos(idioma);
 
 /* Os dois canais do bloco da agenda: telefone e e-mail, nesta ordem. O rótulo
-   lido pelo leitor de tela acompanha cada um. */
+   lido pelo leitor de tela acompanha cada um. Pedido do cliente, 2026-08-05:
+   o telefone leva ao WhatsApp, não ao discador. */
+const msgWhatsapp = encodeURIComponent('Olá! Gostaria de conversar com a equipe da Tobias Advogados.');
+const whatsappHref = `https://wa.me/${config.telefonePrincipal.href.replace(/\D/g, '')}?text=${msgWhatsapp}`;
 const canais = [
   {
     texto: config.telefonePrincipal.texto,
-    href: `tel:${config.telefonePrincipal.href}`,
+    href: whatsappHref,
     rotulo: t['contato.telefone'],
+    externo: true,
   },
   { texto: config.email, href: `mailto:${config.email}`, rotulo: t['contato.email'] },
 ];
@@ -66,7 +70,11 @@ const canais = [
             {
               canais.map((canal) => (
                 <li class="dado__item dado__item--traco">
-                  <a class="dado__canal" href={canal.href}>
+                  <a
+                    class="dado__canal"
+                    href={canal.href}
+                    {...(canal.externo ? { target: '_blank', rel: 'noopener' } : {})}
+                  >
                     <span class="sr-only">{canal.rotulo}</span>
                     {canal.texto}
                   </a>
@@ -77,23 +85,6 @@ const canais = [
         </div>
       </address>
 
-      {/*
-        O "Localização" do rodapé mira aqui — é a única âncora da página que não
-        é uma seção inteira.
-
-        `loading="lazy"` porque o mapa é o fim de uma página longa: quem nunca
-        chega aqui não paga pelos scripts do Google. As medidas do trecho que o
-        Maps entrega (`width`/`height`/`style`) ficam de fora — tamanho mora no
-        CSS, em `rem`, senão sai da escala fluida.
-      */}
-      <iframe
-        id="localizacao"
-        class="cartao-info__mapa"
-        src={config.mapaEmbed}
-        title={faleConosco.mapaTitulo}
-        loading="lazy"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen></iframe>
     </div>
   </div>
 
@@ -344,22 +335,4 @@ const canais = [
     text-underline-offset: 0.25em;
   }
 
-  /*
-   * O mapa atravessa o bloco inteiro (#181:22 é `fill` e o card perdeu o padding
-   * lateral): 980px na largura de projeto, e a altura é a do arquivo.
-   *
-   * `display: block` não é enfeite — iframe nasce `inline`, e o reset só endireita
-   * `img/picture/svg/video`. Como linha de texto, ele ganharia o descender embaixo:
-   * uma fresta de ~4px bem onde a borda do mapa é quem fecha o card.
-   *
-   * Rolagem: com o ponteiro sobre o mapa a roda pertence ao iframe, então o Lenis
-   * não vê o gesto e a página anda pelo scroll nativo, sem a inércia. É o preço de
-   * qualquer embed do Maps, e é mais barato que o JS que evitaria isso.
-   */
-  .cartao-info__mapa {
-    display: block;
-    width: 100%;
-    height: 14.0625rem; /* 225px */
-    border: 0;
-  }
 </style>

@@ -27,25 +27,50 @@
   --cor-terracota: #7a3225; /* seção Thiago */
   --cor-bege: #bca780; /* footer */
   --cor-menta: #eef6f4; /* fundos alternados (história, contato) */
-  --cor-cinza-claro: #dce4e2; /* bordas do grid de clientes */
-  --cor-cinza-borda: #bdbdbd; /* divisórias dos campos do formulário */
+  /* Este cinza é SÓ da parede de clientes (#76:181 e irmãos) — o Figma o
+     confirma lá e em nenhum outro lugar. As divisas das Áreas, do card do
+     Fale conosco e dos campos do formulário são o `--cor-cinza-divisa`
+     abaixo; usá-lo aqui foi um engano que durou até 2026-08-06. */
+  --cor-cinza-claro: #dce4e2;
+  /*
+   * A divisa de 1px que abre os cartões das Áreas (#105:76), o card do Fale
+   * conosco (#161:446) e cada campo do formulário (#85:299): as três são o
+   * MESMO cinza no arquivo. Um token só para as três, então.
+   */
+  --cor-cinza-divisa: #ebebeb;
+  /* Só a lista de países do telefone, que é acréscimo nosso e não tem nó no
+     Figma para copiar. */
+  --cor-cinza-borda: #bdbdbd;
   --cor-branco: #ffffff;
   /*
-   * Preto puro em todo texto e traço escuro.
+   * O preto do arquivo — todo texto escuro, a faixa da matéria, o bloco da
+   * apresentação e o botão Enviar são este mesmo `#171717`.
    *
-   * DIVERGE DO FIGMA de propósito: no arquivo o corpo usa #031E21 (petróleo
-   * escuro) e só o header e o footer usam preto. A decisão foi unificar em
-   * preto — por isso não existe mais `--cor-petroleo-escuro`. Se algum dia o
-   * petróleo voltar, ele volta como token novo; não reaproveite este.
+   * Já foi `#000000` puro, por uma decisão de unificar quando o arquivo ainda
+   * misturava preto com o petróleo escuro `#031E21`. Em 2026-08-06 o Figma
+   * voltou a ser fonte da verdade e o `#171717` venceu; se o petróleo escuro
+   * um dia voltar, ele volta como token novo, não reaproveite este.
    */
-  --cor-preto: #000000;
+  --cor-preto: #171717;
 
-  /* Ponto de partida da revelação do manifesto — o mesmo preto a 20%. Era
-     rgba(3, 30, 33, .2), o petróleo escuro; acompanhou a troca para não deixar
-     um resto de verde aparecendo no trecho ainda apagado do texto. */
-  --cor-texto-fraco: rgba(0, 0, 0, 0.2);
-  --cor-texto-footer: rgba(0, 0, 0, 0.5);
-  --cor-borda-sutil: rgba(0, 0, 0, 0.15);
+  /* Ponto de partida da revelação do manifesto — o mesmo preto a 20%. */
+  --cor-texto-fraco: rgba(23, 23, 23, 0.2);
+  /* Os dois saem literalmente do rodapé no arquivo: os links e o copyright a
+     0.5 (#52:148), os traços da navegação a 0.15 (#77:292). */
+  --cor-texto-footer: rgba(23, 23, 23, 0.5);
+  --cor-borda-sutil: rgba(23, 23, 23, 0.15);
+
+  /*
+   * O cinza dos textos de apoio — a chamada do manifesto (#105:228), o rótulo
+   * dos clientes (#152:369), os das duas Áreas (#152:372, #218:128), o do Fale
+   * conosco (#161:441) e a navegação do header (#155:419).
+   *
+   * COR, e não preto com opacidade: os cinco nós têm fill sólido `#848484`, e
+   * o par `--cor-preto` + `opacity: .83` que existia aqui até 2026-08-06
+   * pintava ~#2B2B2B, escuro demais. Cor também não tira o texto da camada de
+   * fundo — a mesma razão que fez o hover do rodapé deixar de ser `opacity`.
+   */
+  --cor-apoio: #848484;
 
   /* --- Tipografia ---
    * --fonte-display e --fonte-corpo são geradas pela API de fontes do Astro
@@ -56,20 +81,20 @@
 
   /* Escala display (Noto Serif KR) — o valor de line-height e letter-spacing
    * varia por tamanho no Figma, por isso cada degrau carrega os três juntos. */
-  --texto-hero: 400 4.75rem / 1.03 var(--fonte-display); /* 76px */
+  --texto-hero: 400 4.3125rem / 1.1 var(--fonte-display); /* 69px (#35:96) */
   --texto-hero-ls: -0.05em;
 
-  --texto-hero-aparte: 500 1.125rem / 1.5 var(--fonte-corpo); /* 18px */
+  /*
+   * 400, e não o 500 de antes: no arquivo (#35:98) o nó é Semi Bold 600 e o
+   * run do MEIO desce para Regular 400 — ou seja, o peso normal do parágrafo é
+   * 400 e os trechos marcados é que sobem. Como o Portable Text do Sanity marca
+   * `strong` exatamente nesses trechos e o `<strong>` já é 600, o token
+   * descreve o trecho não marcado.
+   */
+  --texto-hero-aparte: 400 1.125rem / 1.5 var(--fonte-corpo); /* 18px */
   --texto-hero-link: 500 1.125rem / 1.2 var(--fonte-corpo); /* 18px */
 
-  --texto-d2: 500 3rem / 1.1 var(--fonte-display); /* 48px — nomes dos sócios */
-  --texto-d2-ls: -0.05em;
-
-  --texto-d3: 500 2rem / 1.25 var(--fonte-display); /* 32px display */
-  --texto-d3-ls: -0.04em;
-
-  /* 24px — título dos cartões das áreas (#105:77). Entrelinha 1.24, e não a
-     1.25 do d3: o arquivo traz os dois valores, cada um no seu degrau. */
+  /* 24px — título dos cartões das áreas (#105:77). */
   --texto-d4: 500 1.5rem / 1.24 var(--fonte-display);
   --texto-d4-ls: -0.04em;
 
@@ -81,7 +106,10 @@
    * escrevia o próprio valor solto; os quatro convergem para o mesmo degrau.
    */
   --texto-titulo-secao: 500 3.625rem / 1.1 var(--fonte-display); /* 58px */
-  --texto-titulo-secao-ls: -0.07em;
+  /* -0.06em nos quatro títulos que o arquivo revisou (#105:51, #105:194,
+     #161:443, #63:89). O título do Sobre (#185:95) ficou em -0.07 e é o único
+     — vai como regra local em `.sobre__titulo`, não como token. */
+  --texto-titulo-secao-ls: -0.06em;
 
   /* O manifesto é Inter, não a serifada: no Figma (#62:3) o estilo base do nó
      diz Noto Serif KR, mas todos os runs sobrescrevem a família para Inter,
@@ -89,19 +117,23 @@
      sobrescrevem — fica o Medium 500 do estilo base. */
   --texto-manifesto: 500 2rem / 1.25 var(--fonte-corpo); /* 32px */
 
-  /* Texto de apoio das colunas laterais — a chamada do manifesto (#105:228) e o
-     rótulo dos clientes (#152:369) usam exatamente o mesmo estilo, sempre a
-     0.83 de opacidade. Entrelinha apertada porque são uma ou duas linhas. */
-  --texto-apoio: 500 1.25rem / 1.1 var(--fonte-corpo); /* 20px */
-  --texto-apoio-ls: -0.05em;
-  --opacidade-apoio: 0.83;
+  /*
+   * Texto de apoio das colunas laterais. Os cinco nós — chamada do manifesto
+   * (#105:228), rótulo dos clientes (#152:369), das duas Áreas (#152:372,
+   * #218:128) e do Fale conosco (#161:441) — declaram exatamente o mesmo
+   * estilo. Era 500/1.1/-0.05em até 2026-08-06, quando o designer padronizou
+   * os cinco. A cor é o `--cor-apoio`, lá em cima.
+   */
+  --texto-apoio: 400 1.25rem / 1.25 var(--fonte-corpo); /* 20px */
+  --texto-apoio-ls: -0.04em;
 
-  /* Menu do header (#155:419) */
-  --texto-menu: 500 0.875rem / 1.2 var(--fonte-corpo); /* 14px */
-  --texto-menu-ls: -0.04em;
+  /* Menu do header (#155:419) — Semi Bold, e o tracking é próprio: -0.03em,
+     não os -0.04 do resto do site. O CTA ao lado (#155:407) é Medium/-0.04 e
+     por isso NÃO herda este token. */
+  --texto-menu: 600 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+  --texto-menu-ls: -0.03em;
 
   /* Escala de corpo (Inter) */
-  --texto-c1: 500 1.5rem / 1.5 var(--fonte-corpo); /* 24px — história */
   /* 18px — corpo do Sobre e das bios. Regular; a frase de abertura de cada bio
      é o único trecho em 600 (é run próprio no Figma, não o estilo base). */
   --texto-c2: 400 1.125rem / 1.5 var(--fonte-corpo);

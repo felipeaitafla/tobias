@@ -79,8 +79,7 @@ const { manifesto } = Astro.props;
     max-width: 15.875rem; /* 254px */
     font: var(--texto-apoio);
     letter-spacing: var(--texto-apoio-ls);
-    color: var(--cor-preto);
-    opacity: var(--opacidade-apoio);
+    color: var(--cor-apoio);
   }
 
   .manifesto__texto {
@@ -88,11 +87,11 @@ const { manifesto } = Astro.props;
        importam: o de fora posiciona a coluna, o de dentro define a quebra de
        linha — e também até onde o gradiente da revelação vai.
 
-       702px, e não os 697px do Figma: o Chrome mede as mesmas linhas uns 4px
-       mais largas que o Figma, e em 697 "multiplicar" caía para a linha
-       seguinte, mudando todo o parágrafo. Entre 699 e 706 as quebras batem com
-       o arquivo; 702 fica no meio dessa folga. */
-    --largura-texto: 43.875rem; /* 702px */
+       655px é o que o arquivo desenha desde a revisão de 2026-08-06 (era 697).
+       O Chrome mede as mesmas linhas uns 4px mais largas que o Figma, então a
+       folga de sempre pode ser necessária — confira as quebras contra o nó
+       antes de mexer, e lembre que o texto também mudou nesta leva. */
+    --largura-texto: 40.9375rem; /* 655px */
 
     display: flex;
     flex: 0 1 54.25rem; /* 868px */

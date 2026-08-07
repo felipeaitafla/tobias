@@ -2,6 +2,7 @@ import { configuracoes } from './configuracoes';
 import { pagina } from './pagina';
 import {
   areaAtuacao,
+  chamadaMateria,
   cliente,
   grupoAreas,
   link,
@@ -16,6 +17,7 @@ export const schemaTypes = [
   configuracoes,
   // Objetos
   areaAtuacao,
+  chamadaMateria,
   cliente,
   grupoAreas,
   link,

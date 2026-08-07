@@ -211,27 +211,33 @@ const trechos = hero.aparte?.[0]?.children ?? [];
 
   .hero__titulo {
     flex: 1 1 30rem;
-    max-width: 53.125rem; /* 850px */
+    max-width: 54.25rem; /* 868px (#35:96) */
     font: var(--texto-hero);
     letter-spacing: var(--texto-hero-ls);
-    /* O min() só age em telas estreitas: em 1446px 4.75rem (76px) vence,
+    /* O min() só age em telas estreitas: em 1446px 4.3125rem (69px) vence,
        e a proporção do Figma fica intacta de 720p a 2K. Abaixo disso o
        11vw impede que a palavra mais longa estoure a tela. */
-    font-size: min(4.75rem, 11vw);
+    font-size: min(4.3125rem, 11vw);
   }
 
   .hero__aparte {
     display: flex;
-    /* O Figma marca 337px, mas nessa largura o parágrafo quebra em 4 linhas no
-       Chrome em vez das 3 do desenho — o texto ocupa 2,88 linhas e a quebra
-       gulosa desperdiça o resto. Vira em 343px; 348px dá margem para variação
-       entre navegadores. Diferença de 3% em relação ao arquivo. */
-    flex: 0 1 21.75rem; /* 348px */
+    /* 305px (#35:97), medido no Chrome depois da revisão de 2026-08-06 — a
+       coluna encolheu (era 337 no arquivo, 348 aqui) e o texto do aparte mudou
+       junto, então a folga que existia para segurar a terceira linha foi
+       recalculada, não herdada. Confira a quebra antes de mexer neste número. */
+    flex: 0 1 19.0625rem; /* 305px */
     flex-direction: column;
     gap: 2rem; /* 32px */
   }
 
   .hero__resumo {
+    /* A COLUNA tem 305px (#35:97), mas o nó de texto dentro dela tem 289
+       (#35:98) — o designer deixou 16px de folga de propósito, e é o 289 que
+       decide onde o parágrafo quebra (4 linhas no arquivo). `max-width` e não
+       `width`: abaixo da largura de projeto a coluna encolhe e o texto tem que
+       acompanhar. */
+    max-width: 18.0625rem; /* 289px */
     font: var(--texto-hero-aparte);
     letter-spacing: var(--texto-corpo-ls);
     color: rgba(255, 255, 255, 0.72);

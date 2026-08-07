@@ -37,7 +37,43 @@ const LARGURAS_FOTO = [722, 1444];
 const SIZES_FOTO = '50vw';
 
 const fotoEscritorio = imagem(historia.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
-const logoValor = imagem(materia.logo, { larguras: [105, 210], sizes: '105px' });
+/*
+ * O logo do Valor NÃO tem 86px de largura fixa — ele escala junto com o resto
+ * do site. `.materia__logo` pede `5.375rem`, e a fonte-raiz é
+ * `clamp(0.75rem, 1.1065vw, 1.75rem)`, ou seja `clamp(12px, 1.1065vw, 28px)`.
+ * Multiplicando: o logo mede de 64,5px (no piso do clamp) a 150,5px (no teto,
+ * ~2530px de tela), passando por 86 na largura de projeto.
+ *
+ * O `sizes` PRECISA dizer isso. Com o `'86px'` que estava aqui, numa tela 2K o
+ * navegador pedia 86px para desenhar 150 — e o logo saía borrado mesmo com
+ * arquivo bom. Se algum navegador não entender o `clamp()`, ele cai no padrão
+ * de 100vw e escolhe o maior candidato: um PNG de 4 KB, prejuízo nenhum.
+ *
+ * 164 e não 172 no segundo candidato porque é a largura real do arquivo no
+ * Sanity — pedir mais que isso faz a CDN ampliar, que é exatamente o defeito
+ * que a troca de 2026-08-06 veio consertar (o asset antigo tinha 105px, e a
+ * tela 2× pedia 172: 64% de ampliação).
+ */
+const logoValor = imagem(materia.logo, {
+  larguras: [86, 164],
+  sizes: 'clamp(64.5px, 5.95vw, 150.5px)',
+});
+
+/*
+ * A chamada da matéria é Portable Text de um bloco só (#185:104 tem três pesos
+ * na mesma frase). Mesmo tratamento do aparte do hero: percorrer os `children`
+ * basta, sem `astro-portabletext` — dois decoradores não justificam a
+ * dependência.
+ *
+ * Ela vem da `historia`, e não de `configuracoes` junto com o resto da matéria:
+ * o veículo, o PDF e o logo são os mesmos nos dois idiomas, mas esta frase é
+ * prosa NOSSA sobre a matéria, e um leitor inglês precisa dela em inglês. Antes
+ * de 2026-08-07 ela morava em `configuracoes`, e o efeito era exatamente esse:
+ * a página inglesa saía inteira em inglês, com esta única faixa em português.
+ */
+const chamadaMateria = historia.materiaChamada?.[0]?.children ?? [];
+/* O `title` do iframe é atributo, então precisa da frase em texto puro. */
+const chamadaTexto = chamadaMateria.map((t) => t.text).join('');
 
 /* O aviso do formato só existe para o leitor de tela; o número de páginas vem
    das configurações, que é onde mora o dado do arquivo. */
@@ -75,7 +111,24 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
           height={logoValor.height}
           alt={materia.veiculo}
         />
-        <span class="materia__chamada">{materia.chamada}</span>
+        {/*
+          Mesma renderização do aparte do hero: Portable Text de um bloco só,
+          percorrendo os `children`. Aqui são DUAS marcas em vez de uma, porque
+          o nó do Figma tem três pesos (ver `chamadaMateria` no Studio).
+        */}
+        <span class="materia__chamada">
+          {
+            chamadaMateria.map((trecho) =>
+              trecho.marks?.includes('nome') ? (
+                <strong class="materia__nome">{trecho.text}</strong>
+              ) : trecho.marks?.includes('leve') ? (
+                <span class="materia__leve">{trecho.text}</span>
+              ) : (
+                trecho.text
+              ),
+            )
+          }
+        </span>
       </span>
       <Mais class="materia__icone" />
       <span class="sr-only" id="materia-formato">{avisoFormato}</span>
@@ -101,7 +154,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
         <iframe
           class="materia__pdf"
           src={`${materia.arquivo}#toolbar=0&navpanes=0&view=FitH`}
-          title={`${materia.veiculo}: ${materia.chamada}`}
+          title={`${materia.veiculo}: ${chamadaTexto}`}
           loading="lazy"></iframe>
       </div>
     </div>
@@ -332,7 +385,14 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
        lado. Continua quebrando em três depois da troca para 58px. */
     max-width: 27.75rem;
     font: var(--texto-titulo-secao);
-    letter-spacing: var(--texto-titulo-secao-ls);
+    /*
+     * -0.07em, e NÃO o `--texto-titulo-secao-ls` (que foi a -0.06 em
+     * 2026-08-06). Este título é o único dos cinco que o arquivo deixou em
+     * -0.07 (#185:95) — os outros quatro (as duas Áreas, o Fale conosco e o
+     * formulário) desceram juntos. Não é deslize daqui, é o que o arquivo
+     * desenha; se um dia os cinco convergirem, esta linha some.
+     */
+    letter-spacing: -0.07em;
     /*
      * A CAIXA do nó de texto da Noto Serif KR é maior que a `line-height`
      * declarada — sem compensar, a última linha some sob o que vem depois.
@@ -470,36 +530,99 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     color: var(--cor-branco);
   }
 
+  /*
+   * 24px de vão, e não os 32 do arquivo (#185:99) — decisão de 2026-08-06.
+   *
+   * A conta do Figma não sobra: a caixa do texto fica com 350px e a tinta da
+   * primeira linha mede 350,67, ou seja, o arquivo roda a linha até passar da
+   * borda. O Chrome precisa de ~2,5px a mais que isso para a mesma frase
+   * ("colabora" cai para a linha 2 e a faixa vai a três linhas), e a nossa
+   * faixa ainda tem 723px em vez de 724 — que é o preço, já documentado, de
+   * usar 50% para as divisas das faixas se encontrarem em qualquer largura.
+   *
+   * Os 8px saem DAQUI porque este é o único valor de puro respiro do grupo:
+   * mexer no padding de 96 desalinharia o logo com a coluna de texto acima, e
+   * mexer no logo ou no ícone mudaria medida de desenho. A folga que sobra
+   * ainda aguenta o texto crescer alguns caracteres sem voltar a quebrar.
+   */
   .materia__fonte {
     display: flex;
     align-items: center;
-    gap: 2rem; /* 32px */
+    gap: 1.5rem; /* 24px — ver acima; o arquivo pede 32 */
   }
 
   .materia__logo {
     flex-shrink: 0;
-    /* 105px (#185:101) — o arquivo de origem tem exatamente essa largura, então
-       aqui não há redução nem ampliação. */
-    width: 6.5625rem;
+    /* 86px (#185:101, redesenhado em 2026-08-06 — eram 105). O hover NÃO mexe
+       no tamanho: as duas variantes do componente declaram a mesma medida. */
+    width: 5.375rem;
     height: auto;
   }
 
+  /*
+   * SEM `max-width`, desde 2026-08-06: no arquivo este nó é `fill` (#185:104),
+   * não largura fixa — os 350px que estavam escritos aqui eram o RESULTADO da
+   * conta (468 − 86 − 32), não uma medida do desenho. Enquanto os dois números
+   * batiam, tanto fazia; quando o vão ao lado mudou para abrir espaço, o
+   * `max-width` virou o gargalo e a caixa não cresceu junto. Deixe a coluna
+   * decidir, como o arquivo faz.
+   */
   .materia__chamada {
     /*
-     * 350px no Figma (atualizado 2026-08-05, antes era 232): com a fonte menor
-     * e o novo texto da chamada, a largura que cabia antes não cabe mais — e a
-     * faixa preta ficava com 3 linhas em vez das 2 do arquivo. O valor certo é
-     * o que sobra depois do logo e do gap no Frame 84 (468 − 86 − 32 = 350).
+     * 12px, e o arquivo pede 13 (#185:104) — pedido do cliente, 2026-08-06,
+     * para ganhar largura na zona morta entre ~700 e 1084px, onde o `clamp()`
+     * já travou a fonte mas a faixa continua encolhendo com os 50% da tela.
+     * Ver a nota da quebra em duas linhas, mais abaixo.
      */
-    max-width: 21.875rem;
-    font: 500 0.8125rem / 1.26 var(--fonte-corpo); /* 13px Medium */
-    letter-spacing: var(--texto-corpo-ls);
+    font: 500 0.75rem / 1.26 var(--fonte-corpo); /* 12px Medium */
+    /*
+     * -0.02em, e NÃO o `--texto-corpo-ls` (-0.04) que estava aqui até
+     * 2026-08-06.
+     *
+     * É a armadilha do run do Figma ao contrário, e ela custou caro: o
+     * `textStyle` BASE do nó (#185:104) diz -0.04em, mas os TRÊS runs
+     * sobrescrevem para -0.02 — ou seja, o valor da base nunca chega a ser
+     * pintado. Ler só a base põe a frase 13px mais estreita do que o desenho
+     * numa linha de 350. Medido contra o render do nó: a -0.04 a linha 1 saía
+     * com 337,5 contra os 350,7 do arquivo; a -0.02, 350,2.
+     */
+    letter-spacing: -0.02em;
+  }
+
+  /*
+   * Os três pesos da frase (#185:104). A base é o Medium 500 acima; estas duas
+   * regras são os dois runs que divergem dela.
+   */
+
+  /*
+   * SEM ITÁLICO, e isso é decisão do cliente (2026-08-06) contra o arquivo, que
+   * escreve o nome em Bold Italic.
+   *
+   * O motivo é medido: a face itálica de verdade (Fontsource) sai 2,91px mais
+   * larga que a inclinação sintetizada e ~1,5px mais larga do que o Figma
+   * desenha — versões diferentes do Inter. Com ela, "colabora" não cabia mais
+   * na primeira linha, a chamada ia a três linhas e a faixa preta subia de
+   * 128,7px para 145,1 (o arquivo desenha 128). Entre reproduzir o itálico e
+   * reproduzir a quebra em duas linhas, o cliente escolheu a quebra.
+   *
+   * 600 e não 700: é o peso de destaque que o site já carrega
+   * (`--peso-destaque`), então o nome continua saltando da frase sem custar
+   * arquivo de fonte novo. Pedir 700 traria o mesmo problema de largura de
+   * volta, e ainda um .woff2 a mais.
+   */
+  .materia__nome {
+    font-weight: var(--peso-destaque);
+  }
+
+  /* O trecho depois do nome volta a Regular (#185:104, run ts3). */
+  .materia__leve {
+    font-weight: 400;
   }
 
   .materia__icone {
     flex-shrink: 0;
-    width: 2.25rem; /* 36px */
-    height: 2.25rem;
+    width: 2rem; /* 32px (#185:105) */
+    height: 2rem;
     /* 0.63 (#185:105): o ícone recua em relação à chamada, que está a 0.8. */
     color: rgba(255, 255, 255, 0.63);
     transition: color 0.2s ease;
@@ -608,11 +731,12 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     }
   }
 
+  /* Sem `gap`: a fileira é `space-between` no arquivo (#212:70) e o texto tem
+     `max-width` própria, então o respiro até o ícone é a sobra, não um número. */
   .apresentacao__chamada {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.625rem; /* 10px (#212:77 Frame 83) */
   }
 
   .apresentacao__texto {

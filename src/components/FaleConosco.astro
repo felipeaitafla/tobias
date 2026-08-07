@@ -139,8 +139,7 @@ const canais = [
     display: none;
     font: var(--texto-apoio);
     letter-spacing: var(--texto-apoio-ls);
-    color: var(--cor-preto);
-    opacity: var(--opacidade-apoio);
+    color: var(--cor-apoio);
   }
 
   @media (max-width: 700px) {
@@ -188,8 +187,13 @@ const canais = [
     /* `RIGHT` no arquivo (#161:441): a coluna fica à direita do conteúdo e o
        texto encosta na margem da seção, não na divisa com o card. */
     text-align: right;
-    color: var(--cor-preto);
-    opacity: var(--opacidade-apoio);
+    /*
+     * O mesmo cinza dos outros quatro rótulos de apoio. O nó traz `#848484`
+     * MAIS `opacity: .7`, o que deixaria só este mais claro que os irmãos —
+     * trato como sobra de edição e sigo o padrão dos cinco. Se o designer
+     * quiser mesmo o recuo extra, é aqui que ele entra.
+     */
+    color: var(--cor-apoio);
   }
 
   /* Pedido do cliente, 2026-07-31: a coluna grudada só existe no desktop —
@@ -205,18 +209,17 @@ const canais = [
    *
    * Traço SÓ EM CIMA (`strokeWeight: 1px 0px 0px` em #161:446): não é caixa
    * fechada nem par de réguas, é uma régua só, abrindo o bloco embaixo do
-   * título. Embaixo quem fecha é a borda do próprio mapa.
+   * título. Nada fecha embaixo — o card termina no fim dos dados.
    *
    * O padding também é só em cima: o recuo de 32px que era do card inteiro
-   * passou a ser da fileira de dados (#181:26), e o mapa foi para a largura
-   * cheia da coluna.
+   * passou a ser da fileira de dados (#181:26).
    */
   .cartao-info {
     display: flex;
     flex-direction: column;
     gap: 2rem; /* 32px */
     padding-top: 2rem;
-    border-top: 1px solid var(--cor-cinza-claro);
+    border-top: 1px solid var(--cor-cinza-divisa);
   }
 
   .cartao-info__dados {
@@ -230,8 +233,8 @@ const canais = [
        empilhado. */
     flex-wrap: wrap;
     row-gap: 2rem;
-    /* O recuo que antes era do card (#181:26). Só à esquerda: o mapa embaixo
-       vai de ponta a ponta. */
+    /* O recuo que antes era do card (#181:26), e que ficou só à esquerda
+       quando o card deixou de ser caixa fechada. */
     padding-left: 2rem;
     /* `<address>` nasce em itálico no navegador. */
     font-style: normal;

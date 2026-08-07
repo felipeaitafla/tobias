@@ -184,6 +184,15 @@ export const pagina = defineType({
               !v || String(v).includes('{paginas}') ? true : 'Precisa conter `{paginas}`.',
             ),
         }),
+        defineField({
+          name: 'materiaChamada',
+          title: 'Chamada da matéria',
+          type: 'chamadaMateria',
+          description:
+            'A frase da faixa preta, sobre a matéria do Valor. Use aspas curvas e hífen normal — o texto do site do jornal vem com espaços incolapsáveis e hífen invisível. ' +
+            'Marque o nome do sócio com "Nome" e o trecho depois dele com "Leve": é o que o desenho pede. ' +
+            'Cuidado com o comprimento: a faixa é desenhada para DUAS linhas, e uma frase mais longa a faz crescer.',
+        }),
       ],
     }),
     defineField({
@@ -230,13 +239,6 @@ export const pagina = defineType({
           of: [defineArrayMember({ type: 'string' })],
           description: 'Uma linha por item. Ex.: "Seg a Sex" e "9h - 18h". Isto se traduz.',
         }),
-        defineField({
-          name: 'mapaTitulo',
-          title: 'Nome acessível do mapa',
-          type: 'string',
-          description:
-            'O que o leitor de tela anuncia no lugar do mapa. A URL do embed fica em Configurações.',
-        }),
       ],
     }),
     defineField({
@@ -246,13 +248,6 @@ export const pagina = defineType({
       group: 'contato',
       fields: [
         defineField({ name: 'titulo', title: 'Título', type: 'string' }),
-        defineField({
-          name: 'eixos',
-          title: 'Eixos',
-          type: 'array',
-          of: [defineArrayMember({ type: 'string' })],
-          description: 'A fileira sob o título. O ponto separador é desenho, não texto.',
-        }),
         defineField({
           name: 'campos',
           title: 'Rótulos dos campos',

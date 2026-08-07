@@ -1,14 +1,20 @@
 ---
 import Assinatura from '../assets/logos/assinatura-horizontal-positivo.svg';
 import Whatsapp from '../assets/icones/whatsapp.svg';
+import Globo from '../assets/icones/idioma-globo.svg';
+import Seta from '../assets/icones/idioma-chevron.svg';
+
+import { IDIOMAS, NOMES_IDIOMA, caminhoDe, textos } from '../lib/interface';
 
 interface Props {
   navegacao: { _key: string; texto: string; href: string }[];
   whatsapp: string;
   whatsappTexto: string;
+  idioma: string;
 }
 
-const { navegacao, whatsapp, whatsappTexto } = Astro.props;
+const { navegacao, whatsapp, whatsappTexto, idioma } = Astro.props;
+const t = textos(idioma);
 ---
 
 <header class="cabecalho">
@@ -20,13 +26,65 @@ const { navegacao, whatsapp, whatsappTexto } = Astro.props;
     {navegacao.map((item) => <a href={item.href}>{item.texto}</a>)}
   </nav>
 
-  <a class="cabecalho__zap" href={whatsapp} target="_blank" rel="noopener noreferrer">
-    <Whatsapp class="cabecalho__icone" />
-    {/* Pedido do cliente, 2026-07-31: some no mobile, fica só o ícone — mas
-        continua lido por quem usa leitor de tela (`.sr-only`, e não
-        `display: none`, que apagaria o nome acessível do link). */}
-    <span class="cabecalho__zap-texto">{whatsappTexto}</span>
-  </a>
+  {/*
+    O grupo da direita (#261:86): seletor de idioma e CTA, 32px entre eles.
+    Até 2026-08-06 o CTA era filho direto do header — o designer o embrulhou
+    junto com o seletor, e reaproveitou os nós: #155:405 e #155:407 ERAM o CTA
+    de WhatsApp e hoje são o seletor. Não se guie pelo número do nó aqui.
+  */}
+  <div class="cabecalho__acoes">
+    {/*
+      Seletor de idioma. `<details>` e nada mais: o chevron do arquivo promete
+      uma lista, e uma lista de verdade sai daqui sem uma linha de JS — com
+      teclado, foco e o estado "expandido" anunciado pelo leitor de tela de
+      graça. Uma lista montada à mão precisaria de JS e de um punhado de ARIA
+      para chegar no mesmo lugar, que é o mesmo critério do `<select>` do
+      formulário.
+
+      O preço, assumido: sem JS ela não fecha ao clicar fora — fecha no próprio
+      botão, no Esc, ou escolhendo um idioma. Para um menu de dois itens que
+      leva a outra página, é barato.
+    */}
+    <details class="idioma">
+      <summary class="idioma__atual">
+        <Globo class="idioma__globo" aria-hidden="true" />
+        {/* O leitor de tela ouve "Escolher idioma: Português"; a tela mostra só
+            o nome. Rótulo em `.sr-only` em vez de `aria-label` no summary,
+            que SUBSTITUIRIA o texto visível em vez de acrescentar. */}
+        <span class="sr-only">{t['idioma.escolher']}: </span>
+        <span>{NOMES_IDIOMA[idioma as keyof typeof NOMES_IDIOMA]}</span>
+        <Seta class="idioma__seta" aria-hidden="true" />
+      </summary>
+
+      <ul class="idioma__lista">
+        {
+          IDIOMAS.map((id) => (
+            <li>
+              {/* `lang` e `hreflang`: sem eles o leitor de tela lê "English"
+                  com a fonética portuguesa, e o buscador não sabe para onde
+                  o link vai. */}
+              <a
+                href={caminhoDe(id)}
+                lang={id}
+                hreflang={id}
+                aria-current={id === idioma ? 'true' : undefined}
+              >
+                {NOMES_IDIOMA[id]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+
+    <a class="cabecalho__zap" href={whatsapp} target="_blank" rel="noopener noreferrer">
+      <Whatsapp class="cabecalho__icone" />
+      {/* Pedido do cliente, 2026-07-31: some no mobile, fica só o ícone — mas
+          continua lido por quem usa leitor de tela (`.sr-only`, e não
+          `display: none`, que apagaria o nome acessível do link). */}
+      <span class="cabecalho__zap-texto">{whatsappTexto}</span>
+    </a>
+  </div>
 </header>
 
 <style>
@@ -60,32 +118,191 @@ const { navegacao, whatsapp, whatsappTexto } = Astro.props;
 
   .cabecalho__assinatura {
     display: block;
-    width: 9rem; /* 144px */
+    width: 7.6619rem; /* 122,59px (#155:404) */
     height: auto;
   }
 
   .cabecalho__nav {
     display: flex;
-    gap: 2rem; /* 32px */
+    gap: 1.5rem; /* 24px */
+    /* O cinza de apoio (#155:419) — a navegação recua em relação ao CTA, que é
+       o único texto preto do header. */
+    color: var(--cor-apoio);
   }
 
+  .cabecalho__nav a {
+    /* Só a cor muda no hover; declarar aqui evita que a transição herde de um
+       ancestral e pegue outras propriedades junto. */
+    transition: color 0.2s ease;
+  }
+
+  /* O CTA não herda `--texto-menu`: no arquivo (#155:407) ele é Medium com o
+     tracking de corpo, enquanto a navegação ao lado é Semi Bold a -0.03em. */
   .cabecalho__zap {
     display: flex;
     align-items: center;
-    gap: 0.6875rem; /* 11px */
+    gap: 0.5rem; /* 8px */
+    font-weight: 500;
+    letter-spacing: var(--texto-corpo-ls);
+    transition: color 0.2s ease;
   }
 
   .cabecalho__icone {
-    width: 0.9375rem; /* 15px */
+    width: 0.75rem; /* 12px */
     height: auto;
   }
 
-  /* `(hover: hover)`: sem a guarda, um toque em tela sensível deixava a
-     opacidade "grudada" até o próximo toque em outro lugar. */
+  /* --- Seletor de idioma (#261:86, #155:405) --- */
+
+  .cabecalho__acoes {
+    display: flex;
+    align-items: center;
+    gap: 2rem; /* 32px, #261:86 */
+    /* Estica junto com o `.idioma` lá dentro: o `stretch` dele só alcança a
+       altura DESTE grupo, e centralizado aqui o grupo teria a altura do texto.
+       Os filhos continuam centrados pelo `align-items` acima. */
+    align-self: stretch;
+  }
+
+  /*
+   * `align-self: stretch` e flex por dentro: sem isso a caixa do `<details>`
+   * tem a altura do TEXTO (14,39px), não a da fileira, e a lista — que abre a
+   * partir do rodapé dessa caixa — nascia 3,22px acima da borda de baixo do
+   * header, cobrindo um trecho de 90px dela. Esticando, os 100% passam a ser
+   * a fileira inteira e a conta do `top` fecha sozinha.
+   */
+  .idioma {
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+
+  /*
+   * O `<summary>` nasce `display: list-item` e com marcador. `list-style` mata
+   * o do padrão e o `::-webkit-details-marker` mata o do Safari, que ignora o
+   * primeiro. Sem os dois sobra um triângulo do navegador ao lado do chevron
+   * do arquivo.
+   */
+  .idioma__atual {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* 8px, #155:405 */
+    list-style: none;
+    cursor: pointer;
+    /* Medium com o tracking de corpo (#155:407) — o mesmo par do CTA ao lado,
+       e não o 600/-0.03em que `--texto-menu` dá à navegação. */
+    font-weight: 500;
+    letter-spacing: var(--texto-corpo-ls);
+    transition: color 0.2s ease;
+  }
+
+  .idioma__atual::-webkit-details-marker {
+    display: none;
+  }
+
+  .idioma__globo {
+    width: 0.71875rem; /* 11,5px (#261:53) — o SVG exporta 12 e o arquivo pede 11,5 */
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  .idioma__seta {
+    width: 0.4375rem; /* 7px (#261:88) */
+    height: auto;
+    flex-shrink: 0;
+    transition: rotate 0.2s ease;
+  }
+
+  .idioma[open] .idioma__seta {
+    rotate: 180deg;
+  }
+
+  /*
+   * A lista aberta NÃO existe no Figma — o arquivo só desenha o estado
+   * fechado. Vestida com o que o header já usa: o mesmo `#e8e8e8` da borda de
+   * baixo e o mesmo corpo de 12px.
+   *
+   * Fundo SÓLIDO, ao contrário do header, que é translúcido com desfoque: a
+   * lista passa por cima do conteúdo da página, e a 85% o texto do site
+   * apareceria atrás dos nomes dos idiomas.
+   */
+  .idioma__lista {
+    position: absolute;
+    /* Rodapé da fileira + o padding de baixo do header + o 1px da borda dele:
+       a lista encosta EMBAIXO da linha do cabeçalho, sem cobri-la. */
+    top: calc(100% + 1rem + 1px);
+    left: 0;
+    z-index: 1;
+    min-width: 100%;
+    padding: 0.5rem 0;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    /* O reset do site não mexe em lista — cada componente zera a sua (mesmo
+       padrão do rodapé e do Fale conosco). Sem isto os marcadores caem FORA da
+       caixa, porque não há padding à esquerda para acomodá-los. */
+    list-style: none;
+  }
+
+  /*
+   * Esconder na mão, e não confiar no `<details>` fechado.
+   *
+   * Filho `position: absolute` ESCAPA do mecanismo com que o navegador oculta
+   * o conteúdo de um `<details>` fechado — medido aqui: a lista pintava por
+   * cima da página com o seletor fechado, em toda visita. O elemento sai do
+   * fluxo e deixa de ser recortado junto com o resto do conteúdo.
+   *
+   * `display: none` também tira os links do Tab, que é o que se espera de um
+   * menu fechado.
+   */
+  .idioma:not([open]) .idioma__lista {
+    display: none;
+  }
+
+  .idioma__lista a {
+    display: block;
+    padding: 0.375rem 1rem;
+    color: var(--cor-apoio);
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+
+  /* O idioma em que a pessoa já está: preto, como o hover da navegação. */
+  .idioma__lista a[aria-current] {
+    color: var(--cor-preto);
+  }
+
+  /*
+   * Hover: a navegação vai do cinza de apoio ao PRETO (pedido do cliente,
+   * 2026-08-06) — o inverso do rodapé, onde os links já nascem escuros e
+   * clareiam. Aqui eles nascem em `--cor-apoio` e acendem.
+   *
+   * COR, e nunca `opacity` — a mesma regra do menu do rodapé: elemento com
+   * `opacity < 1` ganha camada própria e perde a suavização por subpixel, e o
+   * texto parece mudar de espessura. O CTA ao lado troca de preto para o mesmo
+   * preto a 60%, que é exatamente o cinza que a opacidade pintava antes.
+   *
+   * `(hover: hover)`: sem a guarda, um toque em tela sensível deixava o estado
+   * "grudado" até o próximo toque em outro lugar.
+   */
   @media (hover: hover) {
-    .cabecalho__nav a:hover,
+    .cabecalho__nav a:hover {
+      color: var(--cor-preto);
+    }
+
     .cabecalho__zap:hover {
-      opacity: 0.6;
+      color: rgba(23, 23, 23, 0.6);
+    }
+
+    /* O rótulo do seletor já nasce preto (#155:407), então ele APAGA no hover,
+       como o CTA — enquanto a navegação e a lista, que nascem cinzas, acendem.
+       Cor com alfa, nunca `opacity`: ver a regra logo acima. */
+    .idioma__atual:hover {
+      color: rgba(23, 23, 23, 0.6);
+    }
+
+    .idioma__lista a:hover {
+      color: var(--cor-preto);
     }
   }
 
@@ -123,12 +340,13 @@ const { navegacao, whatsapp, whatsappTexto } = Astro.props;
     /* Pedido do cliente, 2026-07-31: ícone do WhatsApp na mesma altura do
        logo. Só `height`: o ícone é quadrado (viewBox 15×15) e a assinatura
        tem razão própria (1920×295,02 ≈ 6,506:1) — casar as DUAS medidas
-       deformaria um dos dois. `9rem × (295,02 ÷ 1920)`, a mesma conta que dá
-       a altura renderizada da assinatura ao lado, então os dois acompanham
-       juntos se a largura do logo mudar algum dia. */
+       deformaria um dos dois. `7.6619rem × (295,02 ÷ 1920)`, a mesma conta que
+       dá a altura renderizada da assinatura ao lado, então os dois acompanham
+       juntos se a largura do logo mudar algum dia (e ela mudou: 144 → 122,59
+       em 2026-08-06). */
     .cabecalho__icone {
       width: auto;
-      height: 1.3829rem; /* 9rem × 295,02/1920 */
+      height: 1.1773rem; /* 7.6619rem × 295,02/1920 */
     }
   }
 

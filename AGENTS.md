@@ -25,9 +25,15 @@ A página, na ordem em que aparece — cada nome é um componente em
 `Areas` (que já traz a `Divisoria` verde no meio) → `Divisoria` vermelha →
 `FaleConosco` → `Formulario` → `Rodape`
 
-A página está inteira. **Faltam as duas páginas que o rodapé aponta**,
+**São duas páginas desde 2026-08-07**, e o build gera as duas: o português em
+`/` e o inglês em `/en/`. A composição é a mesma — `src/pages/en/index.astro`
+tem as mesmas três linhas do da raiz, com outro `idioma`. O seletor de idioma
+vive no `Cabecalho` (ver a seção dele).
+
+As páginas estão inteiras. **Faltam as duas que o rodapé aponta**,
 `/termos-de-uso` e `/politica-de-privacidade` — os links já existem e hoje dão
-404. Falta também o `og:image`, com TODO em
+404 **nos dois idiomas** (os `href` não têm prefixo de idioma, então em `/en/`
+eles apontam para a raiz). Falta também o `og:image`, com TODO em
 [`Base.astro`](src/layouts/Base.astro).
 
 O formulário **envia** (FormSubmit, ver a seção dele) e tem as três faixas de
@@ -48,24 +54,44 @@ conferido com `grep` antes de excluir.
 Nada aqui é defeito de código — é conteúdo que depende de resposta do cliente
 antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
 
-- ~~**dois telefones diferentes** no arquivo~~ — **resolvido em 2026-08-05:**
-  os dois campos (`telefonePrincipal` e `telefoneRodape`) agora apontam para
-  o mesmo número (`+55 51 8194-6082`), e os dois links levam ao WhatsApp;
+- ~~**dois telefones diferentes** no arquivo~~ — **resolvido, e publicado em
+  2026-08-07.** Os dois campos (`telefonePrincipal` e `telefoneRodape`) apontam
+  para o mesmo número e os dois links levam ao WhatsApp. Faltava o 9 do celular
+  (`8194-6082` contra o `98194-6082` do Figma), e sem ele o link montava
+  `wa.me/555181946082` — dez dígitos, que não abrem conversa nenhuma. Fica como
+  alerta geral: **telefone errado aqui não quebra nada visível**, o link
+  continua bonito e clicável, e só quem clica descobre;
+- ~~**cinco textos do Sanity divergem do Figma**~~ — **publicados em
+  2026-08-07** (título e aparte do hero, os dois parágrafos do manifesto, o
+  rótulo dos clientes e o título da história). A descrição de SEO foi acertada
+  junto, que estava com a redação antiga do hero;
 - **o formulário envia para `felipe@aita.studio`**, que é endereço de teste do
   desenvolvedor, via FormSubmit — um serviço gratuito de terceiros. Trocar o
   destino é uma string; decidir se dado de quem procura advogado pode passar por
   terceiro é LGPD, e é conversa (ver a seção do formulário);
 - **três coisas na parede de logos** (os 36 chegaram em 2026-07-31, ver a seção
-  dos clientes): o Eko Residence aparece duas vezes no slide 3, a Ambev aparece
-  no slide 1 e de novo no slide 3 (no arquivo do Cargnelutti, que é co-marcado),
-  e Sayerlack e Minuano vêm com fundo colorido, lendo como azulejo na grade;
+  dos clientes): o Eko Residence aparece duas vezes, a Ambev aparece no primeiro
+  grupo e de novo no arquivo do Cargnelutti (que é co-marcado), e Sayerlack e
+  Minuano vêm com fundo colorido, lendo como azulejo na grade;
+- **falta o logo do Expresso Palmares.** O cliente pediu a nova ordem do
+  primeiro grupo em 2026-08-06 e ele é o 7º da lista — mas não está entre os 36
+  do Sanity nem entre os arquivos originais da migração
+  (`src/assets/clientes/slide-*`), conferido. A ordem foi aplicada com as oito
+  que existem, e o nono lugar ficou com o Magalu, que é quem vem a seguir. Com o
+  arquivo em mãos, é subir ao Sanity e inserir na 7ª posição da lista achatada;
 - **Instagram e LinkedIn ainda apontam para URLs de exemplo**
   (`instagram.com/`, `linkedin.com/`, sem o perfil) — o WhatsApp já foi
   corrigido para o número real em algum momento da migração. Os três vivem em
   `configuracoes` no Sanity agora, não em código — é o cliente (ou quem edita
   o Studio) quem troca, não é mais um TODO de desenvolvedor;
-- **`OAB/RS 00.000` no copyright do rodapé** é marcador do designer, não número
-  de inscrição. O CNPJ ao lado, esse, parece real;
+- ~~**`OAB/RS 00.000` no copyright do rodapé**~~ — **resolvido em 2026-08-07**,
+  agora é `OAB/RS sob o nº 61.313`. E o conserto expôs uma armadilha que
+  continua de pé: **o número vive em DOIS lugares.** Existe um campo
+  `configuracoes.oab` (e um `cnpj` ao lado), mas **nenhum componente os
+  renderiza** — a linha visível é um texto livre único, `rodape.copyright`, na
+  `pagina`, com o CNPJ e a OAB escritos por dentro. Editar só o campo do Studio
+  não muda o site. Ou o rodapé passa a montar a linha a partir dos campos, ou
+  eles saem do esquema; enquanto isso, quem mexer tem de mexer nos dois;
 - **a apresentação institucional tem 63 MB.** É o arquivo que o cliente mandou, e
   está no ar como veio. Ninguém baixa isso de celular — vale pedir uma versão
   comprimida antes do lançamento (a troca é no Studio, sem mexer em código);
@@ -91,13 +117,39 @@ resposta em inglês seria exatamente a mesma?**
 
 | documento | traduzido? | o que guarda |
 |---|---|---|
-| `configuracoes` | não | telefones, endereço, CNPJ, URL do mapa, os 36 logos de clientes, PDF e chamada da matéria, PDF da apresentação institucional, destino do formulário |
-| `pagina` (`pagina-pt-BR`, `pagina-en`) | sim | todo o texto, mais as fotos do hero, da história e dos sócios |
+| `configuracoes` | não | telefones, endereço, CNPJ, os 36 logos de clientes, o **PDF, o veículo e o logo** da matéria, PDF da apresentação institucional, destino do formulário |
+| `pagina` (`pagina-pt-BR`, `pagina-en`) | sim | todo o texto — inclusive a **chamada** da matéria —, mais as fotos do hero, da história e dos sócios |
 
 Sem essa divisa, traduzir a página duplicaria os 36 logos junto — trabalho
 repetido para o cliente e duas listas para sair de sincronia. Cuidado com os
-casos que **parecem** dado de contato e são texto: "Seg a Sex" e o nome acessível
-do mapa moram na `pagina`, não em `configuracoes`.
+casos que **parecem** dado de contato e são texto: "Seg a Sex" mora na `pagina`,
+não em `configuracoes`.
+
+#### A chamada da matéria já esteve do lado errado, e o sintoma demorou a aparecer
+
+Até 2026-08-07 a `chamada` morava em `configuracoes.materia`, com a
+justificativa escrita no esquema de que "a matéria é do Valor Econômico e
+continua em português na versão inglesa". **Isso vale para o PDF, não para a
+legenda:** a chamada é prosa NOSSA sobre a matéria, e um leitor inglês precisa
+dela em inglês.
+
+O defeito só ficou visível quando a página inglesa passou a existir — a página
+saía inteira em inglês com **uma única** faixa em português. Varrida a página
+`/en/` procurando português, era o único vazamento; todo o resto traduziu.
+
+Hoje ela é `pagina.historia.materiaChamada` (tipo `chamadaMateria`, o mesmo
+Portable Text de antes, com os decoradores `nome` e `leve`). O resto da matéria
+— `veiculo`, `paginas`, `logo`, `arquivo` — continua em `configuracoes`, porque
+aí sim a resposta em inglês é exatamente a mesma.
+
+**A migração teve de ser uma transação atômica.** Com o campo fora de
+`configuracoes` e ainda não presente na `pagina`, a legenda simplesmente some da
+faixa preta — não existe estado intermediário aceitável. As três mutações
+(gravar no pt, gravar no en, apagar de `configuracoes`) foram juntas.
+
+Vale como teste para o próximo campo duvidoso: **se o cliente leria a frase e a
+diria "errada" em inglês, ela traduz** — mesmo que o objeto ao redor não
+traduza.
 
 Duas decisões de modelagem que valem lembrar:
 
@@ -221,6 +273,27 @@ máquina ou desta sessão, o caminho normal (`mcp__Sanity__patch_documents` /
 `publish_documents`) volta a ser mais simples que montar a chamada HTTP à
 mão — vale testar primeiro antes de repetir este workaround.
 
+#### Armadilha: abrir o documento no Studio cria rascunho, e rascunho velho ressuscita campo apagado
+
+Em 2026-08-07, logo depois de migrar a chamada da matéria, apareceu um
+`drafts.configuracoes` que não existia minutos antes. Ele não tinha edição
+nenhuma do usuário — nasceu de **abrir** o documento no Studio, que já basta.
+
+O problema é o que ele carregava: a `materia.chamada` **antiga**, porque foi
+tirado do estado anterior à migração. Um Publish nesse rascunho devolveria o
+campo órfão a `configuracoes`, desfazendo metade do trabalho — sem quebrar a
+página, e por isso mesmo sem ninguém perceber.
+
+Duas lições:
+
+- **depois de qualquer migração estrutural, confira se sobrou rascunho:**
+  `*[_id in path("drafts.**")]._id`. Rascunho anterior à mudança é uma bomba
+  relógio, não um resto inofensivo;
+- **antes de descartar, compare rascunho contra publicado campo a campo.** Aqui
+  a única diferença era o campo obsoleto, então descartar não perdeu nada — mas
+  isso é conclusão de comparação, não suposição. O `_system.base.rev` do
+  rascunho diz de qual revisão ele saiu, e é o jeito rápido de datar.
+
 ### Roteamento i18n
 
 Português na **raiz**, inglês em **`/en/`** (`prefixDefaultLocale: false`). A
@@ -231,7 +304,75 @@ Não remova essas tags achando que são enfeite.
 
 A composição inteira mora em [`Site.astro`](src/layouts/Site.astro), que recebe
 `idioma`, faz **uma** consulta e desce tudo por props. Por isso
-`src/pages/index.astro` tem três linhas, e a rota inglesa vai ter as mesmas.
+`src/pages/index.astro` tem três linhas — e
+[`src/pages/en/index.astro`](src/pages/en/index.astro), criada em 2026-08-07,
+tem as mesmas três, só trocando o `idioma`. A promessa se cumpriu: a segunda
+língua custou uma linha de rota e nada mais.
+
+**A ordem entre publicar e criar a rota não é negociável.** O build lê só
+documento publicado, então criar `src/pages/en/index.astro` com o `pagina-en`
+ainda em rascunho **quebra o build** — `buscarConteudo('en')` não acha documento
+com `language == "en"` e lança. Não é um 404 elegante, é build vermelho.
+Publique primeiro.
+
+O `caminhoDe` que monta a rota de cada idioma mora em
+[`interface.ts`](src/lib/interface.ts), e não no layout, porque **dois** lugares
+precisam da mesma conta: o `hreflang`/canonical do `Base.astro` e o seletor de
+idioma do `Cabecalho`. Duas cópias divergiriam na primeira vez que alguém
+acertasse uma só.
+
+### O seletor de idioma é `<details>`, e sem uma linha de JS
+
+Nós do Figma: `261:86` é o grupo da direita (seletor + CTA, 32px entre eles),
+`155:405` é o seletor — globo `261:53` (11,5px), o rótulo `155:407` e o chevron
+`261:88` (7×4). **Cuidado com esses números:** `155:405` e `155:407` ERAM o CTA
+de WhatsApp e o designer os reaproveitou para o seletor em 2026-08-06; o CTA
+mudou para `261:93`. Não se guie pelo número do nó sozinho.
+
+**O arquivo desenha só o estado fechado.** A lista aberta foi vestida com o que
+o header já usa (o mesmo `#e8e8e8` da borda de baixo, o mesmo corpo de 12px), e
+o fundo dela é **sólido**, ao contrário do header, que é translúcido com
+desfoque: a lista passa por cima do conteúdo da página e a 85% o texto do site
+apareceria atrás dos nomes dos idiomas.
+
+`<details>` foi escolha do cliente entre quatro opções, e o critério é o mesmo
+do `<select>` do formulário: uma lista montada à mão precisaria de JS e de um
+punhado de ARIA para chegar no mesmo lugar. O preço assumido é que **sem JS ela
+não fecha ao clicar fora** — fecha no próprio botão, no Esc, ou escolhendo um
+idioma.
+
+Os nomes dos idiomas ficam em `NOMES_IDIOMA`, no `interface.ts`, escritos **no
+próprio idioma** ("Português", nunca "Portuguese"): quem procura a versão
+portuguesa não lê inglês para achá-la. Não vão para o Sanity pela mesma razão de
+`studio/idiomas.ts` — a lista não muda sem alguém mexer no roteamento junto.
+
+#### Duas armadilhas do `<details>`, e as duas só apareceram medindo
+
+- **Filho `position: absolute` ESCAPA da ocultação nativa.** A lista pintava por
+  cima da página com o seletor fechado, em toda visita — o elemento sai do fluxo
+  e deixa de ser recortado junto com o resto do conteúdo. A correção é
+  `.idioma:not([open]) .idioma__lista { display: none }`, explícito, que de
+  quebra tira os links do Tab. **Não confie no `<details>` fechado para esconder
+  um absoluto**; e não confie em olhar a tela, porque com o header ainda no alto
+  a lista cai fora da captura.
+
+- **O `align-self: stretch` precisa começar no ancestral certo.** A lista abre a
+  partir do rodapé da caixa do `<details>`, e essa caixa tinha a altura do TEXTO
+  (14,39px), não da fileira — então a lista nascia 3,22px acima da borda de baixo
+  do header e cobria um trecho de 90px dela. Esticar só o `.idioma` não bastou:
+  `.cabecalho__acoes` é ele próprio um item centralizado, então o `stretch` do
+  filho só alcançava a altura DELE. Com os dois esticados a conta fecha e a lista
+  encosta exato (medido: folga 0).
+
+Medido contra o arquivo em 1446px: gap do grupo 32px, gap interno 8px, rótulo
+Medium 500 / 12px / −0,48px, cor `rgb(23,23,23)`, globo 11,48px, chevron
+6,98×3,98. Fechado, a lista não tem caixa e os links não recebem foco; aberto,
+os dois invertem e o chevron vira 180°.
+
+**Para medir o header, role a página antes.** Ele nasce escondido
+(`translateY(-100%)`) e só desce depois que o hero sai da tela — na rolagem 0 o
+`getBoundingClientRect()` dele devolve `bottom: 0` e todo número relativo sai
+errado.
 
 ### Strings de interface não vão para o Sanity
 
@@ -318,6 +459,51 @@ filho**: os dois parágrafos são um nó de texto só, separados por `\n\n`. O g
 nunca chega a ser aplicado — quem separa os parágrafos é a linha em branco, 40px,
 uma `line-height` inteira. Antes de virar `gap` no CSS, veja quantos filhos o frame
 tem de verdade.
+
+### A leva de 2026-08-06: o designer padronizou, e três tokens mudaram de natureza
+
+Varredura nó a nó do frame inteiro contra o código. A maior parte da leva não foi
+seção por seção — foi **token**, e é por isso que vale registrar aqui e não em
+cada componente:
+
+- **`--cor-apoio: #848484` no lugar de `--opacidade-apoio: 0.83`.** Os cinco
+  rótulos de apoio (chamada do manifesto `105:228`, rótulo dos clientes
+  `152:369`, das duas Áreas `152:372` e `218:128`, do Fale conosco `161:441`)
+  passaram a declarar o mesmo fill sólido. O par preto + 0.83 que existia aqui
+  pintava ~`#2B2B2B` — escuro demais, e ainda tirava o texto da camada de fundo
+  (a mesma razão que já tinha feito o hover do rodapé deixar de ser `opacity`).
+  O token de fonte veio junto: `400 20px/1.25`, `-0.04em`, contra os
+  `500 20px/1.1`, `-0.05em` de antes;
+- **`--cor-cinza-divisa: #ebebeb` é diferente de `--cor-cinza-claro: #dce4e2`,
+  e a divisa entre os dois é literal.** O `#dce4e2` é **só** da parede de
+  clientes (`76:181`); as divisas dos cartões das Áreas, do card do Fale conosco
+  e dos campos do formulário são `#ebebeb`. Usar um pelo outro foi o engano que
+  esta leva desfez. `--cor-cinza-borda: #bdbdbd` sobrou para a lista de países
+  do telefone, que é acréscimo nosso e não tem nó para copiar;
+- **`--cor-preto` virou `#171717`.** Decisão do cliente nesta leva: o arquivo
+  usa esse quase-preto em todo texto escuro, na faixa da matéria, no bloco da
+  apresentação e no botão Enviar. Era `#000` puro por uma decisão antiga de
+  unificar, de quando o arquivo ainda misturava preto com o petróleo escuro
+  `#031E21`. Os derivados acompanharam (`--cor-texto-fraco`,
+  `--cor-texto-footer`, `--cor-borda-sutil`), e o hover do botão Enviar teve
+  que subir de `#1a1a1a` para `#2b2b2b` — contra `#171717` o valor antigo era
+  invisível.
+
+Três diferenças que o arquivo tem consigo mesmo e que o código reproduz de
+propósito, cada uma com comentário no lugar:
+
+1. **o título do Sobre (`185:95`) ficou em `-0.07em`** enquanto os outros quatro
+   títulos de seção desceram para `-0.06`. Por isso `--texto-titulo-secao-ls` é
+   `-0.06` e `.sobre__titulo` tem regra local;
+2. **o rótulo do Fale conosco tem `opacity: 0.7` além do fill `#848484`**, o que
+   o deixaria mais claro que os quatro irmãos. Tratado como sobra de edição;
+3. **os dois grupos de Áreas têm `gap` diferente** (32 no primeiro, 64 no
+   segundo) e só o primeiro tem os 12px de padding no rótulo.
+
+O que **não** foi revertido, embora o arquivo discorde: o `letter-spacing` de
+-0.03em nas descrições dos cartões, a borda na célula vazia das Áreas e todo o
+comportamento do breakpoint de 700px. São pedidos do cliente que continuam
+valendo — ver cada seção.
 
 ## Escala fluida — sem breakpoints
 
@@ -444,6 +630,14 @@ provider: fontProviders.fontsource()   // NÃO google()
 Com `fontProviders.google()` a Noto Serif KR sai com **373 `@font-face`, 122
 arquivos e 6.1 MB**, hangul incluído. `subsets: ['latin']` não adianta (já é o
 padrão) e `unicodeRange` também não. Fontsource resolve: 6 arquivos, 128 KB.
+
+**Cada família precisa do seu `<Font>` no `Base.astro`.** Configurar em
+`astro.config.mjs` e esquecer a linha do layout faz a família existir no build —
+o `.woff2` chega a ser copiado para `dist/` — sem que o `@font-face` e a variável
+CSS cheguem à página. O sintoma é silencioso: o navegador **sintetiza** o que
+falta (inclina a fonte reta para fingir itálico, trava o peso no mais pesado
+carregado) e nada no console avisa. Conferir com `document.fonts` no navegador,
+não com o número de arquivos em `dist/`.
 
 E o `preload` do componente `<Font>` **precisa ser filtrado**:
 
@@ -572,12 +766,137 @@ O PDF fica em `public/`, não em `src/assets/`: é documento para abrir e baixar
 como está, não imagem para o Astro reprocessar.
 
 **O logo do Valor não muda de tamanho no hover**, e isso é para continuar assim.
-As duas variantes do componente (`185:101` e `185:117`) declaram 105×36, que é a
-medida nativa do PNG — daí o CSS pedir `width: 105px` com `flex-shrink: 0` e
-nenhuma regra de hover que toque no tamanho. Medido nos dois estados: 104,98 ×
-35,98 em ambos. A única diferença que sobra entre as variantes é o respiro até a
-chamada (32px no normal, 24 no hover); parece sobra de edição, não desenho, e
-aqui ficam 32 nos dois.
+As duas variantes do componente (`185:101` e `185:117`) declaram a mesma medida,
+daí o CSS pedir uma largura fixa com `flex-shrink: 0` e nenhuma regra de hover
+que toque no tamanho. **Em 2026-08-06 essa medida encolheu de 105×36 para
+86×29,49** — o designer redesenhou o nó, e o número deixou de ser a medida nativa
+do PNG. Ele aparece em dois lugares que precisam andar juntos: o `width` do CSS e
+o `larguras`/`sizes` do `imagem()` no frontmatter. A conta da chamada ao lado
+(468 − 86 − 32 = 350) já era feita com 86; era o CSS que estava fora.
+
+A única diferença que sobra entre as variantes é o respiro até a chamada (32px no
+normal, 24 no hover); parece sobra de edição, não desenho, e aqui ficam 24 nos
+dois — ver a seção da chamada, logo abaixo, para por que 24 e não 32.
+
+**O arquivo do logo precisa ser maior que a medida de exibição, e o `sizes`
+precisa contar a verdade.** Até 2026-08-06 o asset no Sanity tinha 105×36 —
+exatamente o tamanho de exibição na largura de projeto —, então qualquer tela 2×
+pedia 172px de uma fonte de 105 e a CDN ampliava: o cliente viu como
+pixelização. Trocado por um de 164×56.
+
+E o `sizes` dizia `'86px'`, que é falso: `.materia__logo` pede `5.375rem`, e com
+a fonte-raiz em `clamp(12px, 1.1065vw, 28px)` o logo mede de **64,5 a 150,5px**
+conforme a tela. Numa tela 2K o navegador pedia 86px para desenhar 150 — borrado
+mesmo com arquivo bom. Agora é `clamp(64.5px, 5.95vw, 150.5px)`.
+
+Vale para qualquer imagem de largura fixa em `rem` neste site: **`sizes` com um
+px cravado está errado por construção**, porque nada aqui tem largura cravada —
+tudo escala com o `clamp()` da raiz.
+
+#### A chamada da matéria: três pesos, e a armadilha do run AO CONTRÁRIO
+
+O nó `185:104` é o texto mais denso do site, e cada camada dele custou medição.
+
+**O `letter-spacing` é -0.02em, não os -0.04 que a base declara.** Esta é a
+armadilha do run (ver "o run só carrega o que ele sobrescreve", acima) na direção
+que ninguém espera: o `textStyle` base do nó diz `-0.04em`, mas os **três** runs
+sobrescrevem para `-0.02` — o valor da base nunca chega a ser pintado. Ler só a
+base põe a frase 13px mais estreita numa linha de 350. Medido contra o render do
+nó: a -0.04 a linha 1 saía com 337,5 contra os 350,7 do arquivo; a -0.02, 350,2.
+**Quando TODOS os runs sobrescrevem uma propriedade, o valor da base é ruído.**
+
+**São três pesos numa frase só:**
+
+| trecho | peso |
+|---|---|
+| "Representando o Sulpetro," | Medium 500 (a base) |
+| "Thiago Tobias Bezerra" | negrito (o arquivo pede Bold Italic 700) |
+| "colabora para reduzir…" | Regular 400 |
+
+Confirmado no pixel, achando os vãos entre palavras no render exportado: a
+abertura termina em x=157,33, e a 500 o Chrome dá 157,1 contra 155,2 a 400. A
+linha 2, que é toda Regular, mede 317,67 no arquivo — a 400 dá 319,3, a 500 daria
+321,9.
+
+Por isso `historia.materiaChamada` é **Portable Text** (tipo `chamadaMateria` no
+Studio), com dois decoradores — `nome` e `leve`, os dois desvios em relação à
+base. Mesmo padrão do aparte do hero, e pelo mesmo motivo: peso é marca DENTRO
+da frase. (Ela morou em `configuracoes.materia.chamada` até 2026-08-07 — ver "A
+chamada da matéria já esteve do lado errado", na seção do Sanity.)
+
+**O itálico saiu, por decisão do cliente (2026-08-06), e a razão é medida.**
+Carregar a face itálica de verdade custava pouco (uma entrada própria no
+`astro.config.mjs`, 1 arquivo e 28 KB — a API do Astro faz produto cruzado de
+pesos × estilos, então pedir 700+itálico na entrada normal geraria 8 arquivos no
+lugar de 3). O problema não era o peso do download: **a face itálica do
+Fontsource sai 2,91px mais larga que a inclinação sintetizada, e ~1,5px mais
+larga do que o Figma desenha** — versões diferentes do Inter. Com ela, "colabora"
+não cabia mais na primeira linha, a chamada ia a três linhas e a faixa preta
+subia de 128,7px para 145,1 (o arquivo desenha 128). Entre reproduzir o itálico e
+reproduzir a quebra em duas linhas, o cliente escolheu a quebra. O nome ficou em
+600, que é o `--peso-destaque` que o site já carrega.
+
+**A caixa do texto não tem `max-width`, e o vão até o logo é 24 e não 32.** No
+arquivo o nó é `fill` (#185:104): os 350px que já estiveram escritos aqui eram o
+RESULTADO da conta (468 − 86 − 32), não medida de desenho — e quando o vão ao
+lado mudou, o `max-width` virou gargalo e a caixa não cresceu junto. Os 8px do
+vão são o que compra a segunda linha: a conta do Figma não sobra (caixa de 350
+para uma tinta de 350,67 — o arquivo roda a linha até passar da borda), o Chrome
+precisa de ~2,5px a mais para a mesma frase, e a nossa faixa ainda tem 723px em
+vez de 724, que é o preço já conhecido de usar 50%. Saíram do vão porque é o
+único valor de puro respiro do grupo: mexer no padding de 96 desalinharia o logo
+com a coluna de texto acima, e mexer no logo ou no ícone mudaria medida de
+desenho.
+
+**A fonte é 12px, e o arquivo pede 13** (pedido do cliente, 2026-08-06). O
+motivo era ganhar largura na zona morta descrita abaixo. Ganhou pouco: o limite
+das 2 linhas desceu de 1084px para ~1040 — 44px de faixa a mais. E na largura de
+projeto a quebra **deixou de coincidir com a do render**: com a fonte menor,
+"para" sobe para a primeira linha, enquanto o arquivo quebra depois de
+"colabora". Duas linhas continuam sendo duas linhas, e a faixa mede 127,95
+contra os 128 do arquivo.
+
+#### A zona morta entre ~1040 e 700px
+
+A chamada quebra em 3, 4, 5 linhas nessa faixa, e **não é problema da caixa de
+texto** — é a assimetria que o `clamp()` cria:
+
+| viewport | caixa tem | texto precisa |
+|---|---|---|
+| 1084 | 267,5 | 268,8 |
+| 1000 | 225,5 | 268,8 |
+| 900 | 175,5 | 268,8 |
+| 800 | 125,5 | 268,8 |
+
+Abaixo de 1084px a fonte-raiz trava em 12px, então o texto para de encolher —
+mas `.materia` continua sendo **50% da viewport** e some largura. Aos 1000px a
+faixa inteira tem 500px, e padding (72×2) + logo (64,5) + vãos (42) + ícone (24)
+já ocupam 274,5. Não existem 43px para tirar sem desalinhar o logo da coluna de
+texto acima, que hoje bate em 0,8px em toda a faixa. Abaixo de 700px o problema
+some sozinho: o breakpoint mobile põe a faixa em 100% e sobram 468px.
+
+Aumentar a largura da caixa não resolve, e reduzir a fonte quase não resolve —
+os dois já foram tentados e medidos. O que resolve na faixa inteira é **encurtar
+a chamada**, que é uma linha de texto no Studio.
+
+**Com o inglês, cada língua tem a sua zona morta**, e a inglesa começa antes
+(medido em 2026-08-07, com a chamada de 115 caracteres contra os 107 do
+português):
+
+| viewport | PT | EN |
+|---|---|---|
+| **1446** (projeto) | **2 linhas, faixa 127,95px** | **2 linhas, faixa 127,95px** |
+| 1200 | 2 | 2 |
+| 1040 | 2 | 3 |
+| 900 | 3 | 4 |
+| 800 | 5 | 5 |
+
+Na largura de projeto as duas saem idênticas e batem com os 128px do arquivo — a
+linha inglesa mais longa mede 307,84px numa caixa de 357,09, com 49px de folga.
+O inglês só degrada um degrau antes na descida, o que é o mesmo defeito
+estrutural, não uma regressão. **Ao traduzir esta frase para uma terceira
+língua, meça as duas coisas:** o número de linhas em 1446px (tem de ser 2) e a
+altura da faixa (tem de ser ~128px).
 
 ### O bloco de download da apresentação, na faixa do Thiago
 
@@ -798,6 +1117,51 @@ contrário.
 `muted` é obrigatório — sem ele nenhum navegador libera `autoplay` — e
 `playsinline` evita o iOS abrir o vídeo em tela cheia sozinho.
 
+**O vídeo NÃO está no Sanity, e isso é decisão, não esquecimento.** Ele é o
+único pedaço de conteúdo visível que o cliente não edita sozinho, contra a
+premissa do resto do projeto. A razão: a CDN da Sanity redimensiona imagem, mas
+**não transcodifica vídeo**. Um campo de upload livre significa que um dia
+alguém sobe o ProRes de 692 MB e o site passa a servir isso no topo da página,
+sem nada no caminho para impedir. Se um dia virar campo, que venha com validação
+de tamanho.
+
+#### A escada de resolução, medida (2026-08-07)
+
+O material é uma montagem de três planos em 10s — Porto Alegre do alto
+(Gasômetro, Guaíba, Beira-Rio), um skyline ao anoitecer e uma travessia urbana.
+Três cortes, muito detalhe fino e um degradê de céu inteiro: não é o caso fácil
+que "vídeo de fundo" sugere.
+
+Todos no mesmo `-preset slow -crf 26`, SSIM contra o ProRes exibido a 4K, e a
+coluna que importa é a **com o véu** — a faixa por cima do vídeo vai de 53% de
+preto no topo a **preto total** embaixo, então metade da imagem é invisível e o
+topo é visto a ~47%:
+
+| versão | tamanho | SSIM cru | SSIM com véu |
+|---|---|---|---|
+| 720p | 2,03 MB | 0,9568 | — |
+| **1080p (no ar)** | 4,04 MB | 0,9728 | 0,9853 |
+| 1440p | 6,46 MB | 0,9794 | 0,9887 |
+| 2160p | 13,20 MB | 0,9849 | 0,9917 |
+| 1440p a CRF 20 | 16,55 MB | 0,9867 | — |
+
+O véu corta os dois degraus pela metade, **por igual** — ele não penaliza a alta
+resolução em particular. O argumento contra o 4K é preço: ele entrega
+praticamente o mesmo incremento que o degrau anterior (+0,0030 contra +0,0034)
+por **2,8× os bytes**.
+
+**E há um limite de mecanismo que decide sozinho:** `<video>` não tem
+`srcset`/`sizes`. O que existe é `media` no `<source>`, e ele funciona — testado
+no Chrome — mas com duas propriedades que importam: a seleção é feita **uma vez,
+na carga** (redimensionar não troca de arquivo), e a media query lê **pixels
+CSS**. Um 27" 4K na escala de fábrica reporta **1920 CSS px**, indistinguível de
+um 1080p real. Ou seja: o "monitor bom e caro" que justificaria o 4K é
+exatamente o que a media query não sabe identificar.
+
+Recomendação registrada, ainda não executada: **720p abaixo de 700px, 1440p
+acima** — o corte cai de graça no único breakpoint que o site já tem. Mobile pela
+metade, desktop com o degrau que rende, nenhum 4K que não se consegue endereçar.
+
 ### Parallax e revelação por rolagem
 
 Usam `animation-timeline` (`scroll()` no hero, `view()` no manifesto). Sem suporte
@@ -961,12 +1325,16 @@ de altura cada uma (64 + 300 + 64), e é `box-sizing: content-box` que faz a
 conta fechar, porque a altura declarada é a da tinta.
 
 A vermelha é o **espelho horizontal** da verde: mesmos `y`, `x` refletidos em
-torno de 2304. E **diverge do Figma** na cor: no arquivo ela é `#C1503B`, um
-tijolo mais claro que não aparece em nenhum outro lugar do site; aqui usa a
-terracota da marca (`#7A3225`, a mesma da faixa do Thiago). As duas cores moram
-dentro dos SVGs porque eles entram como `background-image`, e imagem externa
-não herda `currentColor` nem enxerga variável de CSS — se um token de cor
-mudar, os arquivos têm que ser editados junto.
+torno de 2304. A cor dela é o `#C1503B` do arquivo — um tijolo mais claro que não
+aparece em nenhum outro lugar do site, e é isso mesmo. Até 2026-08-06 ela usava a
+terracota da marca (`#7A3225`, a da faixa do Thiago), por uma decisão daqui; o
+cliente a reverteu quando o Figma voltou a valer como fonte da verdade.
+
+As duas cores moram dentro dos SVGs porque eles entram como `background-image`, e
+imagem externa não herda `currentColor` nem enxerga variável de CSS. Consequência
+prática: **a vermelha não tem token nenhum**, e mudar a cor dela é editar
+`divisoria-vermelho-loop.svg`. Se um token de cor mudar, os arquivos têm que ser
+editados junto.
 
 Cada arquivo traz seis cópias do leque de barras posicionadas **à mão** — o
 passo entre elas varia de 375,6 a 384,1px. Como a faixa é sangrada e a tela
@@ -1182,18 +1550,21 @@ dois frames irmãos com a divisória no meio (`54:179`, `161:433`, `105:191`). A
 
 Três consequências que valem lembrar antes de mexer:
 
-- **o respiro é assimétrico e espelhado.** O primeiro bloco abre com 128 e fecha
-  com 64; o segundo faz o inverso. Somados aos 64+64 da faixa, é isso que dá o
-  ritmo do arquivo. Nenhum dos dois usa o `.secao` padrão;
+- **o respiro é assimétrico e espelhado, e o `gap` também.** O primeiro bloco
+  abre com 128 e fecha com 64; o segundo faz o inverso. Somados aos 64+64 da
+  faixa, é isso que dá o ritmo do arquivo. Nenhum dos dois usa o `.secao`
+  padrão. Desde 2026-08-06 o **gap entre rótulo e grade** também difere: 32px
+  no primeiro (`54:179`), 64 no segundo (`105:191`) — assimetria do arquivo,
+  não deslize;
 - **o rótulo grudado, no desktop, percorre os dois grupos — não só o
-  primeiro.** No arquivo o frame dele (`154:384`) vive só dentro de `areas-1`,
-  mas o cliente pediu em 2026-07-31 que o segundo grupo tivesse o mesmo
-  tratamento (sticky, à esquerda), em vez do chapéu que uma correção anterior
-  havia posto nos dois — ver a seção do chapéu mobile, abaixo, para o motivo
-  de existirem os dois. Quem segura os 980px no lugar certo, nos dois grupos,
-  é o `justify-content: flex-end` da seção — sem ele o grupo encostaria à
-  esquerda e as duas grades sairiam desalinhadas. Conferido: as duas colunas
-  começam em x = 402,03;
+  primeiro.** O cliente pediu isso em 2026-07-31, quando o arquivo tinha a
+  coluna só em `areas-1` (`154:384`); em 2026-08-06 **o designer incorporou o
+  rótulo do segundo grupo ao arquivo** (`218:128`), então não é mais acréscimo
+  nosso. Uma diferença sobrou: o do primeiro grupo tem os 12px de padding do
+  frame, o do segundo é nó de texto solto e não tem — daí o
+  `.areas--fecho .areas__rotulo { padding-top: 0 }`. Quem segura os 980px no
+  lugar certo, nos dois grupos, é o `justify-content: flex-end` da seção — sem
+  ele o grupo encostaria à esquerda e as duas grades sairiam desalinhadas;
 - **a marcação dos cartões fica em um lugar só.** As duas seções saem do mesmo
   laço, e o que os índices decidem é o que existe em cada ponta (rótulo e
   âncora no primeiro, faixa antes do segundo). Quando o Sanity entrar, é um
@@ -1215,7 +1586,10 @@ em cima de uma correção, e vale registrar a volta:
    assimetria do Figma;
 3. o cliente corrigiu: o chapéu é comportamento **só de mobile**; no
    desktop os dois grupos precisam do sticky lateral, igual, sem exceção
-   para o segundo.
+   para o segundo;
+4. em 2026-08-06 o designer deu razão a ele e pôs o rótulo do segundo grupo
+   no arquivo (`218:128`). O código não mudou por causa disso — a
+   divergência é que deixou de existir.
 
 A solução final são as **duas marcações, sempre presentes, alternando por
 media query** — o mesmo padrão de outras seções (ver "Strings de interface"
@@ -1303,27 +1677,43 @@ Mais duas coisas mudaram na segunda leva do mesmo dia:
 - **os blocos trocaram de ordem**: endereço → horário → canais. Antes o horário
   fechava a fileira.
 
-### O mapa foi removido (2026-08-05)
+### O mapa foi removido (2026-08-05), e apagado de vez em 2026-08-07
 
 Pedido do cliente: o mapa do Google Maps que ficava embaixo dos dados de contato
-foi removido do `FaleConosco.astro`. O campo `config.mapaEmbed` continua no
-Sanity (não foi apagado), mas o componente não o renderiza mais. O CSS da
-classe `.cartao-info__mapa` foi removido junto. Com isso saiu também o
-`id="localizacao"` que o rodapé mirava — o link "Localização" agora aponta
-para `#contato`, a seção inteira.
+saiu do `FaleConosco.astro`, junto com o CSS da classe `.cartao-info__mapa`. Com
+isso saiu também o `id="localizacao"` que o rodapé mirava — o link "Localização"
+aponta para `#contato`, a seção inteira.
+
+Em **2026-08-07** foram embora os restos, que eram três e viviam em lugares
+diferentes: `configuracoes.mapaEmbed` (dado, esquema e projeção),
+`pagina.faleConosco.mapaTitulo` (o nome acessível do mapa, que era texto
+traduzido), e os comentários do `FaleConosco.astro` que ainda explicavam padding
+e borda **pelo mapa** — "embaixo quem fecha é a borda do próprio mapa" descrevia
+um elemento que não existia mais havia dois dias.
+
+Uma coisa que parece do mapa e **não é**: o ícone `MapaPino`, importado no
+`FaleConosco.astro`, é o pino do **endereço**, um dos três blocos de dados. Esse
+fica.
 
 ### Os telefones agora são WhatsApp (2026-08-05)
 
 Pedido do cliente: **os dois campos de telefone** (`telefonePrincipal` e
-`telefoneRodape`) apontam para o mesmo número (`+55 51 8194-6082`), e os dois
-links levam ao WhatsApp (`wa.me/…?text=…`), não ao discador (`tel:`). A
-mensagem pré-preenchida é "Olá! Gostaria de conversar com a equipe da Tobias
-Advogados." e é construída no frontmatter de cada componente com
-`encodeURIComponent`. Os links abrem em nova aba (`target="_blank"`,
-`rel="noopener"`).
+`telefoneRodape`) apontam para o mesmo número, e os dois links levam ao WhatsApp
+(`wa.me/…?text=…`), não ao discador (`tel:`). A mensagem pré-preenchida é "Olá!
+Gostaria de conversar com a equipe da Tobias Advogados." e é construída no
+frontmatter de cada componente com `encodeURIComponent`. Os links abrem em nova
+aba (`target="_blank"`, `rel="noopener"`).
 
 Isso resolveu o bloqueio de lançamento dos "dois telefones diferentes" — agora
 são o mesmo número nos dois lugares.
+
+**E o número estava errado até 2026-08-06:** faltava o 9 do celular. O Figma
+escreve `+55 51 98194-6082` nos dois nós (`181:24` e `52:131`); o Sanity guardava
+`8194-6082`, e o `href.replace(/\D/g, '')` que monta o link produzia
+`wa.me/555181946082` — dez dígitos, número que o WhatsApp não abre. Vale como
+alerta geral: **um telefone errado aqui não quebra nada visível**, o link
+continua bonito e clicável, e só quem clica descobre. Corrigido e **publicado em
+2026-08-07**.
 
 ### O rótulo mudou de lado
 
@@ -1369,19 +1759,20 @@ cor do texto e a escala fluida.
 Rolagem linear, sem freio: a seção mora dentro da `.camada-contato`, que não
 publica nem consome `view-timeline` (ver a seção das camadas).
 
-### A coluna da esquerda mudou em 2026-07-30
+### A coluna da esquerda é só o título
 
-Os quatro eixos (TEMPO • EMPRESA • PATRIMÔNIO • FAMÍLIA) **subiram**: moravam no
-pé da coluna, e agora formam um bloco só com o título (`76:248`), 12px abaixo
-dele. O parágrafo de apoio que ficava ali ("Fale conosco preenchendo o
-formulário…") **saiu do arquivo** e foi removido junto — os eixos ocuparam o
-lugar dele. Eles também afinaram: Regular 400 em vez de Semi Bold, e 0.33 de
-preto em vez de 0.59.
+**Os quatro eixos (TEMPO • EMPRESA • PATRIMÔNIO • FAMÍLIA) não existem mais.** O
+cliente pediu que saíssem em 2026-07-31 e o componente os removeu na hora; em
+2026-08-06 o arquivo acompanhou — `63:80` tem um filho só, o título. O parágrafo
+de apoio que morava ali ("Fale conosco preenchendo o formulário…") já tinha saído
+antes, na revisão de 2026-07-30.
 
-A fileira antiga (`63:81`) continua no Figma, mas com **tinta transparente** —
-o designer escondeu em vez de apagar. Não é um segundo bloco a desenhar.
+O que sobrou disso: o campo `eixos` continuou viajando na consulta do Sanity sem
+ninguém para lê-lo até 2026-08-06, quando saiu de `conteudo.ts` — e em
+**2026-08-07 saiu do esquema e dos dois documentos**, a pedido do cliente. Se
+ele voltar a aparecer numa projeção, é sobra, não requisito.
 
-O respiro da seção passou de 64 para **96px** em cima e embaixo.
+O respiro da seção passou de 64 para **96px** em cima e embaixo (2026-07-30).
 
 ### O ornamento virou um vetor em pé, petróleo
 
@@ -1504,15 +1895,20 @@ Duas decisões da validação:
 caminho, com a rede fora, seria mentir que deu certo. Usa a mesma faixa de erro
 e traz o e-mail como link, para quem não vai tentar de novo.
 
-### Fontes do formulário (atualizadas em 2026-07-30)
+### Fontes do formulário (atualizadas em 2026-08-06)
 
-Campos e botão: **Inter Regular 400, 16px**, entrelinha 1.1, `letter-spacing`
-−0.04em. Antes eram 18px Medium. A seta do botão encolheu junto — caixa do nó de
-32,67 para 25,33, tinta de 17 para 13px.
+Campos e botão: **Inter Medium 500, 16px**, entrelinha 1.1, `letter-spacing`
+−0.04em. O tamanho caiu de 18 para 16 em 2026-07-30, e o peso desceu a Regular
+400 junto; em 2026-08-06 o arquivo devolveu o Medium sem mexer no tamanho. A seta
+do botão encolheu na primeira leva — caixa do nó de 32,67 para 25,33, tinta de 17
+para 13px.
 
-O botão fica **preto**, e não no `#031E21` que as variantes de sucesso e erro
-trazem: é a mesma decisão registrada em `tokens.css`, o petróleo escuro saiu do
-projeto.
+O rótulo de campo vazio é **`#848484`**, o mesmo cinza dos textos de apoio do
+site (`--cor-apoio`), e não a opacidade de 0.32 que estava aqui até 2026-08-06.
+
+O botão fica no `--cor-preto`, que desde 2026-08-06 é o **`#171717`** do arquivo
+— não mais o `#000` puro de antes, nem o `#031E21` que as variantes de sucesso e
+erro trazem (esse petróleo escuro saiu do projeto e não volta).
 
 As variantes ainda divergem entre si: elas escrevem "Área de interesse" onde o
 Default diz "Área de atuação", e a de erro põe o botão em Semi Bold. Vale o
@@ -1654,9 +2050,18 @@ O reset aplica `text-wrap: pretty` em todo `<p>`. Ele reequilibra o parágrafo p
 evitar linha final curta, e com isso empurra palavras de linha — quebra diferente
 da desenhada. Onde as quebras são desenho (o manifesto), anule com `text-wrap: wrap`.
 
-E conte com uma folga na largura: o Chrome mede as mesmas linhas ~4px mais largas
-que o Figma, então a caixa do manifesto tem 702px em vez dos 697px do arquivo (em
-697 uma palavra caía de linha). Mesma história dos 348px do hero.
+E conte com **poder precisar** de uma folga na largura: o Chrome mede as mesmas
+linhas ~4px mais largas que o Figma, e já houve caso de uma palavra cair de linha
+por isso (a caixa do manifesto ficou em 702px contra os 697 do arquivo, e a do
+hero em 348 contra 337).
+
+**Folga não é regra, é conserto.** Na leva de 2026-08-06 o arquivo trocou os dois
+números — manifesto para 655, hero para 305 (com o nó de texto em 289 dentro
+dele) — e os valores crus do Figma bateram sem folga nenhuma: as quebras do
+manifesto saem palavra por palavra iguais ao render do nó `62:3`, e a linha mais
+larga do aparte mede 283,1 contra os 282 do render de `35:98`. Só acrescente
+folga depois de medir e ver a quebra divergir; acrescentar por precaução é o que
+faz o código deixar de descrever o arquivo.
 
 ## O rodapé ([`Rodape.astro`](src/components/Rodape.astro))
 
@@ -1775,13 +2180,37 @@ original do arquivo, porque lá o `width: 27.4375rem` fixo sangra por cima
 da coluna vizinha vazia (ver "Detalhes do desenho", acima) e aumentar a
 fonte ali reabriria essa conta.
 
-### A navegação não é a do header
+### A navegação do rodapé virou a do header também
 
-Desde 2026-07-30 ela tem lista e ordem próprias (`52:48`): **Manifesto, Sobre,
-Áreas de Atuação, Localização, Contato**. Trocou "Clientes" por "Manifesto",
-escreve "Áreas de Atuação" onde o header abrevia para "Serviços", e
-"Localização" subiu para antes de "Contato". Os cinco destinos existem —
-`#manifesto` já era o id da seção.
+Ela tem lista e ordem próprias desde 2026-07-30 (`52:48`): **Manifesto, Sobre,
+Áreas de atuação, Localização, Contato**. Trocou "Clientes" por "Manifesto" e
+"Localização" subiu para antes de "Contato".
+
+**Os cinco destinos são cinco lugares diferentes** — e não eram até 2026-08-06,
+quando o cliente reparou que "Contato" e "Localização" caíam no mesmo ponto. Os
+dois apontavam para `#contato`, que é a seção do Fale conosco (o id ficou com
+esse nome, e "Localização" é o rótulo que o designer lhe deu depois). Agora
+"Contato" aponta para **`#formulario`**, que é onde a pessoa realmente escreve.
+
+Cuidado ao mexer: o id `contato` NÃO é o formulário, apesar do nome. Conferido
+clicando os cinco links com o Lenis rodando — todos param com o topo da seção
+em 0 (±0,2px), e `#formulario` assenta 499px abaixo de `#contato`.
+
+**Em 2026-08-06 o cliente pediu que o header usasse a mesma lista**, e isso
+diverge do Figma: `155:385` desenha quatro itens (Clientes, Sobre, Serviços,
+Contato). Os dois campos continuam separados no Sanity (`navegacao` e
+`rodape.navegacao`), com chaves próprias — guardam o mesmo conteúdo hoje, mas
+voltar a divergir é edição no Studio, não mudança de código. Medido: a nav de
+cinco itens ocupa 388,8px no header, com 691px de folga na largura de projeto e
+333 aos 900px; não chega perto de quebrar.
+
+### Caixa de frase nos títulos, contra o Figma
+
+Pedido do cliente, 2026-08-06: **"Áreas de atuação"** com "a" minúsculo (no
+rótulo de apoio, na nav do header e na do rodapé), **"Governança e organização
+societária"** e **"Gestão de contingências"**. O arquivo escreve os três em
+caixa alta de título. Como os títulos dos grupos alimentam os `<optgroup>` do
+formulário, a correção desceu junto — sem uma segunda lista para sincronizar.
 
 Divergência assumida: o arquivo escreve **"Linkedin"**, e aqui está "LinkedIn".
 Nome de marca escrito errado no rodapé de um escritório de advocacia lê como
@@ -1804,6 +2233,17 @@ do link não anda um pixel.
 
 Vale como regra: **para apagar texto em hover, prefira cor a opacidade.** O
 efeito é o mesmo e não custa uma camada de composição.
+
+E vale para ACENDER também. O hover da nav do header foi para preto em
+2026-08-06 (pedido do cliente): lá os links nascem em `--cor-apoio` (`#848484`)
+e vão a `--cor-preto`, o inverso do rodapé. O CTA ao lado, que já nasce preto,
+troca por `rgba(23, 23, 23, .6)` — exatamente o cinza que a `opacity: .6`
+anterior pintava, sem tirar o texto da camada de fundo.
+
+Conferido com `CSS.forcePseudoState` pelo CDP, e não com ponteiro sintetizado:
+**`Input.dispatchMouseEvent` não dispara `:hover` de forma confiável no
+headless**, e o teste passa a mentir que a regra não existe. Forçar o
+pseudo-estado é o que o botão "hov" do DevTools faz.
 
 ## Verificação visual
 
@@ -1862,14 +2302,25 @@ três pontos enquanto o conteúdo subia a 35%.
 - Classes e variáveis em português, seguindo o vocabulário da marca
   (`--cor-petroleo`, `--cor-terracota`, `.manifesto__aparte`).
 - Comentário explica **por quê**, não o quê — sobretudo quando o código foge do
-  Figma de propósito (ex.: o bloco do hero tem 348px em vez dos 337px do arquivo
-  porque em 337 o parágrafo quebra em 4 linhas no Chrome em vez de 3).
+  Figma de propósito (ex.: as descrições dos cartões das Áreas têm
+  `letter-spacing: -0.03em` contra os -0.04 do arquivo, porque o cliente pediu).
+  E quando o arquivo diverge de si mesmo, o comentário diz isso: o
+  `letter-spacing` do título do Sobre é regra local justamente porque só ele
+  ficou em -0.07.
 - Assets de marca em `src/assets/` (não `public/`), para o Astro otimizar. Vale
   também para SVG: dentro de `src/` ele é inlinado como componente, e aí um
   `fill="currentColor"` deixa a cor vir do token em vez de ficar escrita no
   arquivo. `public/` hoje tem os favicons, o PDF da matéria e o vídeo do hero
   (`video-hero.mp4`, ver a seção do Hero) — coisas para servir como estão,
   sem o Astro reprocessar.
+- **SVG exportado do Figma vem com a cor cravada** (`fill="#171717"`,
+  `fill="black"`). Trocar por `currentColor` é passo obrigatório do fluxo de
+  exportação, não detalhe — sem isso o ícone ignora o token e para de acompanhar
+  hover e mudança de tema. Foi o que os dois ícones do seletor de idioma
+  precisaram em 2026-08-07.
+- **O reset não zera lista.** Cada componente que usa `<ul>` declara o próprio
+  `list-style: none` (rodapé, Fale conosco, clientes, formulário, seletor de
+  idioma). Numa caixa sem padding à esquerda, os marcadores caem FORA dela.
 
 ## Desenvolvimento
 
@@ -1883,12 +2334,22 @@ npm run studio:publicar # publica o Studio com o token do .env (rede de seguran�
 npm run bandeiras       # regera o sprite do seletor de país (só quando mudar)
 ```
 
+O build gera **duas** páginas: `/` e `/en/`. Se sair só uma, o `pagina-en` do
+Sanity não está publicado.
+
 **O `astro dev` não serve `/api/apresentacao`** — a função é da hospedagem, não
 do Astro. Em desenvolvimento o POST dá 404 e o bloco mostra a frase de falha, o
 que está certo e não é defeito. Para ver as três frases sem servidor nenhum, use
 a encenação (`?apresentacao=sucesso`); para exercitar a função de verdade, é
 `vercel dev` ou `netlify dev`, com `RESEND_API_KEY` e `EMAIL_REMETENTE` no
 `.env`.
+
+**`grep -r` trava nesta máquina** quando varre a raiz do projeto — mordeu duas
+vezes em 2026-08-07, a segunda derrubando um comando encadeado com `&&` (o `rm`
+depois dele nunca rodou, e o arquivo continuou lá parecendo apagado). Use a
+ferramenta de busca do agente, ou restrinja o caminho. E **não encadeie uma ação
+destrutiva depois de um `grep`** — se ele travar, você não sabe se a ação
+aconteceu.
 
 Dependências do site, e por quê: **@sanity/client** (lê o conteúdo no build),
 **@sanity/image-url** (monta as URLs da CDN), **groq** (`defineQuery`), **lenis**

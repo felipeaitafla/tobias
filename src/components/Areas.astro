@@ -112,6 +112,9 @@ const { areas: areasAtuacao } = Astro.props;
 
   .areas--fecho {
     padding-block: var(--gutter) var(--respiro-secao);
+    /* 64px entre o rótulo e a grade, contra os 32 do primeiro bloco: a
+       assimetria é do arquivo (#105:191 contra #54:179), não deslize. */
+    gap: 4rem;
   }
 
   /*
@@ -135,8 +138,14 @@ const { areas: areasAtuacao } = Astro.props;
     padding-top: 0.75rem;
     font: var(--texto-apoio);
     letter-spacing: var(--texto-apoio-ls);
-    color: var(--cor-preto);
-    opacity: var(--opacidade-apoio);
+    color: var(--cor-apoio);
+  }
+
+  /* Os 12px acima são do frame do PRIMEIRO grupo (#154:384). O rótulo do
+     segundo (#218:128) é um nó de texto solto, sem frame e sem padding — ele
+     alinha com o topo do título, não com a primeira linha dele. */
+  .areas--fecho .areas__rotulo {
+    padding-top: 0;
   }
 
   /* Pedido do cliente, 2026-07-31: a coluna grudada só existe no desktop —
@@ -161,8 +170,7 @@ const { areas: areasAtuacao } = Astro.props;
     display: none;
     font: var(--texto-apoio);
     letter-spacing: var(--texto-apoio-ls);
-    color: var(--cor-preto);
-    opacity: var(--opacidade-apoio);
+    color: var(--cor-apoio);
   }
 
   @media (max-width: 700px) {
@@ -244,11 +252,11 @@ const { areas: areasAtuacao } = Astro.props;
    * metade da grade em vez de atravessá-la.
    */
   .cartao {
-    border-top: 1px solid var(--cor-cinza-claro);
+    border-top: 1px solid var(--cor-cinza-divisa);
   }
 
   .cartao:nth-child(odd) {
-    border-right: 1px solid var(--cor-cinza-claro);
+    border-right: 1px solid var(--cor-cinza-divisa);
   }
 
   /*
@@ -271,7 +279,7 @@ const { areas: areasAtuacao } = Astro.props;
    * para na metade da grade, como no arquivo.
    */
   .cartao:nth-last-child(-n + 2) {
-    border-bottom: 1px solid var(--cor-cinza-claro);
+    border-bottom: 1px solid var(--cor-cinza-divisa);
   }
 
   .cartao__titulo {
@@ -320,7 +328,7 @@ const { areas: areasAtuacao } = Astro.props;
        Cível — a célula vazia fica na mesma fileira dele (2ª coluna), e sem
        borda própria não fechava a divisa entre as duas fileiras do lado
        direito. Mesmo traço de `.cartao`. */
-    border-top: 1px solid var(--cor-cinza-claro);
+    border-top: 1px solid var(--cor-cinza-divisa);
   }
 
   /*

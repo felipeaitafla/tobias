@@ -10,14 +10,15 @@
  * juntas aqui dentro, com 128px de respiro entre elas. Agora cada uma traz os
  * seus 64px de padding, que é o respiro do frame de cada uma no arquivo.
  *
- * DIVERGE DO FIGMA de propósito: no arquivo a vermelha é #C1503B, um tijolo mais
- * claro que não existe em nenhum outro lugar do site. Aqui ela usa a terracota
- * da marca (#7A3225, a mesma da faixa do Thiago no Sobre).
+ * A vermelha é o #C1503B do arquivo, um tijolo mais claro que não aparece em
+ * nenhum outro lugar do site — e é isso mesmo. Até 2026-08-06 ela usava a
+ * terracota da marca (#7A3225, a da faixa do Thiago), por uma decisão daqui que
+ * o cliente reverteu quando o Figma voltou a valer como fonte da verdade.
  *
  * As duas cores estão dentro dos SVGs, e não em `--cor-petroleo` /
  * `--cor-terracota`: o SVG entra como `background-image`, e imagem externa não
- * herda `currentColor` nem enxerga variável de CSS. Se um token de cor mudar,
- * o arquivo tem que ser editado junto.
+ * herda `currentColor` nem enxerga variável de CSS. Por isso a vermelha não tem
+ * token nenhum, e mudar a cor dela é editar o arquivo.
  *
  * Cada arquivo traz seis cópias do leque de barras colocadas à mão, com passo
  * variando de 375,6 a 384,1px. Aqui cada uma vira um ladrilho de uma cópia só,

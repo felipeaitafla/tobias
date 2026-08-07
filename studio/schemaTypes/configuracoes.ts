@@ -10,8 +10,8 @@ import { defineArrayMember, defineField, defineType } from 'sanity';
  *
  * A regra para decidir onde um campo mora: se a resposta em inglês seria
  * *exatamente* a mesma, é aqui. Endereço, telefone, CNPJ e logo de cliente são
- * daqui. Já "Seg a Sex" e o nome acessível do mapa são texto, e moram na
- * `pagina`, mesmo parecendo dado de contato.
+ * daqui. Já "Seg a Sex" é texto, e mora na `pagina`, mesmo parecendo dado de
+ * contato.
  */
 export const configuracoes = defineType({
   name: 'configuracoes',
@@ -58,25 +58,12 @@ export const configuracoes = defineType({
       validation: (r) => r.required(),
     }),
     defineField({
-      name: 'mapaEmbed',
-      title: 'Mapa (URL do embed do Google Maps)',
-      type: 'url',
-      group: 'contato',
-      description:
-        'Compartilhar › Incorporar um mapa, no perfil do escritório. Só a URL do `src` do iframe. Captura de tela do Maps fere os termos de uso do Google — por isso é embed.',
-      validation: (r) =>
-        r.required().uri({ scheme: ['https'] }).custom((url) =>
-          !url || String(url).includes('google.com/maps/embed')
-            ? true
-            : 'Precisa ser uma URL de embed do Google Maps (google.com/maps/embed?pb=…)',
-        ),
-    }),
-    defineField({
       name: 'whatsapp',
       title: 'WhatsApp (URL)',
       type: 'url',
       group: 'contato',
-      description: 'TODO antes do lançamento: hoje é URL de exemplo.',
+      description:
+        'Formato `https://wa.me/<DDI><DDD><número>`, só dígitos. O celular precisa do 9 — sem ele o link monta 10 dígitos e não abre conversa nenhuma, sem dar erro visível.',
     }),
     defineField({
       name: 'instagram',
@@ -103,7 +90,6 @@ export const configuracoes = defineType({
       title: 'Inscrição OAB',
       type: 'string',
       group: 'contato',
-      description: 'TODO antes do lançamento: `OAB/RS 00.000` é marcador do designer.',
     }),
 
     // --- Clientes ---
@@ -125,16 +111,9 @@ export const configuracoes = defineType({
       type: 'object',
       group: 'documentos',
       description:
-        'Fica aqui, e não na página traduzida, porque a matéria é do Valor Econômico e continua em português na versão inglesa.',
+        'O veículo, o PDF e o logo — que são os mesmos nos dois idiomas. A CHAMADA não mora aqui: ela é prosa nossa sobre a matéria, e fica na Página, que traduz.',
       fields: [
         defineField({ name: 'veiculo', title: 'Veículo', type: 'string' }),
-        defineField({
-          name: 'chamada',
-          title: 'Chamada',
-          type: 'string',
-          description:
-            'Como saiu no jornal. Use aspas curvas e hífen normal — o texto do site do jornal vem com espaços incolapsáveis e hífen invisível.',
-        }),
         defineField({
           name: 'logo',
           title: 'Logo do veículo (versão branca)',

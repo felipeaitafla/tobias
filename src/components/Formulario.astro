@@ -387,7 +387,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
    */
   .campo,
   .campos__dupla {
-    border-bottom: 1px solid var(--cor-cinza-borda);
+    border-bottom: 1px solid var(--cor-cinza-divisa);
   }
 
   .campo {
@@ -422,7 +422,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
   }
 
   .campo--metade:first-child {
-    border-right: 1px solid var(--cor-cinza-borda);
+    border-right: 1px solid var(--cor-cinza-divisa);
   }
 
   /* Empilhado (`.campos__dupla` acima), o traço que dividia os dois campos
@@ -431,7 +431,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
   @media (max-width: 700px) {
     .campo--metade:first-child {
       border-right: none;
-      border-bottom: 1px solid var(--cor-cinza-borda);
+      border-bottom: 1px solid var(--cor-cinza-divisa);
     }
   }
 
@@ -457,7 +457,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
        zoom automático do Safari no iOS ao ganhar foco. Acima da largura de
        projeto `1rem` já passa de 16px sozinho, então o `max()` não muda nada
        lá. */
-    font: 400 max(1rem, 16px) / 1.1 var(--fonte-corpo); /* 16px */
+    font: 500 max(1rem, 16px) / 1.1 var(--fonte-corpo); /* 16px Medium */
     letter-spacing: -0.04em;
     color: var(--cor-preto);
     background: none;
@@ -495,12 +495,13 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
   }
 
   /*
-   * 0.32 de preto (#85:300 e irmãos). O `::placeholder` precisa ser regra
-   * própria: navegador que não entende o seletor descarta a declaração inteira
-   * se ela vier junto com outras.
+   * `#848484` (#85:300 e irmãos) — é o rótulo do campo vazio, o mesmo cinza
+   * dos textos de apoio do site. O `::placeholder` precisa ser regra própria:
+   * navegador que não entende o seletor descarta a declaração inteira se ela
+   * vier junto com outras.
    */
   .campo__entrada::placeholder {
-    color: rgba(0, 0, 0, 0.32);
+    color: var(--cor-apoio);
     /* Firefox aplica opacidade própria por cima da cor. */
     opacity: 1;
   }
@@ -738,7 +739,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
    * vazia está selecionada é ela, não o select.
    */
   .campo--selecao .campo__entrada:has(option[value='']:checked) {
-    color: rgba(0, 0, 0, 0.32);
+    color: var(--cor-apoio);
   }
 
   /* A lista aberta é pintada pelo sistema, então o preto do site não chega lá:
@@ -754,7 +755,7 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
     align-items: center;
     justify-content: space-between;
     padding: 2rem;
-    font: 400 1rem / 1.1 var(--fonte-corpo); /* 16px */
+    font: 500 1rem / 1.1 var(--fonte-corpo); /* 16px Medium (#85:309) */
     letter-spacing: -0.04em;
     color: var(--cor-branco);
     /*
@@ -775,8 +776,10 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
   .campos__enviar:hover,
   .campos__enviar:focus-visible {
     /* Acréscimo ao Figma: o arquivo não desenha estado de ponteiro, mas um
-       botão sem reação nenhuma não parece clicável. */
-    background: #1a1a1a;
+       botão sem reação nenhuma não parece clicável. Um passo acima do
+       `--cor-preto` (#171717) — quando ele era #000 puro, este valor era
+       #1a1a1a, praticamente invisível contra a base de hoje. */
+    background: #2b2b2b;
   }
 
   /* Mesmo tratamento dos campos: o contorno acompanha a barra inteira. Sem

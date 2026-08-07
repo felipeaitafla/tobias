@@ -312,3 +312,41 @@ export const textoComEnfase = defineType({
     }),
   ],
 });
+
+/*
+ * A chamada da matéria do Valor (#185:104) tem TRÊS pesos numa frase só, e por
+ * isso não cabe no `textoComEnfase` acima:
+ *
+ *   "Representando o Sulpetro,"  → Medium 500, o estilo base do nó
+ *   "Thiago Tobias Bezerra"      → negrito
+ *   "colabora para reduzir…"     → Regular 400
+ *
+ * Os dois decoradores abaixo são os dois desvios em relação a esse base. O
+ * arquivo escreve o nome em Bold ITÁLICO; o site não usa o itálico, por decisão
+ * do cliente — ver o comentário de `.materia__nome` em `Sobre.astro` para a
+ * medição que motivou isso.
+ *
+ * O `leve` é o mais fácil de perder numa edição futura, e o custo de perdê-lo é
+ * pequeno (o trecho renderiza a 500 em vez de 400, ~2px numa linha de 320).
+ * Conferido em pixel contra o render do nó antes de existir: sem ele a linha 2
+ * sai 4,2px mais larga que o arquivo; com ele, 1,6px.
+ */
+export const chamadaMateria = defineType({
+  name: 'chamadaMateria',
+  title: 'Chamada da matéria',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      styles: [{ title: 'Normal', value: 'normal' }],
+      lists: [],
+      marks: {
+        decorators: [
+          { title: 'Nome (negrito)', value: 'nome' },
+          { title: 'Leve', value: 'leve' },
+        ],
+        annotations: [],
+      },
+    }),
+  ],
+});

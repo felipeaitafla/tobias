@@ -23,9 +23,11 @@ interface Props {
 const { rodape, config, idioma } = Astro.props;
 const t = textos(idioma);
 
-/* O rodapé usa o OUTRO telefone — os dois divergem no Figma e a escolha entre
-   eles continua sendo bloqueio de lançamento. Pedido do cliente, 2026-08-05:
-   telefone antes do e-mail, e leva ao WhatsApp. */
+/* O rodapé lê `telefoneRodape`, o Fale conosco lê `telefonePrincipal` — os dois
+   campos existem porque o Figma já teve números diferentes nos dois lugares.
+   Hoje guardam o mesmo, mas continuam separados: se o cliente quiser voltar a
+   ter dois, é uma edição no Studio e não uma mudança de código. Pedido do
+   cliente, 2026-08-05: telefone antes do e-mail, e leva ao WhatsApp. */
 const msgWhatsapp = encodeURIComponent('Olá! Gostaria de conversar com a equipe da Tobias Advogados.');
 const whatsappHref = `https://wa.me/${config.telefoneRodape.href.replace(/\D/g, '')}?text=${msgWhatsapp}`;
 const contato = [
@@ -110,7 +112,7 @@ const redes = [
       <div class="rodape__coluna">
         <div class="rodape__bloco">
           <h2 class="rodape__titulo">{rodape.redesTitulo}</h2>
-          <ul class="rodape__lista">
+          <ul class="rodape__lista rodape__lista--redes">
             {
               redes.map((link) => (
                 <li>
@@ -368,8 +370,9 @@ const redes = [
 
   .rodape__nav-link {
     display: block;
-    /* 34px — degrau que só existe aqui, por isso não virou token. */
-    font: 500 2.125rem / 1.2 var(--fonte-corpo);
+    /* 34px Semi Bold (#208:30) — degrau que só existe aqui, por isso não virou
+       token. */
+    font: 600 2.125rem / 1.2 var(--fonte-corpo);
     letter-spacing: var(--texto-corpo-ls);
     /* Cor, não opacidade — ver o hover, mais abaixo. */
     transition: color 0.2s ease;
@@ -385,18 +388,25 @@ const redes = [
   }
 
   .rodape__titulo {
-    /* 24px — outro degrau de uso único. */
-    font: 500 1.5rem / 1.2 var(--fonte-corpo);
+    /* 24px Semi Bold (#52:129, #53:159) — outro degrau de uso único. */
+    font: 600 1.5rem / 1.2 var(--fonte-corpo);
     letter-spacing: var(--texto-corpo-ls);
   }
 
   .rodape__lista {
     display: flex;
     flex-direction: column;
-    /* 11px entre as linhas (101 → 134 com 22 de altura). */
+    /* 11px entre as linhas (#208:36). */
     gap: 0.6875rem;
     padding: 0;
     list-style: none;
+  }
+
+  /* A lista das redes é mais apertada que a de contato: 7px (#208:38) contra os
+     11 de lá. Os dois números são do arquivo, não sobra de edição — as linhas
+     de lá são texto puro e as daqui vêm com ícone ao lado. */
+  .rodape__lista--redes {
+    gap: 0.4375rem; /* 7px */
   }
 
   /* Termos e Políticas ficam colados: 17px de uma linha para a outra (383 →
@@ -404,8 +414,8 @@ const redes = [
      para a cópia do desktop (`.rodape__lista--legais-desktop`, que herda
      isto); a do mobile sobrescreve tudo abaixo. */
   .rodape__lista--legais {
-    gap: 0.1625rem; /* 2,6px */
-    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+    gap: 0.1875rem; /* 3px (#208:40) */
+    font: 500 0.75rem / 1.2 var(--fonte-corpo); /* 12px Medium */
     letter-spacing: var(--texto-corpo-ls);
   }
 
@@ -430,7 +440,7 @@ const redes = [
        clamp reduz a fonte-raiz a 12px, e 0.8125rem caía para 9,75px —
        ilegível. `max()` crava 13px físicos ali e continua livre para crescer
        fluido dali para cima. */
-    font: 400 max(0.8125rem, 13px) / 1.2 var(--fonte-corpo); /* 13px, era 12px */
+    font: 500 max(0.8125rem, 13px) / 1.2 var(--fonte-corpo); /* 13px, era 12px */
   }
 
   /* Pedido do cliente, 2026-07-31: 12px de respiro em cima de Termos de Uso
@@ -466,6 +476,9 @@ const redes = [
     align-items: center;
     /* O visual medido no arquivo, tanto na seta de subir quanto na diagonal. */
     gap: 0.6875rem;
+    /* Medium (#53:160, #52:131): o corpo do site é 400, e os links do rodapé
+       são o único lugar que sobe um passo. */
+    font-weight: 500;
     color: var(--cor-texto-footer);
     transition: color 0.2s ease;
   }
@@ -492,8 +505,8 @@ const redes = [
   .rodape__nav-link:focus-visible,
   .rodape__topo:hover,
   .rodape__topo:focus-visible {
-    /* Os mesmos 60% de preto que a opacidade pintava sobre o bege. */
-    color: rgba(0, 0, 0, 0.6);
+    /* Os mesmos 60% do preto do arquivo que a opacidade pintava sobre o bege. */
+    color: rgba(23, 23, 23, 0.6);
   }
 
   /*
@@ -522,7 +535,9 @@ const redes = [
   }
 
   .rodape__topo {
-    font: 500 1.5rem / 1.2 var(--fonte-corpo);
+    /* 24px Semi Bold (#52:89) — no arquivo ele tem o peso de um título de
+       coluna, não de um link. */
+    font: 600 1.5rem / 1.2 var(--fonte-corpo);
     letter-spacing: var(--texto-corpo-ls);
     color: var(--cor-preto);
     transition: color 0.2s ease;
@@ -568,7 +583,7 @@ const redes = [
    */
   .rodape__copyright-desktop {
     width: 27.4375rem; /* 439px */
-    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+    font: 500 0.75rem / 1.2 var(--fonte-corpo); /* 12px Medium (#52:148) */
   }
 
   @media (max-width: 700px) {
@@ -584,7 +599,7 @@ const redes = [
      do desktop, que dependia da coluna vizinha vazia para sangrar). */
   .rodape__copyright-mobile {
     padding-top: 12px;
-    font: 400 max(0.8125rem, 13px) / 1.5 var(--fonte-corpo);
+    font: 500 max(0.8125rem, 13px) / 1.5 var(--fonte-corpo);
   }
 
   .rodape__selo {

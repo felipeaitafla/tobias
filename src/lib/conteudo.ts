@@ -27,14 +27,14 @@ const CONSULTA = defineQuery(/* groq */ `{
     hero{ titulo, aparte, link, foto ${IMAGEM} },
     manifesto{ chamada, paragrafos },
     clientesRotulo,
-    historia{ titulo, texto, fotoAlt, materiaFormato, foto ${IMAGEM} },
+    historia{ titulo, texto, fotoAlt, materiaFormato, materiaChamada, foto ${IMAGEM} },
     socios[]{
       _key, nome, destaque, paragrafos, cor, imagemPrimeiro, foto ${IMAGEM},
       apresentacao
     },
     areas{ rotulo, grupos[]{ _key, titulo, itens[]{ _key, titulo, descricao } } },
-    faleConosco{ rotulo, titulo, atendimento, mapaTitulo },
-    formulario{ titulo, eixos, campos, enviar, estados },
+    faleConosco{ rotulo, titulo, atendimento },
+    formulario{ titulo, campos, enviar, estados },
     rodape{
       navegacao[]{ _key, texto, href },
       contatoTitulo, redesTitulo, topo, marca, copyright,
@@ -42,11 +42,11 @@ const CONSULTA = defineQuery(/* groq */ `{
     }
   },
   "config": *[_id == "configuracoes"][0]{
-    email, endereco, mapaEmbed, whatsapp, instagram, linkedin, cnpj, oab,
+    email, endereco, whatsapp, instagram, linkedin, cnpj, oab,
     telefonePrincipal, telefoneRodape,
     clientes[]{ _key, nome, largura, ajusteOptico, logo ${IMAGEM} },
     materia{
-      veiculo, chamada, paginas,
+      veiculo, paginas,
       logo ${IMAGEM},
       "arquivo": arquivo.asset->url
     },

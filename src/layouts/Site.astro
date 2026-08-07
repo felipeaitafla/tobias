@@ -38,6 +38,7 @@ const { pagina, config } = await buscarConteudo(idioma);
     navegacao={pagina.navegacao}
     whatsapp={config.whatsapp}
     whatsappTexto={pagina.whatsappTexto}
+    idioma={idioma}
   />
   {/* O "Voltar ao topo" do rodapé mira aqui: o header é fixo, então o topo do
       `main` é o topo do documento. Sem JS o âncora funciona igual. */}

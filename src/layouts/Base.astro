@@ -2,7 +2,7 @@
 import { Font } from 'astro:assets';
 import '../styles/global.css';
 
-import { IDIOMAS, IDIOMA_PADRAO } from '../lib/interface';
+import { IDIOMAS, IDIOMA_PADRAO, caminhoDe } from '../lib/interface';
 
 interface Props {
   titulo: string;
@@ -23,7 +23,6 @@ const { titulo, descricao, idioma } = Astro.props;
  * `x-default` aponta para o português: é a versão a servir a quem o buscador não
  * sabe classificar.
  */
-const caminhoDe = (id: string) => (id === IDIOMA_PADRAO ? '/' : `/${id}/`);
 const urlDe = (id: string) => new URL(caminhoDe(id), Astro.site).href;
 const ogLocale = idioma.replace('-', '_');
 ---
@@ -58,6 +57,14 @@ const ogLocale = idioma.replace('-', '_');
     */}
     <Font cssVariable="--fonte-display-astro" preload={[{ subset: 'latin', weight: 400 }]} />
     <Font cssVariable="--fonte-corpo-astro" preload={[{ subset: 'latin', weight: 400 }]} />
+    {/*
+      Se um dia entrar uma terceira família em `astro.config.mjs`, ela precisa
+      de um `<Font>` AQUI também: é este componente que emite o `@font-face` e a
+      variável CSS. Configurar lá e esquecer esta lista faz a família existir no
+      build — o `.woff2` chega a ser copiado para `dist/` — sem chegar à página,
+      e aí o navegador sintetiza o que falta em silêncio, sem aviso no console.
+      Custou uma rodada de medição em 2026-08-06.
+    */}
   </head>
   <body>
     <slot />

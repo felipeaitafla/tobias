@@ -1,0 +1,17 @@
+---
+/*
+ * O inglês, em `/en/`.
+ *
+ * Gêmea do `index.astro` da raiz, com outro `idioma` — a composição inteira
+ * mora no layout, que faz UMA consulta e desce tudo por props. É por isso que
+ * uma língua nova custa três linhas aqui e nada mais.
+ *
+ * O prefixo vem de `prefixDefaultLocale: false` no `astro.config.mjs`: o
+ * padrão fica na raiz e só os outros ganham pasta. O `hreflang` e o canonical
+ * do `Base.astro` são o preço dessa escolha — sem eles as duas versões
+ * competiriam entre si no buscador.
+ */
+import Site from '../../layouts/Site.astro';
+---
+
+<Site idioma="en" />

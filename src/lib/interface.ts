@@ -27,6 +27,9 @@ const DICIONARIO = {
     'apresentacao.baixar': 'Baixar a apresentação institucional em PDF',
     'apresentacao.travado': 'Disponível depois de preencher o e-mail',
     'idioma.escolher': 'Escolher idioma',
+    /* O rótulo é fixo; a DATA vem do Sanity, porque é ela que o cliente
+       atualiza a cada revisão do texto. */
+    'legal.atualizado': 'Última atualização: ',
   },
   en: {
     'rodape.aria': 'Footer',
@@ -41,6 +44,7 @@ const DICIONARIO = {
     'apresentacao.baixar': 'Download the firm profile as PDF',
     'apresentacao.travado': 'Available once you fill in your email',
     'idioma.escolher': 'Choose language',
+    'legal.atualizado': 'Last updated: ',
   },
 } as const;
 

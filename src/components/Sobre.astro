@@ -729,6 +729,28 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
       /* Padrão de 32px (`--gutter-mobile`), igual ao resto do site. */
       padding-inline: var(--gutter-mobile);
     }
+
+    /*
+     * Pedido do cliente, 2026-08-11: 50% a mais de respiro entre a LINHA do
+     * campo de e-mail e a borda de baixo do bloco.
+     *
+     * Medido: no celular esse vão é 36px — só o `padding-bottom` do bloco
+     * (`3rem` com a fonte-raiz travada em 12px). A `margin-bottom` de 1rem que
+     * a gaveta ganha aberta NÃO entra aqui: ela vive dentro de
+     * `@media (hover: hover) and (pointer: fine)`, e no toque essa media query
+     * é falsa. Quem medir isto no desktop encolhendo a janela vai ver 48px e
+     * achar que a conta está errada — não está, são estados diferentes.
+     *
+     * 36 × 1,5 = 54, e os 18px extras entram na GAVETA, não no padding do
+     * bloco: assim o respiro pertence a quem está pedindo espaço (o campo), e
+     * some junto com ele se um dia a gaveta fechar no toque também. O padding
+     * do bloco continua simétrico, como o arquivo desenha.
+     *
+     * `px` cru pela razão de sempre nesta faixa (ver `--gutter-mobile`).
+     */
+    .apresentacao__gaveta {
+      margin-bottom: 18px;
+    }
   }
 
   /* Sem `gap`: a fileira é `space-between` no arquivo (#212:70) e o texto tem

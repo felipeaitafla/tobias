@@ -8,9 +8,21 @@ interface Props {
   titulo: string;
   descricao: string;
   idioma: string;
+  /*
+   * Onde esta página vive, por idioma. Só quem NÃO é a one page precisa passar:
+   * uma página legal que existe só em português manda `{ 'pt-BR': '/politica-de-privacidade' }`.
+   *
+   * Sem isto o canonical de toda página seria `/`, e uma página nova estaria
+   * dizendo ao buscador "eu sou uma cópia da home" — que é o pedido para ela
+   * não aparecer em busca nenhuma. O `hreflang` tem o mesmo problema pelo
+   * avesso: apontar para `/en/` a partir de uma página que não tem versão
+   * inglesa manda o leitor de outra língua para a home, não para a tradução.
+   * Idioma que não está no mapa simplesmente não é declarado.
+   */
+  rotas?: Record<string, string>;
 }
 
-const { titulo, descricao, idioma } = Astro.props;
+const { titulo, descricao, idioma, rotas } = Astro.props;
 
 /*
  * O português mora na raiz e o inglês em `/en/` (`prefixDefaultLocale: false`).
@@ -21,9 +33,14 @@ const { titulo, descricao, idioma } = Astro.props;
  * raiz limpa, e estas tags são o preço dela.
  *
  * `x-default` aponta para o português: é a versão a servir a quem o buscador não
- * sabe classificar.
+ * sabe classificar. Onde o português não existe, sobra a própria página — o
+ * atributo não pode apontar para o vazio.
  */
-const urlDe = (id: string) => new URL(caminhoDe(id), Astro.site).href;
+const caminhos = rotas ?? Object.fromEntries(IDIOMAS.map((id) => [id, caminhoDe(id)]));
+const urlDe = (caminho: string) => new URL(caminho, Astro.site).href;
+
+const canonical = urlDe(caminhos[idioma] ?? caminhoDe(idioma));
+const padrao = caminhos[IDIOMA_PADRAO] ?? caminhos[idioma];
 const ogLocale = idioma.replace('-', '_');
 ---
 
@@ -37,14 +54,18 @@ const ogLocale = idioma.replace('-', '_');
     <title>{titulo}</title>
     <meta name="description" content={descricao} />
 
-    <link rel="canonical" href={urlDe(idioma)} />
-    {IDIOMAS.map((id) => <link rel="alternate" hreflang={id} href={urlDe(id)} />)}
-    <link rel="alternate" hreflang="x-default" href={urlDe(IDIOMA_PADRAO)} />
+    <link rel="canonical" href={canonical} />
+    {
+      Object.entries(caminhos).map(([id, caminho]) => (
+        <link rel="alternate" hreflang={id} href={urlDe(caminho)} />
+      ))
+    }
+    {padrao && <link rel="alternate" hreflang="x-default" href={urlDe(padrao)} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={titulo} />
     <meta property="og:description" content={descricao} />
-    <meta property="og:url" content={urlDe(idioma)} />
+    <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={ogLocale} />
     {/* TODO: gerar og:image (1200×630) a partir do hero */}
 

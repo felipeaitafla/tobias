@@ -1,0 +1,59 @@
+---
+/*
+ * Os pedaços de UM bloco de Portable Text, com as marcas aplicadas.
+ *
+ * Existe separado do `TextoLegal.astro` por um motivo bobo e real: as marcas se
+ * aninham (um trecho pode ser forte E link), e aninhar exige montar o elemento
+ * de dentro para fora — coisa que não cabe no frontmatter, que é TypeScript e
+ * não template. Com um componente à parte, os quatro donos possíveis de um
+ * trecho (parágrafo, seção, subseção, item de lista) chamam a mesma linha em
+ * vez de repetirem esta lógica quatro vezes.
+ */
+
+type Trecho = { _key?: string; text?: string; marks?: string[] };
+type Anotacao = { _key: string; _type: string; href?: string };
+
+interface Props {
+  trechos?: Trecho[];
+  anotacoes?: Anotacao[];
+}
+
+const { trechos = [], anotacoes = [] } = Astro.props;
+
+/*
+ * `marks` mistura duas coisas na mesma lista: decorador (`strong`, `em` — o
+ * valor é o próprio nome) e anotação (o valor é a `_key` de uma entrada em
+ * `markDefs`). Procurar a chave entre as anotações é o que separa as duas —
+ * se achou, é link; se não, é decorador.
+ */
+const destinoDe = (marcas: string[]) =>
+  marcas.map((marca) => anotacoes.find((a) => a._key === marca)?.href).find(Boolean);
+---
+
+{
+  trechos.map((trecho) => {
+    const texto = trecho.text ?? '';
+    const marcas = trecho.marks ?? [];
+    const href = destinoDe(marcas);
+
+    /* De dentro para fora: ênfase, peso e por último o link, que embrulha tudo
+       — é ele que precisa ser a área clicável inteira. */
+    const comEnfase = marcas.includes('em') ? <em>{texto}</em> : texto;
+    const comPeso = marcas.includes('strong') ? <strong>{comEnfase}</strong> : comEnfase;
+
+    if (!href) return comPeso;
+
+    /*
+     * Destino de fora abre em aba nova; caminho do próprio site e `mailto:`
+     * não. O `rel` acompanha o `target` sempre: sem ele a página de destino
+     * ganha uma referência à nossa por `window.opener`.
+     */
+    return /^https?:/i.test(href) ? (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {comPeso}
+      </a>
+    ) : (
+      <a href={href}>{comPeso}</a>
+    );
+  })
+}

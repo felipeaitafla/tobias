@@ -30,3 +30,6 @@ pnpm-debug.log*
 # e são grandes demais pro repositório (692 MB e 66 MB).
 src/assets/video-hero.mov
 src/assets/Apresentação Institucional - Tobias ADV.pdf
+# a versão comprimida do PDF (66 MB → 3,6 MB) também não entra: o destino dela
+# é o Sanity, igual à original. Fica no disco só como resultado da conversão.
+src/assets/apresentacao-institucional-tobias-adv-comprimido.pdf

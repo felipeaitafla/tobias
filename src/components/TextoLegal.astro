@@ -1,0 +1,248 @@
+---
+import TrechoLegal from './TrechoLegal.astro';
+
+/*
+ * O corpo de uma página legal, vindo do Portable Text do Sanity (`textoLegal`).
+ *
+ * Escrito à mão em vez de `astro-portabletext`, e a razão não é peso — o
+ * renderizador roda no build, então não custaria um byte ao visitante. É que o
+ * nosso esquema é FECHADO: parágrafo, seção, subseção, lista, forte, itálico e
+ * link, e nada mais (ver `textoLegal` em `studio/schemaTypes/objetos.ts`). Uma
+ * biblioteca genérica existe para tratar o que a gente deliberadamente tornou
+ * impossível de escrever. O projeto já renderiza Portable Text assim em dois
+ * lugares (o aparte do hero e a chamada da matéria); este é o mesmo padrão, com
+ * blocos além de trechos.
+ *
+ * Se um dia o esquema abrir para citação, imagem ou tabela, a conta inverte e a
+ * dependência passa a valer — é este comentário que diz quando trocar.
+ */
+
+type Bloco = {
+  _key: string;
+  _type: string;
+  style?: string;
+  listItem?: string;
+  children?: { _key?: string; text?: string; marks?: string[] }[];
+  markDefs?: { _key: string; _type: string; href?: string }[];
+};
+
+interface Props {
+  corpo?: Bloco[];
+}
+
+const { corpo = [] } = Astro.props;
+
+/*
+ * O Portable Text não tem `<ul>`: cada item de lista é um bloco solto marcado
+ * com `listItem`. Quem agrupa os vizinhos numa lista só é o renderizador — sem
+ * isto cada item viraria uma lista de um item, e o leitor de tela anunciaria
+ * "lista de 1 item" nove vezes seguidas em vez de "lista de 9 itens".
+ */
+type Item = { tipo: 'bloco'; bloco: Bloco } | { tipo: 'lista'; blocos: Bloco[] };
+
+const itens: Item[] = [];
+for (const bloco of corpo) {
+  if (bloco.listItem) {
+    const anterior = itens.at(-1);
+    if (anterior?.tipo === 'lista') anterior.blocos.push(bloco);
+    else itens.push({ tipo: 'lista', blocos: [bloco] });
+  } else {
+    itens.push({ tipo: 'bloco', bloco });
+  }
+}
+
+/* O título da página é o `h1` — o corpo começa em `h2`, e o esquema não oferece
+   outra coisa. Estilo desconhecido cai em parágrafo, que é o degrau mais seguro
+   para errar. */
+const TAGS: Record<string, 'h2' | 'h3' | 'p'> = { h2: 'h2', h3: 'h3' };
+---
+
+<div class="texto-legal">
+  {
+    itens.map((item) => {
+      if (item.tipo === 'lista') {
+        return (
+          <ul>
+            {item.blocos.map((bloco) => (
+              <li>
+                <TrechoLegal trechos={bloco.children} anotacoes={bloco.markDefs} />
+              </li>
+            ))}
+          </ul>
+        );
+      }
+
+      /* Nome em maiúscula: é assim que o Astro entende uma string como nome de
+         tag em vez de componente. */
+      const Tag = TAGS[item.bloco.style ?? ''] ?? 'p';
+      return (
+        <Tag>
+          <TrechoLegal trechos={item.bloco.children} anotacoes={item.bloco.markDefs} />
+        </Tag>
+      );
+    })
+  }
+</div>
+
+<style>
+  /*
+   * O corpo declara a PRÓPRIA tipografia, e isso começou como conserto de um
+   * defeito: sem esta regra o parágrafo herdava o `body`, que usa
+   * `--texto-c3` — o token dos LINKS DO RODAPÉ, com entrelinha 1.2. Medido em
+   * 2026-08-11: 21,6px de entrelinha para uma linha de ~90 caracteres. Era
+   * aperto por omissão, e o tipo de coisa que não aparece lendo o CSS deste
+   * arquivo, porque a causa estava em outro.
+   *
+   * **16px** e entrelinha **1.65**, os dois pedidos do cliente em 2026-08-11.
+   * A entrelinha fica acima dos 1.5 do corpo da one page de propósito: lá o
+   * texto vem em blocos curtos ao lado de foto, aqui são trinta parágrafos
+   * seguidos numa linha longa, e linha longa precisa de mais ar para o olho
+   * achar a volta.
+   *
+   * `max(…px)` nos três degraus, e não `rem` puro — é o padrão já usado no
+   * rodapé (ver `--gutter-mobile` em tokens.css e `.rodape__copyright-mobile`).
+   * Abaixo de ~1084px o `clamp()` da raiz trava em 12px, então `1rem` viraria
+   * **12px físicos** num celular: o "16px" pedido só valeria na largura de
+   * projeto, e o documento chegaria ilegível justamente em quem lê política de
+   * privacidade no telefone. Com o piso, 16px é 16px em qualquer tela e continua
+   * crescendo fluido acima de 1446px.
+   *
+   * Os títulos precisam do MESMO piso, e não é preciosismo: sem ele o h3
+   * (1.125rem) cairia para 13,5px no celular — MENOR que o corpo de 16 — e a
+   * hierarquia se inverteria sem nada quebrar visivelmente.
+   *
+   * Em longhand, e não no atalho `font`: o atalho zera toda propriedade que não
+   * menciona (foi assim que a entrelinha se perdeu antes), e uma `max()` seguida
+   * da barra da `line-height` é justamente o ponto em que o parser dele fica
+   * ambíguo.
+   */
+  .texto-legal {
+    font-family: var(--fonte-corpo);
+    font-weight: 400;
+    font-size: max(1rem, 16px);
+    line-height: 1.65;
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  /*
+   * Ritmo por irmãos, e não `gap` de flex: os degraus são diferentes por tipo
+   * (uma seção nova pede muito mais ar que um parágrafo seguinte), e `gap` dá
+   * um número só para todo mundo.
+   */
+  .texto-legal > * + * {
+    margin-top: 1.25rem; /* 20px entre parágrafos */
+  }
+
+  /*
+   * A divisa de 1px é a mesma dos cartões das Áreas e do card do Fale conosco
+   * (`--cor-cinza-divisa`) — é o vocabulário que o site usa para abrir um
+   * bloco, e num documento de trinta parágrafos é ela que devolve o ritmo que
+   * a one page tem de sobra e o texto corrido não tem.
+   *
+   * INTER, não a serifada (pedido do cliente, 2026-08-11): a Noto Serif KR fica
+   * só na headline da página. Não é degrau inventado — é o mesmo par do título
+   * de coluna do rodapé (#52:129), 24px Semi Bold com o tracking de corpo, e o
+   * único lugar do site onde a serifada aparece em 24px é o cartão das Áreas,
+   * que é outro contexto.
+   *
+   * Com as duas em Inter, quem separa a seção do parágrafo é o peso, o tamanho
+   * e sobretudo a divisa acima — que é justamente por isso que ela ficou.
+   */
+  .texto-legal > h2 {
+    margin-top: 4rem; /* 64px */
+    padding-top: 2rem; /* 32px, o mesmo respiro do card do Fale conosco */
+    font-weight: 600;
+    font-size: max(1.5rem, 22px); /* 24px na largura de projeto, piso de 22 */
+    line-height: 1.2;
+    /*
+     * Declarado, e não herdado — `em` em `letter-spacing` resolve na fonte de
+     * quem DECLARA e desce como pixel fixo, não como razão. Herdando do corpo
+     * de 16px, o -0.04em virava -0,64px, que num título de 24 vale -0,027em:
+     * o título afrouxava sozinho. Medido em 2026-08-11, depois de eu tirar
+     * esta linha por engano ao passar o `font` para longhand.
+     */
+    letter-spacing: var(--texto-corpo-ls);
+    border-top: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .texto-legal > h2 + * {
+    margin-top: 1.5rem; /* 24px */
+  }
+
+  /* A subseção já era Inter e continua: ela vive dentro de um bloco de texto e
+     não abre nada — o peso é o que a separa do parágrafo ao lado. Um degrau
+     abaixo da seção (18 contra 24), no mesmo peso. */
+  .texto-legal > h3 {
+    margin-top: 2.5rem; /* 40px */
+    font-weight: var(--peso-destaque);
+    font-size: max(1.125rem, 18px); /* 18px, um degrau acima do corpo de 16 */
+    line-height: 1.5;
+    /* Declarado pelo mesmo motivo do h2, logo acima: `em` herdado vira pixel. */
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  .texto-legal > h3 + * {
+    margin-top: 0.75rem; /* 12px — a subseção é o rótulo do parágrafo abaixo */
+  }
+
+  /* O reset não zera lista (ver Convenções no CLAUDE.md), então o padding é
+     declarado aqui de propósito: sem ele os marcadores caem FORA da caixa. */
+  .texto-legal > ul {
+    padding-left: 1.5rem; /* 24px */
+    list-style: disc;
+  }
+
+  .texto-legal > ul > li + li {
+    margin-top: 0.625rem; /* 10px */
+  }
+
+  .texto-legal > ul ::marker {
+    color: var(--cor-apoio);
+  }
+
+  .texto-legal > :first-child {
+    margin-top: 0;
+  }
+
+  /*
+   * A primeira seção não desenha a própria régua: quem já abriu o documento foi
+   * a borda do bloco do título, 24px acima. Com as duas, o alto da página saía
+   * com dois traços paralelos quase colados — parecia defeito de renderização,
+   * não desenho. O padding vai junto, senão sobra o respiro de uma régua que
+   * não está mais lá.
+   */
+  .texto-legal > h2:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /*
+   * `:global()` com ancestral escopado — a armadilha documentada no CLAUDE.md,
+   * aqui pela outra ponta: o Astro carimba o atributo de escopo no que está
+   * NESTE template, e `<strong>`, `<em>` e `<a>` são montados dentro do
+   * `TrechoLegal.astro`. Sem `:global` a regra não casaria com nada; sem o
+   * ancestral, vazaria para a página inteira.
+   */
+  .texto-legal :global(strong) {
+    font-weight: var(--peso-destaque);
+  }
+
+  /*
+   * Sublinhado, e não só cor. Nos links do resto do site a posição já diz que
+   * são links (menu, rodapé, botão); aqui eles moram no meio de um parágrafo, e
+   * cor sozinha falha para quem não distingue as duas — é a regra 1.4.1 da
+   * WCAG. O deslocamento tira o traço de cima das descidas do "g" e do "p".
+   */
+  .texto-legal :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+    transition: color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .texto-legal :global(a:hover) {
+      color: var(--cor-petroleo);
+    }
+  }
+</style>

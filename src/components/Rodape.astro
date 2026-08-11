@@ -16,7 +16,12 @@ import type { Config, Pagina } from '../lib/conteudo';
 
 interface Props {
   rodape: NonNullable<Pagina>['rodape'];
-  config: NonNullable<Config>;
+  /*
+   * Só os quatro campos que ele lê, e não o `config` inteiro. O rodapé aparece
+   * também nas páginas legais, cuja consulta não busca os 36 logos nem as fotos
+   * dos sócios — declarar o documento todo aqui diria que ela precisa deles.
+   */
+  config: Pick<NonNullable<Config>, 'telefoneRodape' | 'email' | 'instagram' | 'linkedin'>;
   idioma: string;
 }
 

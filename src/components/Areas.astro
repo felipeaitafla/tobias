@@ -342,6 +342,18 @@ const { areas: areasAtuacao } = Astro.props;
       /* `px`, não `2rem`: aqui dentro a fonte-raiz já está travada em 12px
          pelo piso do clamp, e `2rem` daria 24px físicos, não os 32 pedidos. */
       margin-top: 32px;
+      /*
+       * E a borda de cima SAI (pedido do cliente, 2026-08-11: "tem uma linha
+       * sobrando em cima do símbolo").
+       *
+       * Ela só faz sentido em 2 colunas: lá a célula vazia é a vizinha da
+       * direita do cartão "Cível", e o traço dela é a metade direita da divisa
+       * entre as duas últimas fileiras. Em 1 coluna não há vizinha nenhuma — a
+       * célula empilha sozinha embaixo, e o que era metade de uma divisa vira
+       * um risco solto pairando acima do símbolo, ainda por cima separado dele
+       * pelos 32px de respiro logo acima.
+       */
+      border-top: none;
     }
   }
 

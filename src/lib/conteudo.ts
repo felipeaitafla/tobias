@@ -19,11 +19,34 @@ const IMAGEM = /* groq */ `{
   "dimensoes": asset->metadata.dimensions
 }`;
 
+/*
+ * O que se repete no alto e no pé de TODA página do site — a one page e as
+ * páginas legais.
+ *
+ * Extraído em fragmento, e não copiado, porque as duas consultas alimentam os
+ * MESMOS dois componentes (`Cabecalho` e `Rodape`). Duas listas de campos
+ * divergiriam na primeira vez que alguém acrescentasse um item numa só, e o
+ * sintoma seria um rodapé com um bloco a menos só nas páginas legais — nada
+ * quebra, ninguém repara.
+ */
+const CHROME_PAGINA = /* groq */ `
+  navegacao[]{ _key, texto, href },
+  whatsappTexto,
+  rodape{
+    navegacao[]{ _key, texto, href },
+    contatoTitulo, redesTitulo, topo, marca, copyright,
+    legais[]{ _key, texto, href }
+  }
+`;
+
+const CHROME_CONFIG = /* groq */ `
+  email, whatsapp, instagram, linkedin, telefoneRodape
+`;
+
 const CONSULTA = defineQuery(/* groq */ `{
   "pagina": *[_type == "pagina" && language == $idioma][0]{
     seo,
-    navegacao[]{ _key, texto, href },
-    whatsappTexto,
+    ${CHROME_PAGINA},
     hero{ titulo, aparte, link, foto ${IMAGEM} },
     manifesto{ chamada, paragrafos },
     clientesRotulo,
@@ -34,16 +57,12 @@ const CONSULTA = defineQuery(/* groq */ `{
     },
     areas{ rotulo, grupos[]{ _key, titulo, itens[]{ _key, titulo, descricao } } },
     faleConosco{ rotulo, titulo, atendimento },
-    formulario{ titulo, campos, enviar, estados },
-    rodape{
-      navegacao[]{ _key, texto, href },
-      contatoTitulo, redesTitulo, topo, marca, copyright,
-      legais[]{ _key, texto, href }
-    }
+    formulario{ titulo, campos, enviar, estados }
   },
   "config": *[_id == "configuracoes"][0]{
-    email, endereco, whatsapp, instagram, linkedin, cnpj, oab,
-    telefonePrincipal, telefoneRodape,
+    ${CHROME_CONFIG},
+    endereco, cnpj, oab,
+    telefonePrincipal,
     clientes[]{ _key, nome, largura, ajusteOptico, logo ${IMAGEM} },
     materia{
       veiculo, paginas,
@@ -80,3 +99,59 @@ export async function buscarConteudo(idioma: string) {
 export type Conteudo = Awaited<ReturnType<typeof buscarConteudo>>;
 export type Pagina = Conteudo['pagina'];
 export type Config = Conteudo['config'];
+
+/*
+ * --- As páginas legais ---
+ *
+ * Política de privacidade e, quando chegar a vez dela, termos de uso. Elas não
+ * são a one page: não têm hero, camada, parallax nem seção nenhuma da lista
+ * acima. O que compartilham com ela é só o alto e o pé — e é exatamente isso
+ * que os dois fragmentos `CHROME_*` trazem.
+ *
+ * Por isso a consulta é OUTRA, e não a de cima com campos a mais: buscar os 36
+ * logos de clientes, as fotos dos sócios e o PDF da apresentação para desenhar
+ * uma página de texto corrido seria pagar a one page inteira por uma página que
+ * não mostra nada disso.
+ *
+ * O `$id` segue `legal-<chave>-<idioma>` — a convenção que a estrutura do Studio
+ * escreve do outro lado (`studio/estrutura.ts`). É a única amarra entre os dois
+ * repositórios, e é de propósito que ela seja uma string previsível: assim a
+ * rota pede o documento pelo nome, sem depender de slug nem de ordem.
+ */
+const CONSULTA_LEGAL = defineQuery(/* groq */ `{
+  "legal": *[_id == $id][0]{ seo, titulo, atualizadoEm, corpo },
+  "pagina": *[_type == "pagina" && language == $idioma][0]{ ${CHROME_PAGINA} },
+  "config": *[_id == "configuracoes"][0]{ ${CHROME_CONFIG} }
+}`);
+
+export async function buscarLegal(chave: string, idioma: string) {
+  const id = `legal-${chave}-${idioma}`;
+  const dados = await sanity.fetch(CONSULTA_LEGAL, { id, idioma });
+
+  /*
+   * Erro, e não uma página vazia: o build lê SÓ documento publicado, então a
+   * causa quase certa é rascunho não publicado — e uma página legal publicada
+   * em branco é pior que build vermelho. O rodapé já aponta para ela.
+   */
+  if (!dados?.legal) {
+    throw new Error(
+      `Não há documento "paginaLegal" com _id == "${id}" PUBLICADO no Sanity. ` +
+        `Se ele existe como rascunho, publique-o no Studio (npm run studio) — ` +
+        `o build não enxerga "drafts.*".`,
+    );
+  }
+  if (!dados?.pagina) {
+    throw new Error(
+      `Não há documento "pagina" com language == "${idioma}" no Sanity, e as ` +
+        `páginas legais reaproveitam o cabeçalho e o rodapé dele.`,
+    );
+  }
+  if (!dados?.config) {
+    throw new Error('Não há documento "configuracoes" no Sanity.');
+  }
+
+  return dados;
+}
+
+export type ConteudoLegal = Awaited<ReturnType<typeof buscarLegal>>;
+export type Legal = ConteudoLegal['legal'];

@@ -11,14 +11,31 @@ interface Props {
   whatsapp: string;
   whatsappTexto: string;
   idioma: string;
+  /* Para onde a assinatura leva. Na one page é o topo dela mesma; em qualquer
+     outra página é a home — daí o padrão ser `#` e não um caminho. */
+  inicio?: string;
+  /*
+   * Desliga a entrada por rolagem. Ela existe porque na one page o header
+   * disputaria espaço com o hero, e só desce quando ele sai da tela (100svh).
+   * Numa página sem hero isso deixaria a navegação escondida até a pessoa rolar
+   * uma tela inteira de texto — e numa página curta, escondida para sempre.
+   */
+  sempreVisivel?: boolean;
 }
 
-const { navegacao, whatsapp, whatsappTexto, idioma } = Astro.props;
+const {
+  navegacao,
+  whatsapp,
+  whatsappTexto,
+  idioma,
+  inicio = '#',
+  sempreVisivel = false,
+} = Astro.props;
 const t = textos(idioma);
 ---
 
-<header class="cabecalho">
-  <a class="cabecalho__marca" href="#" aria-label="Tobias Advogados — início">
+<header class:list={['cabecalho', { 'cabecalho--sempre': sempreVisivel }]}>
+  <a class="cabecalho__marca" href={inicio} aria-label="Tobias Advogados — início">
     <Assinatura class="cabecalho__assinatura" />
   </a>
 
@@ -52,7 +69,10 @@ const t = textos(idioma);
             o nome. Rótulo em `.sr-only` em vez de `aria-label` no summary,
             que SUBSTITUIRIA o texto visível em vez de acrescentar. */}
         <span class="sr-only">{t['idioma.escolher']}: </span>
-        <span>{NOMES_IDIOMA[idioma as keyof typeof NOMES_IDIOMA]}</span>
+        {/* Some da tela no mobile (vira `.sr-only` por media query, como o texto
+            do CTA ao lado) — pedido do cliente, 2026-08-11: lá o seletor é só
+            globo + seta. O leitor de tela continua ouvindo o idioma atual. */}
+        <span class="idioma__nome">{NOMES_IDIOMA[idioma as keyof typeof NOMES_IDIOMA]}</span>
         <Seta class="idioma__seta" aria-hidden="true" />
       </summary>
 
@@ -104,7 +124,16 @@ const t = textos(idioma);
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 1rem var(--gutter); /* 16px 64px */
+    /*
+     * O respiro vertical é variável porque DOIS lugares dependem dele: este
+     * padding e o `top` da lista de idiomas, que abre a partir do rodapé da
+     * fileira e precisa somar o padding de baixo mais a borda para encostar
+     * embaixo da linha do header (medido: folga 0). Enquanto era `1rem` escrito
+     * nos dois, mudar um só desalinhava a lista em silêncio — e no mobile ele
+     * mudou.
+     */
+    --pad-y: 1rem; /* 16px */
+    padding: var(--pad-y) var(--gutter); /* 16px 64px */
     font: var(--texto-menu);
     letter-spacing: var(--texto-menu-ls);
     color: var(--cor-preto);
@@ -230,8 +259,9 @@ const t = textos(idioma);
   .idioma__lista {
     position: absolute;
     /* Rodapé da fileira + o padding de baixo do header + o 1px da borda dele:
-       a lista encosta EMBAIXO da linha do cabeçalho, sem cobri-la. */
-    top: calc(100% + 1rem + 1px);
+       a lista encosta EMBAIXO da linha do cabeçalho, sem cobri-la. O padding
+       vem por variável para acompanhar o mobile, que usa outro (ver `--pad-y`). */
+    top: calc(100% + var(--pad-y) + 1px);
     left: 0;
     z-index: 1;
     min-width: 100%;
@@ -319,14 +349,50 @@ const t = textos(idioma);
       display: none;
     }
 
+    /*
+     * Pedido do cliente, 2026-08-11: elementos mais altos, para dar o que
+     * tocar. Medido antes: os alvos tinham 14,1px (logo e WhatsApp) e 10,8 (o
+     * seletor) — abaixo dos 24px que a WCAG 2.5.8 exige e muito abaixo dos 44
+     * que é a referência de toque.
+     *
+     * O respiro vertical DIMINUI de 16 para 8 justamente porque os alvos
+     * crescem: sem isso o header saltaria para ~77px, e uma barra fixa desse
+     * tamanho come tela demais num celular. Com os dois, ele fica na faixa de
+     * 56-64px que um header de app costuma ter.
+     *
+     * `px` cru, não `rem`: dentro deste breakpoint a fonte-raiz já está travada
+     * no piso do clamp (12px), então `rem` daria um valor menor que o pedido —
+     * a mesma razão de `--gutter-mobile` (ver tokens.css).
+     */
     .cabecalho {
+      --pad-y: 8px;
       padding-inline: var(--gutter-mobile);
+    }
+
+    /* Os três alvos de toque do header. `min-height` e não `height`: o conteúdo
+       de cada um continua mandando se um dia crescer. */
+    .cabecalho__marca,
+    .idioma__atual,
+    .cabecalho__zap {
+      min-height: 44px;
+    }
+
+    /* O link do logo não era flex — sem isto o `min-height` cresce a caixa e a
+       assinatura fica colada no topo dela. */
+    .cabecalho__marca {
+      display: flex;
+      align-items: center;
     }
 
     /* Some visualmente, continua acessível — mesma técnica do `.sr-only`
        global (não reaproveitei a classe direto porque aqui é condicional,
-       só abaixo de 700px; a classe global vale sempre). */
-    .cabecalho__zap-texto {
+       só abaixo de 700px; a classe global vale sempre).
+
+       Vale para o texto do CTA e, desde 2026-08-11, para o nome do idioma:
+       no celular o seletor é só globo + seta, e quem usa leitor de tela
+       continua ouvindo "Escolher idioma: Português". */
+    .cabecalho__zap-texto,
+    .idioma__nome {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -348,6 +414,69 @@ const t = textos(idioma);
       width: auto;
       height: 1.1773rem; /* 7.6619rem × 295,02/1920 */
     }
+
+    /*
+     * Pedido do cliente, 2026-08-11: o globo na MESMA ALTURA do ícone do
+     * WhatsApp — daí o valor ser literalmente o mesmo `1.1773rem` da regra
+     * acima, e não um número parecido. Se aquele mudar, este tem que mudar
+     * junto: é o par que a pessoa vê lado a lado.
+     *
+     * A seta acompanha por proporção, e não pela mesma altura: no arquivo ela
+     * é 0.4375rem de largura contra 0.71875 do globo, e é essa razão (0,6087)
+     * que mantém o par com o desenho que o designer fez. Casar as alturas dos
+     * dois achataria a seta, que é 7×4 e não quadrada.
+     */
+    .idioma__globo {
+      height: 1.1773rem;
+      width: auto;
+    }
+
+    .idioma__seta {
+      width: 0.7166rem; /* 1.1773rem × (0.4375 ÷ 0.71875) */
+    }
+
+    /*
+     * Pedido do cliente, 2026-08-11: 12px no seletor e na lista.
+     *
+     * Medido antes: os dois saíam a **9px**. Não era um valor escolhido — é o
+     * `--texto-menu` (0.75rem) do header com a fonte-raiz travada no piso do
+     * clamp, que aqui é 12px. `max(…, 12px)` crava os 12 físicos e continua
+     * livre para crescer acima de 700px, o mesmo padrão dos links legais do
+     * rodapé.
+     *
+     * Vai no `.idioma` para valer nos dois de uma vez: o rótulo do seletor e os
+     * links da lista herdam daqui. (O rótulo continua invisível no celular, por
+     * pedido anterior — só globo e seta; o tamanho fica valendo para quando ele
+     * aparecer.)
+     */
+    .idioma {
+      font-size: max(0.75rem, 12px);
+    }
+
+    /*
+     * A lista ancora pela DIREITA no celular.
+     *
+     * Com o rótulo escondido, o seletor encolheu para ~29px, mas a lista
+     * continua tendo a largura do texto dela — ou seja, ela é bem mais larga
+     * que o gatilho. Abrindo da esquerda para a direita a partir de um gatilho
+     * que fica a ~30px da borda da tela, o que sobra vaza para fora. Ancorada à
+     * direita, ela cresce para dentro da tela, que é a única direção com
+     * espaço.
+     */
+    .idioma__lista {
+      right: 0;
+      left: auto;
+    }
+
+    /* Alvo de toque de 44px por item, o mesmo dos três do header. `flex` porque
+       `min-height` sozinho num `display: block` cresce a caixa e deixa o texto
+       colado no topo dela. */
+    .idioma__lista a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 1rem;
+    }
   }
 
   /*
@@ -361,10 +490,16 @@ const t = textos(idioma);
    * `animation-timeline` (Firefox hoje) o header fica sempre à mostra — um
    * header comum, que é o pior caso aceitável. Se o escondido fosse a base,
    * lá ele não apareceria nunca.
+   *
+   * `:not(.cabecalho--sempre)` é a porta de saída das páginas sem hero (as
+   * legais): lá não há tela cheia de foto para o header disputar, e esperar
+   * 100svh de rolagem para mostrar a navegação seria escondê-la sem motivo.
+   * A guarda vai nas DUAS regras — a de animação e a de timeline —, senão a
+   * segunda pendura uma linha do tempo numa animação que não existe.
    */
   @supports (animation-timeline: scroll()) {
     @media (prefers-reduced-motion: no-preference) {
-      .cabecalho {
+      .cabecalho:not(.cabecalho--sempre) {
         animation: cabecalho-descer ease-in-out both;
         /* Fica escondido durante todo o hero e desce ao longo dos 128px
            seguintes. Em 48px a descida cabia em meio giro de roda e parecia
@@ -378,7 +513,7 @@ const t = textos(idioma);
        * rejeita nome de timeline ali: a animação some no build e o header
        * passa a aparecer desde o topo. Mesmo cuidado do hero e do manifesto.
        */
-      body .cabecalho {
+      body .cabecalho:not(.cabecalho--sempre) {
         animation-timeline: scroll(root block);
       }
     }

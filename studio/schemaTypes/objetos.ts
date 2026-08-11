@@ -350,3 +350,74 @@ export const chamadaMateria = defineType({
     }),
   ],
 });
+
+/*
+ * O corpo das páginas legais (`paginaLegal`).
+ *
+ * É o único Portable Text do projeto com ESTRUTURA. Os outros dois acima são uma
+ * frase com marcas por dentro, e por isso os componentes que os usam percorrem
+ * os `children` de um bloco só. Aqui há seções, subseções e listas, porque um
+ * documento jurídico é exatamente isso — e o `TextoLegal.astro` do site foi
+ * escrito para tratar esta lista, item por item.
+ *
+ * A lista é curta de propósito, e o corte tem regra: entra o que a peça precisa
+ * (hierarquia de seções, enumeração, ênfase, link), fica de fora o que só serve
+ * para decorar. Um documento com efeito legal não ganha nada com citação, imagem
+ * ou tabela, e cada um desses seria mais uma coisa que o cliente pode inserir e
+ * que a página não sabe desenhar.
+ *
+ * ATENÇÃO: acrescentar um estilo aqui sem acrescentar no renderizador NÃO dá
+ * erro — o bloco desconhecido cai no caso padrão e sai como parágrafo comum, e
+ * ninguém percebe até alguém reler a página inteira. Os dois arquivos andam
+ * juntos.
+ *
+ * Não há `h1`: o título da página é campo próprio, e é ele o `h1`. Se o corpo
+ * pudesse abrir outro, a página teria dois títulos de primeiro nível — que é o
+ * tipo de coisa que só quebra para quem navega por cabeçalhos, em silêncio.
+ */
+export const textoLegal = defineType({
+  name: 'textoLegal',
+  title: 'Texto legal',
+  type: 'array',
+  of: [
+    defineArrayMember({
+      type: 'block',
+      styles: [
+        { title: 'Parágrafo', value: 'normal' },
+        { title: 'Seção', value: 'h2' },
+        { title: 'Subseção', value: 'h3' },
+      ],
+      lists: [{ title: 'Lista', value: 'bullet' }],
+      marks: {
+        decorators: [
+          { title: 'Forte', value: 'strong' },
+          { title: 'Itálico', value: 'em' },
+        ],
+        annotations: [
+          /*
+           * `hiperlink`, e não `link`: o `link` acima já é um tipo registrado no
+           * esquema (o par texto + destino do menu e do rodapé), e anotação de
+           * bloco entra no MESMO registro de tipos. Dois `link` diferentes com
+           * campos diferentes é conflito de nome, e o Studio resolveria um dos
+           * dois — provavelmente o errado, e sem barulho.
+           */
+          {
+            name: 'hiperlink',
+            title: 'Link',
+            type: 'object',
+            fields: [
+              defineField({
+                name: 'href',
+                title: 'Destino',
+                type: 'string',
+                description:
+                  'Caminho do próprio site (`/termos-de-uso`), e-mail (`mailto:alguem@tobias.adv.br`) ou endereço completo (`https://…`).',
+                validation: (r) => r.required(),
+              }),
+            ],
+          },
+        ],
+      },
+    }),
+  ],
+});

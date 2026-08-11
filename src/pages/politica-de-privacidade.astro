@@ -1,0 +1,18 @@
+---
+/*
+ * A política de privacidade, em português.
+ *
+ * O caminho é o mesmo que o rodapé já apontava antes desta página existir
+ * (`rodape.legais` no Sanity) — mudar o nome do arquivo aqui quebra aquele link
+ * sem quebrar o build.
+ *
+ * A versão inglesa não existe ainda: traduzir peça com efeito legal é decisão do
+ * escritório, não do desenvolvimento. Quando existir, é publicar
+ * `legal-privacidade-en` no Studio e criar `src/pages/en/privacy-policy.astro`
+ * com estas mesmas linhas — nessa ordem, porque o build lê só documento
+ * publicado. E o `rotas` das duas passa a listar os dois idiomas.
+ */
+import Legal from '../layouts/Legal.astro';
+---
+
+<Legal chave="privacidade" idioma="pt-BR" rotas={{ 'pt-BR': '/politica-de-privacidade' }} />

@@ -1,0 +1,21 @@
+---
+/*
+ * Os termos de uso, em português.
+ *
+ * O caminho é o mesmo que o rodapé já apontava antes desta página existir
+ * (`rodape.legais` no Sanity) — mudar o nome do arquivo aqui quebra aquele link
+ * sem quebrar o build.
+ *
+ * O texto aponta para a política de privacidade em dois lugares (as seções 6 e
+ * 9), então as duas páginas viajam juntas: publicar só esta deixa dois links
+ * mortos no meio de "parte integrante destes Termos".
+ *
+ * Sem versão inglesa, pela mesma razão da política: traduzir peça com efeito
+ * legal é decisão do escritório. Quando existir, é publicar `legal-termos-en` e
+ * criar `src/pages/en/terms-of-use.astro` com estas mesmas linhas — nessa
+ * ordem, porque o build lê só documento publicado.
+ */
+import Legal from '../layouts/Legal.astro';
+---
+
+<Legal chave="termos" idioma="pt-BR" rotas={{ 'pt-BR': '/termos-de-uso' }} />

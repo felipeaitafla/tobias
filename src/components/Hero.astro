@@ -39,10 +39,44 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     Pedido do cliente, 2026-07-31: vídeo no lugar da foto. A foto continua no
     DOM, embaixo — é o quadro que aparece antes do vídeo carregar e o que fica
     para quem prefere sem movimento (`prefers-reduced-motion`, ver o style: o
-    vídeo some e a foto mostra por baixo, sem JS nenhum). Convertido do
-    ProRes original (692 MB, 4K) para H.264 1080p com `ffmpeg`: 4 MB.
+    vídeo some e a foto mostra por baixo, sem JS nenhum). Os dois arquivos saem
+    do mesmo ProRes 4K de 692 MB, que não entra no git (ver `.gitignore`).
     `muted` é obrigatório para o autoplay funcionar em qualquer navegador, e
     `playsinline` evita o iOS abrir em tela cheia sozinho.
+
+    --- A escada de resolução (2026-08-11) ---
+
+    `<video>` NÃO tem `srcset`/`sizes`. O único mecanismo de escolha é o `media`
+    do `<source>`, e ele tem duas propriedades que mudam o que dá para fazer:
+
+      - a seleção acontece UMA VEZ, na carga. Redimensionar a janela não troca
+        de arquivo, então não adianta desenhar uma escada fina;
+      - ele lê PIXELS CSS. Um 27" 4K na escala de fábrica reporta 1920 CSS px,
+        indistinguível de um 1080p real — ou seja, o monitor caro que
+        justificaria 4K é justamente o que a media query não sabe identificar.
+
+    São três degraus, e cada corte tem motivo:
+
+      - **720px** para o 720p. Pedido do cliente, 2026-08-11. Repare que ele
+        NÃO é o breakpoint de 700px do layout, e isso é de propósito — resolução
+        de vídeo e modo de layout são coisas independentes, e o número aqui
+        casa com a altura do arquivo, que é o que se lê ao depurar. Se um dia
+        alguém "consertar" isto para 700 achando que é typo, os 20px de
+        diferença não quebram nada e a intenção se perde;
+      - **1439px** para o 1080p. Sem este degrau do meio, um notebook comum de
+        1366×768 baixava os 6,46 MB do 1440p; com ele são 4,04 — 37% a menos
+        exatamente onde vive a maior parte dos notebooks. Um retina de 1440 CSS
+        px (com 2880 pixels de verdade) cai no degrau de cima, que é o certo.
+
+    **Nada de 4K**, e a razão é medida, não gosto. Metade da imagem é invisível
+    (o véu vai de 53% de preto no topo a preto total embaixo), e com o véu
+    aplicado o 2160p entrega +0,0030 de SSIM sobre o 1440p — praticamente o
+    mesmo incremento do degrau anterior (+0,0034) por **2,8× os bytes** (13,20
+    contra 6,46 MB). Some o fato acima, de que ele não é endereçável.
+
+    A ORDEM é o mecanismo: o navegador fica no PRIMEIRO `<source>` cujo `media`
+    casa. Por isso os `media` são tetos crescentes e o último não tem nenhum —
+    ele é o padrão, e um `<video>` em que nenhuma fonte casa não toca nada.
   */}
   <video
     class="hero__video"
@@ -52,7 +86,9 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     playsinline
     aria-hidden="true"
   >
-    <source src="/video-hero.mp4" type="video/mp4" />
+    <source src="/video-hero-720.mp4" media="(max-width: 720px)" type="video/mp4" />
+    <source src="/video-hero-1080.mp4" media="(max-width: 1439px)" type="video/mp4" />
+    <source src="/video-hero-1440.mp4" type="video/mp4" />
   </video>
 
   <div class="hero__veu"></div>

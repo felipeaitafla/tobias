@@ -302,10 +302,24 @@ const ritmo = `
      *
      * A barra de passagem não está dentro da grade, daí o `~`: ela é irmã
      * seguinte.
+     *
+     * `(hover: hover) and (pointer: fine)` desde 2026-08-11, a pedido do
+     * cliente: no toque não existe hover de verdade — o primeiro toque na grade
+     * GRUDA o estado e a passagem fica parada até a pessoa tocar em outro
+     * lugar. Não era pausa, era travamento; ninguém pediu para parar e não é
+     * óbvio como voltar a andar. Mesma guarda do visor da matéria, no Sobre, e
+     * pelo mesmo motivo.
+     *
+     * O que isso custa: no celular sobra só o `prefers-reduced-motion` acima
+     * como jeito de parar a passagem (a WCAG 2.2.2). Os traços continuam
+     * pulando de grupo, mas pular não é pausar. É uma troca consciente — a
+     * pausa que existia lá não era usável.
      */
-    .clientes__trilho:hover .clientes__grade,
-    .clientes__trilho:hover ~ .clientes__aparte .passagem__preenchimento {
-      animation-play-state: paused;
+    @media (hover: hover) and (pointer: fine) {
+      .clientes__trilho:hover .clientes__grade,
+      .clientes__trilho:hover ~ .clientes__aparte .passagem__preenchimento {
+        animation-play-state: paused;
+      }
     }
 
     /*

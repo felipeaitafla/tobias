@@ -41,7 +41,7 @@ export default defineConfig({
      */
     documentInternationalization({
       supportedLanguages: IDIOMAS.map((i) => ({ id: i.id, title: i.title })),
-      schemaTypes: ['pagina'],
+      schemaTypes: ['pagina', 'paginaLegal'],
     }),
 
     visionTool(),
@@ -53,10 +53,17 @@ export default defineConfig({
    * Sem isto o menu "Criar novo" ofereceria "Página" solta, sem idioma — e um
    * documento sem `language` fica invisível para a consulta do site e para o
    * seletor de tradução. Cada idioma ganha um template que já nasce marcado.
+   *
+   * "Página legal" não ganha template nenhum e some do menu de vez: os ids dela
+   * são fixos (`legal-privacidade-pt-BR`) e quem os cria é a estrutura, ao abrir
+   * a entrada. Um documento criado pelo menu nasceria com id aleatório, e a rota
+   * do site — que pede o documento pelo nome — nunca o encontraria.
    */
   document: {
     newDocumentOptions: (anteriores) =>
-      anteriores.filter((item) => item.templateId !== 'pagina'),
+      anteriores.filter(
+        (item) => item.templateId !== 'pagina' && item.templateId !== 'paginaLegal',
+      ),
   },
   templates: (anteriores: Template[]): Template[] => [
     ...anteriores,

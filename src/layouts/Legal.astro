@@ -1,0 +1,184 @@
+---
+/*
+ * A composição das páginas de texto corrido — política de privacidade e, quando
+ * chegar a vez dela, termos de uso.
+ *
+ * Mesma ideia do `Site.astro`: a página inteira mora aqui e a rota tem três
+ * linhas. Aqui a economia é maior ainda, porque a segunda página legal não custa
+ * nem componente novo — custa uma `chave`.
+ *
+ * O que ela NÃO tem, e é o ponto: hero, camada, parallax, `view-timeline`,
+ * `timeline-scope`. A one page empilha seis camadas que sobem umas por cima das
+ * outras a 35% da velocidade da rolagem; um documento jurídico é uma coluna de
+ * texto que a pessoa lê de cima a baixo, e qualquer coisa que se mexa embaixo
+ * dele atrapalha exatamente quem mais precisa ler com atenção. O que se
+ * aproveita da one page é o alto, o pé e os tokens — que é o que faz as duas
+ * parecerem o mesmo site.
+ */
+import Base from './Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import Rodape from '../components/Rodape.astro';
+import TextoLegal from '../components/TextoLegal.astro';
+import { buscarLegal } from '../lib/conteudo';
+import { caminhoDe, textos } from '../lib/interface';
+
+interface Props {
+  /* A metade do meio do id no Sanity (`legal-<chave>-<idioma>`). Ver
+     `buscarLegal` em `src/lib/conteudo.ts`. */
+  chave: string;
+  idioma: string;
+  /* O caminho desta página, por idioma. Vai para o canonical e o `hreflang` do
+     `Base.astro` — e enquanto a tradução não existir, o mapa tem uma entrada só,
+     que é como se diz "esta página não tem versão inglesa" sem mentir. */
+  rotas: Record<string, string>;
+}
+
+const { chave, idioma, rotas } = Astro.props;
+const { legal, pagina, config } = await buscarLegal(chave, idioma);
+const t = textos(idioma);
+const inicio = caminhoDe(idioma);
+
+/*
+ * Âncora da one page vira âncora COM caminho.
+ *
+ * O `#manifesto` do menu funciona na home porque a seção está ali. Aqui não
+ * está: o clique não vai a lugar nenhum, a URL ganha um hash morto e o
+ * tratador do Lenis (no `Base.astro`) desiste em silêncio, porque
+ * `querySelector` não acha o alvo. Prefixando com a home, o mesmo item de menu
+ * volta a levar aonde o texto dele promete.
+ *
+ * `#topo` fica de fora de propósito: é o "Voltar ao topo" do rodapé, e o topo
+ * de QUALQUER página é ela mesma. O `id` está no `<main>` aqui embaixo, igual
+ * ao da one page.
+ */
+const comCaminho = (href: string) =>
+  href.startsWith('#') && href !== '#topo' ? `${inicio}${href}` : href;
+
+const navegacao = pagina.navegacao.map((item) => ({ ...item, href: comCaminho(item.href) }));
+const rodape = {
+  ...pagina.rodape,
+  navegacao: pagina.rodape.navegacao.map((item) => ({ ...item, href: comCaminho(item.href) })),
+};
+
+/*
+ * A data sai do Sanity como `YYYY-MM-DD` e é escrita por extenso no idioma da
+ * página. `Intl` em vez de uma tabela de meses: o navegador (e o Node do build)
+ * já sabe fazer isso, e uma tabela nossa teria que crescer a cada idioma novo.
+ *
+ * `T00:00:00` obriga a leitura em hora LOCAL. Sem isso `new Date('2026-08-11')`
+ * é lido como meia-noite UTC, e em qualquer fuso a oeste de Greenwich — o
+ * nosso — a data volta um dia. Um documento legal datado de véspera é o tipo de
+ * erro que ninguém confere e que fica no ar para sempre.
+ */
+const atualizado = new Intl.DateTimeFormat(idioma, { dateStyle: 'long' }).format(
+  new Date(`${legal.atualizadoEm}T00:00:00`),
+);
+---
+
+<Base titulo={legal.seo.titulo} descricao={legal.seo.descricao} idioma={idioma} rotas={rotas}>
+  {/* Sem hero para disputar a tela: o header nasce visível. */}
+  <Cabecalho
+    navegacao={navegacao}
+    whatsapp={config.whatsapp}
+    whatsappTexto={pagina.whatsappTexto}
+    idioma={idioma}
+    inicio={inicio}
+    sempreVisivel
+  />
+
+  <main id="topo" class="legal secao">
+    <article class="legal__folha">
+      <header class="legal__topo">
+        <h1 class="legal__titulo">{legal.titulo}</h1>
+        {/* `<time>` com `datetime`: a data por extenso é para quem lê, o
+            atributo é para quem processa. */}
+        <p class="legal__data">
+          {t['legal.atualizado']}<time datetime={legal.atualizadoEm}>{atualizado}</time>
+        </p>
+      </header>
+
+      <TextoLegal corpo={legal.corpo} />
+    </article>
+  </main>
+
+  <Rodape rodape={rodape} config={config} idioma={idioma} />
+</Base>
+
+<style>
+  /*
+   * O header é `position: fixed`, e na one page quem passa por baixo dele é o
+   * hero. Aqui a primeira coisa da página é o título, então o respiro de seção
+   * (128px) é o que impede o `h1` de nascer debaixo da barra — ela mede ~52px
+   * na largura de projeto, e o resto vira ar.
+   */
+  .legal {
+    background: var(--cor-branco);
+  }
+
+  /*
+   * A coluna de leitura: 44rem, que na largura de projeto são 704px.
+   *
+   * O `.container` do site vai a 1446px, e isso serve para a one page, onde o
+   * texto vive em blocos curtos ao lado de fotos. Texto corrido de 18px numa
+   * linha de 1382px passa de 200 caracteres — a linha fica tão longa que o olho
+   * erra a volta e relê a mesma. 704px dá ~90 caracteres, que é o teto da faixa
+   * confortável. É medida de conteúdo, então vai em `rem` e escala junto com o
+   * resto (ver "Escala fluida" no CLAUDE.md).
+   *
+   * CENTRALIZADA (pedido do cliente, 2026-08-11). Diverge do resto do site, que
+   * é alinhado à esquerda no gutter — e a divergência é deliberada: a one page
+   * põe texto ao lado de foto e de grade, onde o eixo à esquerda é o que
+   * alinha tudo; aqui não há nada ao lado, e uma coluna encostada à esquerda
+   * deixa metade da tela vazia em qualquer monitor grande.
+   *
+   * Não usa o `.container` do site para conseguir isso: ele centraliza, mas
+   * traz junto um `max-width` de 1446px que não tem o que fazer numa coluna de
+   * 704 — o menor sempre ganharia, e ficaria um valor morto no código dizendo
+   * que importa. `margin-inline: auto` é a metade dele que interessa.
+   *
+   * No celular isto não faz nada: a coluna já ocupa a largura disponível
+   * (311px numa tela de 375), então as margens automáticas dão zero.
+   */
+  .legal__folha {
+    max-width: 44rem;
+    margin-inline: auto;
+  }
+
+  .legal__topo {
+    /* O mesmo par de divisa e respiro que abre cada seção do corpo — é ele que
+       diz "o documento começa aqui". */
+    padding-bottom: 2rem; /* 32px */
+    margin-bottom: 1.5rem; /* 24px */
+    border-bottom: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .legal__titulo {
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+  }
+
+  /* Texto de apoio, o mesmo dos rótulos cinza do site. */
+  .legal__data {
+    margin-top: 1rem; /* 16px */
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  /*
+   * A mesma exceção pontual do resto do site (ver `--gutter-mobile` em
+   * tokens.css): abaixo de 700px a fonte-raiz já está travada no piso do clamp,
+   * então o respiro vertical de 128px em `rem` vira 96px físicos e o título de
+   * 58px vira 43,5 — grande demais para uma tela de 375. Aqui os dois descem, e
+   * em `px` cru pelo motivo de sempre nessa faixa.
+   */
+  @media (max-width: 700px) {
+    .legal {
+      padding-block: 96px 64px;
+    }
+
+    .legal__titulo {
+      font-size: 36px;
+    }
+  }
+</style>

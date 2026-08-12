@@ -38,25 +38,30 @@ const SIZES_FOTO = '50vw';
 
 const fotoEscritorio = imagem(historia.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
 /*
- * O logo do Valor NÃO tem 86px de largura fixa — ele escala junto com o resto
- * do site. `.materia__logo` pede `5.375rem`, e a fonte-raiz é
+ * O logo do Valor NÃO tem 81,67px de largura fixa — ele escala junto com o resto
+ * do site. `.materia__logo` pede `5.104rem`, e a fonte-raiz é
  * `clamp(0.75rem, 1.1065vw, 1.75rem)`, ou seja `clamp(12px, 1.1065vw, 28px)`.
- * Multiplicando: o logo mede de 64,5px (no piso do clamp) a 150,5px (no teto,
- * ~2530px de tela), passando por 86 na largura de projeto.
+ * Multiplicando: o logo mede de 61,3px (no piso do clamp) a 142,9px (no teto,
+ * ~2530px de tela), passando por 81,67 na largura de projeto.
  *
- * O `sizes` PRECISA dizer isso. Com o `'86px'` que estava aqui, numa tela 2K o
- * navegador pedia 86px para desenhar 150 — e o logo saía borrado mesmo com
- * arquivo bom. Se algum navegador não entender o `clamp()`, ele cai no padrão
- * de 100vw e escolhe o maior candidato: um PNG de 4 KB, prejuízo nenhum.
+ * O `sizes` PRECISA dizer isso. Com um px cravado, numa tela 2K o navegador
+ * pediria a medida da largura de projeto para desenhar 143 — e o logo sairia
+ * borrado mesmo com arquivo bom. Se algum navegador não entender o `clamp()`,
+ * ele cai no padrão de 100vw e escolhe o maior candidato: um PNG de 4 KB,
+ * prejuízo nenhum.
  *
- * 164 e não 172 no segundo candidato porque é a largura real do arquivo no
- * Sanity — pedir mais que isso faz a CDN ampliar, que é exatamente o defeito
- * que a troca de 2026-08-06 veio consertar (o asset antigo tinha 105px, e a
- * tela 2× pedia 172: 64% de ampliação).
+ * 164 no segundo candidato porque é a largura real do arquivo no Sanity — pedir
+ * mais que isso faz a CDN ampliar, que é exatamente o defeito que a troca de
+ * 2026-08-06 veio consertar (o asset antigo tinha 105px, e a tela 2× pedia 172:
+ * 64% de ampliação).
+ *
+ * OS TRÊS NÚMEROS ANDAM JUNTOS — largura no CSS, candidatos e `sizes`. O nó
+ * encolheu duas vezes em duas levas (105 → 86 em 2026-08-06, 86 → 81,67 em
+ * 2026-08-12), e nas duas o que borra a imagem é acertar um e esquecer os outros.
  */
 const logoValor = imagem(materia.logo, {
-  larguras: [86, 164],
-  sizes: 'clamp(64.5px, 5.95vw, 150.5px)',
+  larguras: [82, 164],
+  sizes: 'clamp(61.3px, 5.65vw, 142.9px)',
 });
 
 /*
@@ -497,8 +502,14 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
      * coluna de texto que está logo acima. Lá os 96 são os 64 de respiro da
      * faixa mais os 32 do padding da própria coluna; aqui a faixa começa na
      * borda da tela, então os dois viram um número só.
+     *
+     * 32 em cima e embaixo é pedido do cliente (2026-08-12) e diverge do
+     * arquivo, que desenha 48 (#185:97) — os mesmos 48 que este código foi
+     * buscar em 2026-08-05, quando estava em 24. A faixa encolhe junto: mede
+     * ~96px de altura em vez dos 128 do arquivo. Só o vertical muda; os 96 dos
+     * lados são alinhamento, não respiro, e continuam presos à coluna de cima.
      */
-    padding: 3rem 6rem; /* 48px 96px */
+    padding: 2rem 6rem; /* 32px 96px — 32 é pedido do cliente, o arquivo pede 48 */
     /* 0.8 é a cor da chamada (#185:104). O ícone é um passo mais apagado e tem
        cor própria, lá embaixo. */
     color: rgba(255, 255, 255, 0.8);
@@ -553,9 +564,11 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
 
   .materia__logo {
     flex-shrink: 0;
-    /* 86px (#185:101, redesenhado em 2026-08-06 — eram 105). O hover NÃO mexe
-       no tamanho: as duas variantes do componente declaram a mesma medida. */
-    width: 5.375rem;
+    /* 81,67px (#I186:126;185:101, redesenhado de novo em 2026-08-12 — foram 105,
+       depois 86). O hover NÃO mexe no tamanho: as duas variantes do componente
+       declaram a mesma medida. Mexer aqui pede mexer no `sizes` junto, ver o
+       frontmatter. */
+    width: 5.104rem;
     height: auto;
   }
 
@@ -707,8 +720,14 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     width: 50%;
     /* Os mesmos 96 da faixa da matéria, e pelo mesmo motivo: é o que alinha o
        bloco com a coluna de texto logo acima (64 de respiro da faixa + 32 do
-       padding da coluna, que aqui viram um número só). */
-    padding: 3rem 6rem; /* 48px 96px */
+       padding da coluna, que aqui viram um número só).
+
+       E os mesmos 32 em cima e embaixo, pelo mesmo pedido do cliente
+       (2026-08-12) — o arquivo desenha 48 nas três variantes. As alturas do
+       bloco descem 32px em bloco: ~120,8px fechado, ~176,9 com o campo à
+       mostra. A invariante que importa continua de pé: os três estados
+       (enviando, sucesso, falha) medem o mesmo, sem pulo. */
+    padding: 2rem 6rem; /* 32px 96px — 32 é pedido do cliente, o arquivo pede 48 */
     color: rgba(255, 255, 255, 0.8);
     background: var(--cor-preto);
   }
@@ -718,6 +737,73 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
   .sobre__faixa--foto-antes .apresentacao {
     right: 0;
     left: auto;
+  }
+
+  /*
+   * --- O CONTRAPESO: a barra cola na camada de baixo ---
+   *
+   * Pedido do cliente, 2026-08-12: em vez de afundar junto com o Sobre, a barra
+   * deve subir por cima dele, colada nas Áreas.
+   *
+   * `.camada-sobre` é freada contra a timeline `--areas` (ver `Site.astro`): ela
+   * é empurrada `--freio-camada` (65vh) para baixo ao longo da faixa `entry`, o
+   * que a faz subir a 35% da velocidade da página. A barra, por estar dentro
+   * dela, afundava junto.
+   *
+   * Pendurar aqui a animação INVERSA, na mesma timeline e na mesma faixa, faz as
+   * duas se cancelarem: a barra fica parada na posição de LAYOUT dela. E a
+   * posição de layout dela é a base da última faixa do Sobre, que é exatamente
+   * onde a `.camada-areas` começa — e essa camada NÃO é freada. Logo barra e
+   * Áreas passam a andar as duas a 100% da rolagem, e a barra fica soldada à
+   * borda de cima das Áreas durante toda a entrada. Relativamente ao Sobre ela
+   * sobe, porque é o Sobre que está afundando a 35%.
+   *
+   * ISTO SÓ FUNCIONA PORQUE A FAIXA DO THIAGO É A ÚLTIMA DO SOBRE. Hoje só o
+   * Thiago tem o bloco (`socios[].apresentacao` no Sanity), e é isso que faz a
+   * base da barra coincidir com a emenda entre as duas camadas. Se um dia a
+   * Marjorye ganhar o bloco, o dela vai colar na emenda ENTRE AS FAIXAS, no meio
+   * do Sobre, e o efeito não é o mesmo — não é defeito de CSS, é o contrapeso
+   * cancelando um freio contra uma emenda que não é a das Áreas.
+   *
+   * A barra da matéria (`.materia`) NÃO leva contrapeso: ela continua freada
+   * junto com o Sobre, de propósito.
+   *
+   * Nada recorta a barra no caminho: nem `.sobre__faixa` nem o `<section>` do
+   * Sobre declaram `overflow`. Em tela alta (onde 65vh passa dos 810px da faixa)
+   * ela sai pelo topo da faixa do Thiago e passa por cima da Marjorye, que é o
+   * pedido — e o `z-index: 1` acima já a põe na frente das faixas irmãs.
+   */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .apresentacao {
+        animation: camada-contrapeso linear both;
+        animation-range: entry;
+      }
+
+      /*
+       * Regra separada, com seletor DIFERENTE, de propósito — a mesma armadilha
+       * do minificador que o `Site.astro`, o manifesto, o rodapé e o cabeçalho já
+       * contornam: junto na mesma regra, o minificador funde `animation` e
+       * `animation-timeline` no atalho, o navegador rejeita nome de timeline ali
+       * e descarta a declaração INTEIRA. `animation-name` vira `none` e o efeito
+       * desaparece só no build — o `dev`, sem minificação, continua funcionando.
+       *
+       * `--areas` está em escopo aqui por causa do `timeline-scope` do `main`.
+       */
+      .sobre__faixa .apresentacao {
+        animation-timeline: --areas;
+      }
+    }
+  }
+
+  /* Um `to` só, como o `camada-frear`: o `from` implícito é o valor da cascata
+     (sem transform), então antes da faixa `entry` a barra está onde sempre
+     esteve, e o `both` a retém no fim casando com o freio, que também fica
+     retido. */
+  @keyframes camada-contrapeso {
+    to {
+      transform: translateY(calc(-1 * var(--freio-camada)));
+    }
   }
 
   /* Mesma exceção pontual da moldura e da matéria (ver acima): abaixo de
@@ -734,17 +820,24 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
      * Pedido do cliente, 2026-08-11: 50% a mais de respiro entre a LINHA do
      * campo de e-mail e a borda de baixo do bloco.
      *
-     * Medido: no celular esse vão é 36px — só o `padding-bottom` do bloco
-     * (`3rem` com a fonte-raiz travada em 12px). A `margin-bottom` de 1rem que
-     * a gaveta ganha aberta NÃO entra aqui: ela vive dentro de
-     * `@media (hover: hover) and (pointer: fine)`, e no toque essa media query
-     * é falsa. Quem medir isto no desktop encolhendo a janela vai ver 48px e
-     * achar que a conta está errada — não está, são estados diferentes.
+     * Quando isto foi escrito o vão medido era 36px — só o `padding-bottom` do
+     * bloco (`3rem` com a fonte-raiz travada em 12px) —, e 36 × 1,5 = 54 deu os
+     * 18px extras. **O padding baixou para `2rem` em 2026-08-12** (pedido do
+     * cliente, ver a regra do bloco), então o piso agora é 24 e estes 18px
+     * fazem 42, não 54. Ficam como estão de propósito: o número que o cliente
+     * viu e aprovou é o vão, não a razão. Se algum dia ele pedir o "50% a mais"
+     * de novo sobre o padding novo, o valor passa a ser 12px.
      *
-     * 36 × 1,5 = 54, e os 18px extras entram na GAVETA, não no padding do
-     * bloco: assim o respiro pertence a quem está pedindo espaço (o campo), e
-     * some junto com ele se um dia a gaveta fechar no toque também. O padding
-     * do bloco continua simétrico, como o arquivo desenha.
+     * Estes 18px são SÓ do toque: com ponteiro fino a regra da gaveta aberta
+     * zera a margem (pedido do cliente, 2026-08-12: lá o respiro de baixo é
+     * igual ao de cima), e as duas media queries valem juntas numa janela de
+     * desktop estreita. Quem medir isto encolhendo a janela do desktop vai ver
+     * 32px e achar que a conta está errada — não está, são estados diferentes.
+     *
+     * Os extras entram na GAVETA, não no padding do bloco: assim o respiro
+     * pertence a quem está pedindo espaço (o campo), e some junto com ele se um
+     * dia a gaveta fechar no toque também. O padding do bloco continua
+     * simétrico.
      *
      * `px` cru pela razão de sempre nesta faixa (ver `--gutter-mobile`).
      */
@@ -866,12 +959,14 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     .apresentacao__gaveta {
       grid-template-rows: minmax(0, 0fr);
       margin-top: 0;
+      /* Zera os 18px do mobile: as duas media queries valem ao mesmo tempo numa
+         janela de desktop estreita, e com ponteiro o respiro de baixo é só o
+         padding do bloco — aberta ou fechada. */
       margin-bottom: 0;
       opacity: 0;
       transition:
         grid-template-rows 0.3s ease 0.4s,
         margin-top 0.3s ease 0.4s,
-        margin-bottom 0.3s ease 0.4s,
         opacity 0.2s ease 0.4s;
     }
 
@@ -887,10 +982,16 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     .apresentacao:has(.apresentacao__estado:not([hidden])) .apresentacao__gaveta {
       grid-template-rows: minmax(0, 1fr);
       margin-top: 2rem;
-      /* 16px a mais embaixo do bloco: Figma pede pB=64 na variante ask-email
-         (#212:79), contra os 48 do Default. A diferença vira margem, para não
-         interferir no padding da faixa inteira. */
-      margin-bottom: 1rem; /* 16px */
+      /*
+       * Sem margem embaixo, e isso é divergência assumida do arquivo: o Figma
+       * pede pB=64 na variante ask-email (#212:79) contra os 48 do Default, e
+       * os 16px de diferença viviam aqui como margem.
+       *
+       * Pedido do cliente, 2026-08-12: com o campo à mostra, o respiro de baixo
+       * tem que ser igual ao de cima. Os dois são agora o `padding: 2rem` do
+       * bloco (era `3rem`; baixou no mesmo dia, ver a regra do bloco), e o
+       * bloco aberto mede 16px menos que antes de a margem sair.
+       */
       opacity: 1;
       transition-delay: 0s;
     }

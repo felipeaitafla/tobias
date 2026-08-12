@@ -283,6 +283,39 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     font-weight: 600;
   }
 
+  /*
+   * Pedido do cliente, 2026-08-12: no celular a descrição vai até o limite do
+   * padding, e o vão entre título e descrição encolhe para o mesmo que já
+   * existe entre a descrição e o link.
+   *
+   * Empilhados, os dois números do desktop deixam de descrever o desenho:
+   *
+   *   - a base do aparte (305px, #35:97) é a FATIA dele numa fileira de duas
+   *     colunas. Sozinha numa linha, ela vira uma faixa estreita com sobra à
+   *     direita, e o `max-width` de 289px do nó de texto (#35:98) — que no
+   *     arquivo é a folga interna da coluna — só afasta mais o texto da borda;
+   *   - o `gap` do `.hero__base` separa as duas colunas na horizontal. Depois
+   *     da quebra ele passa a ser respiro vertical, e `--gutter` dá 48px contra
+   *     os 24 do `gap` do aparte: o dobro, no lugar onde o desenho pede menos.
+   *
+   * `2rem` literal e não um valor novo, contra a regra do `px` cru desta faixa:
+   * o pedido é "o mesmo que o outro", e o outro é `2rem`. Escritos iguais, os
+   * dois vãos continuam iguais se alguém mexer no `gap` do aparte.
+   */
+  @media (max-width: 700px) {
+    .hero__base {
+      gap: 2rem; /* 24px, com a fonte-raiz travada no piso do clamp */
+    }
+
+    .hero__aparte {
+      flex-basis: 100%;
+    }
+
+    .hero__resumo {
+      max-width: none;
+    }
+  }
+
   .hero__link {
     display: flex;
     align-items: center;

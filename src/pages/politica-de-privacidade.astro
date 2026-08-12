@@ -6,13 +6,15 @@
  * (`rodape.legais` no Sanity) — mudar o nome do arquivo aqui quebra aquele link
  * sem quebrar o build.
  *
- * A versão inglesa não existe ainda: traduzir peça com efeito legal é decisão do
- * escritório, não do desenvolvimento. Quando existir, é publicar
- * `legal-privacidade-en` no Studio e criar `src/pages/en/privacy-policy.astro`
- * com estas mesmas linhas — nessa ordem, porque o build lê só documento
- * publicado. E o `rotas` das duas passa a listar os dois idiomas.
+ * Existe versão inglesa desde 2026-08-12 (`src/pages/en/privacy-policy.astro`,
+ * documento `legal-privacidade-en`) — por isso o `rotas` lista os dois
+ * idiomas, e não só o pt-BR: é o que fecha o `hreflang` nos dois sentidos.
  */
 import Legal from '../layouts/Legal.astro';
 ---
 
-<Legal chave="privacidade" idioma="pt-BR" rotas={{ 'pt-BR': '/politica-de-privacidade' }} />
+<Legal
+  chave="privacidade"
+  idioma="pt-BR"
+  rotas={{ 'pt-BR': '/politica-de-privacidade', en: '/en/privacy-policy' }}
+/>

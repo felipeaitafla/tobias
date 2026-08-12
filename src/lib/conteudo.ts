@@ -34,7 +34,7 @@ const CHROME_PAGINA = /* groq */ `
   whatsappTexto,
   rodape{
     navegacao[]{ _key, texto, href },
-    contatoTitulo, redesTitulo, topo, marca, copyright,
+    menuTitulo, contatoTitulo, redesTitulo, topo, marca, copyright,
     legais[]{ _key, texto, href }
   }
 `;

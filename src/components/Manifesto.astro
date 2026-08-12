@@ -90,8 +90,17 @@ const { manifesto } = Astro.props;
        655px é o que o arquivo desenha desde a revisão de 2026-08-06 (era 697).
        O Chrome mede as mesmas linhas uns 4px mais largas que o Figma, então a
        folga de sempre pode ser necessária — confira as quebras contra o nó
-       antes de mexer, e lembre que o texto também mudou nesta leva. */
-    --largura-texto: 40.9375rem; /* 655px */
+       antes de mexer, e lembre que o texto também mudou nesta leva.
+
+       O `min()` não é fluidez, é teto: abaixo de ~1084px a fonte-raiz trava no
+       piso do clamp e este número para de encolher junto com a coluna. No
+       celular ele valia 491px numa coluna de 311 — e como ele também é o
+       `background-size` da revelação, a frente terminava a varredura FORA do
+       texto: a última quinta parte da animação não pintava nada, e o bloco já
+       estava todo preto em `--revelacao: 78%`. Preso a 100% da coluna, a
+       varredura acaba na última palavra. Não muda nada onde os 655 cabem
+       (medido em 1446px: mesmas quebras, mesmo `background-size`). */
+    --largura-texto: min(40.9375rem, 100%); /* 655px */
 
     display: flex;
     flex: 0 1 54.25rem; /* 868px */
@@ -188,6 +197,30 @@ const { manifesto } = Astro.props;
        */
       .manifesto .manifesto__texto {
         animation-timeline: --revelar;
+      }
+    }
+
+    /*
+     * Exceção pontual de mobile — comportamento, não tamanho, que é o único
+     * caso em que o breakpoint vale (ver a regra no CLAUDE.md).
+     *
+     * A frente de revelação é uma diagonal, então a FAIXA em transição é tão
+     * alta quanto o texto é LARGO: 655px de faixa no desktop contra 311 no
+     * celular. Faixa fina somada à mesma duração deixava a transição colada na
+     * borda de baixo — medido a 375×812, a parte visível dela ficava entre
+     * y≈605 e o rodapé da tela em toda a varredura, e o bloco já estava preto
+     * com o topo ainda a 190px. O texto chegava à zona de leitura pronto.
+     *
+     * Começar mais tarde e durar mais sobe a faixa para o meio da tela: nos
+     * mesmos 375×812 ela passa a viver entre y≈150 e y≈470, e a varredura fica
+     * à vista do começo ao fim. Os dois números têm limite dos dois lados —
+     * antes de 22% não há bloco na tela suficiente para haver cinza que se veja
+     * (a 22% o topo dele está em 508), e depois de 88% a última linha revelaria
+     * já saindo pelo topo (a 88% a base ainda está a 166px da borda de cima).
+     */
+    @media screen and (prefers-reduced-motion: no-preference) and (max-width: 700px) {
+      .manifesto__texto {
+        animation-range: cover 22% cover 88%;
       }
     }
   }

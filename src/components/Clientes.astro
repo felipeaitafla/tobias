@@ -175,6 +175,21 @@ const ritmo = `
   @media (max-width: 700px) {
     .clientes__aparte {
       order: -1;
+      /*
+       * Pedido do cliente, 2026-08-12: o rótulo e a barra vão até o padding da
+       * seção. É a mesma armadilha já documentada no hero — MEDIDA DE FATIA NÃO
+       * SOBREVIVE À QUEBRA DE LINHA. Os 330px da base descrevem uma coluna que
+       * divide a fileira com a parede de logos; empilhada pelo `flex-wrap`, ela
+       * vira uma faixa solta com sobra à direita, e o número deixa de descrever
+       * o desenho (medido a 375px: 247,5 de coluna dentro de 311 disponíveis,
+       * 63,5 de vazio).
+       *
+       * Basta a base: nem o rótulo nem a barra declaram largura própria — ele
+       * enche a coluna, e ela é esticada pelo `stretch` padrão da coluna (ver o
+       * comentário da `.passagem`). Os quatro traços continuam `flex: 1` e
+       * repartem o que houver.
+       */
+      flex-basis: 100%;
     }
   }
 
@@ -182,36 +197,91 @@ const ritmo = `
     font: var(--texto-apoio);
     letter-spacing: var(--texto-apoio-ls);
     color: var(--cor-apoio);
+    /*
+     * Anula o `text-wrap: balance` que o reset dá a todo `h1..h4` — e aqui isso
+     * é sobre a barra de passagem, não sobre o texto.
+     *
+     * `balance` iguala as linhas de um título curto, e num rótulo que quebra em
+     * duas ele ENCOLHE o bloco de propósito: o inglês ("Companies that have
+     * relied on Tobias's experience:") saía com duas linhas de 189,2px numa
+     * coluna de 330, e a barra — que agora mede a coluna — sobrava 141px além do
+     * texto. Sem `balance` a primeira linha usa a largura disponível e o bloco vai
+     * a 270,6px, com 59 de sobra.
+     *
+     * O português não muda: cabe em uma linha, e `balance` não tem o que
+     * equilibrar (medido: 316,5px nos dois casos).
+     */
+    text-wrap: wrap;
   }
 
   /* --- Barra de passagem --- */
+
+  /*
+   * SEM LARGURA PRÓPRIA, e é de propósito: a barra mede a coluna de apoio
+   * inteira, que é a mesma caixa em que a frase do rótulo vive. Pedido do
+   * cliente, 2026-08-12.
+   *
+   * O arquivo desenha 241px (#104:25), e obedecer a esse número passou a produzir
+   * o INVERSO da relação que ele desenha. No Figma o rótulo é uma caixa estreita
+   * de 171px (#152:369) que quebra em ~3 linhas, e a barra é mais LARGA que ele.
+   * Aqui o rótulo nunca teve `width`: ele enche a coluna, e quando a fonte de
+   * apoio caiu de 20 para 16px (na mesma leva) a frase passou a caber em UMA
+   * linha de 316,5px — contra os 241 da barra. A barra ficou 75px mais estreita
+   * que o texto, terminando no meio dele.
+   *
+   * Não era falta de responsividade: os 241px estavam em `rem` e já encolhiam com
+   * o `clamp()` da raiz (241 → 200 → 180,8). Era proporção.
+   *
+   * Amarrada à coluna, ela acompanha a frase em toda a faixa — e sem breakpoint,
+   * porque coluna e texto congelam JUNTOS no piso do clamp abaixo de ~1084px
+   * (247,5 contra 237,6). Medido a 1446px: barra 330, frase 316,5.
+   *
+   * Quem estica é o `align-items: stretch` padrão de `.clientes__aparte`, que é
+   * coluna e não declara alinhamento — daí não haver `width: 100%` nem
+   * `align-self` aqui. Os quatro traços são `flex: 1` e repartem sozinhos: 78px
+   * cada um na largura de projeto, contra os 55,8 de antes.
+   */
   .passagem {
     display: flex;
     /* `center`, e não o `stretch` padrão: o traço tem altura própria agora, e
        esticado ele comeria o próprio miolo (ver o `content-box` abaixo). */
     align-items: center;
     gap: 0.375rem; /* 6px */
-    width: 15.0625rem; /* 241px */
-    height: 0.25rem; /* 4px */
+    /* Acompanha a altura do traço — ver `.passagem__divisao`, e o porquê do
+       `max()` está lá. Os dois valores TÊM de andar juntos: é esta altura que
+       segura a fileira enquanto o botão transborda. */
+    height: max(0.1875rem, 3px); /* 3px */
   }
 
   /*
-   * O desenho continua sendo um traço de 4px, mas o alvo de clique não pode ter
-   * 4px de altura. O respiro vertical vira área clicável e some do layout:
-   * `content-box` deixa a tinta pintar só o miolo, e a altura fixa da `.passagem`
-   * segura a fileira nos 4px do arquivo enquanto o botão transborda para os dois
-   * lados. Sem `box-sizing: content-box` o reset (border-box) descontaria o
-   * padding da altura e o traço sumiria.
+   * O desenho é um traço de 3px (pedido do cliente, 2026-08-12 — eram 4), mas o
+   * alvo de clique não pode ter 3px de altura. O respiro vertical vira área
+   * clicável e some do layout: `content-box` deixa a tinta pintar só o miolo, e a
+   * altura fixa da `.passagem` segura a fileira nos 3px enquanto o botão
+   * transborda para os dois lados. Sem `box-sizing: content-box` o reset
+   * (border-box) descontaria o padding da altura e o traço sumiria.
+   *
+   * Os DOIS `max()` existem pelo mesmo motivo, e é a exceção documentada de usar
+   * `px` cru: em `rem` puro o piso do clamp (fonte-raiz travada em 12px abaixo de
+   * ~1084px) encolheria o traço para 2,25px e o alvo para 23,25 — abaixo dos 24px
+   * que a WCAG 2.5.8 pede, e mais fino do que os 3px pedidos. Com o piso nos dois,
+   * o traço é 3px e o alvo 24 em QUALQUER largura (3 + 10,5 + 10,5).
+   *
+   * Se a altura do traço mudar, o padding muda junto: ele é `(24 − altura) ÷ 2`.
    */
   .passagem__divisao {
     box-sizing: content-box;
     flex: 1;
-    height: 0.25rem; /* 4px */
-    /* `max()` trava o alvo em 24px físicos (10+10+4) mesmo abaixo da largura
-       de projeto — em `rem` puro o piso do clamp reduzia isso a ~18px. */
-    padding: max(0.625rem, 10px) 0; /* 10px → alvo de 24px */
+    height: max(0.1875rem, 3px); /* 3px */
+    padding: max(0.65625rem, 10.5px) 0; /* 10,5px → alvo de 24px */
     border: 0;
-    background-color: color-mix(in srgb, var(--cor-petroleo) 15%, transparent);
+    /*
+     * Preto a 15%, e não o petróleo da marca (pedido do cliente, 2026-08-12). As
+     * porcentagens são as mesmas de antes — mudou o pigmento, não a hierarquia.
+     * O contorno de foco, esse, CONTINUA petróleo: é a cor de foco de todo o site
+     * (`global.css`), não desenho desta barra.
+     */
+    background-color: color-mix(in srgb, var(--cor-preto) 15%, transparent);
     background-clip: content-box;
     transition: background-color 0.2s ease;
   }
@@ -223,7 +293,7 @@ const ritmo = `
   }
 
   .passagem--interativa .passagem__divisao:is(:hover, :focus-visible) {
-    background-color: color-mix(in srgb, var(--cor-petroleo) 40%, transparent);
+    background-color: color-mix(in srgb, var(--cor-preto) 40%, transparent);
   }
 
   .passagem__divisao:focus-visible {
@@ -234,7 +304,9 @@ const ritmo = `
   .passagem__preenchimento {
     display: block;
     height: 100%;
-    background: var(--cor-petroleo);
+    /* Preto cheio — o traço de trás é o mesmo preto a 15%, então o progresso lê
+       como a mesma tinta ganhando corpo. Era petróleo até 2026-08-12. */
+    background: var(--cor-preto);
     /* Vazio é o estado normal; quem enche é a animação. */
     transform: scaleX(0);
     transform-origin: left;
@@ -289,55 +361,27 @@ const ritmo = `
     }
 
     /*
-     * WCAG 2.2.2 pede um jeito de parar o que se move sozinho por mais de 5s.
-     * `prefers-reduced-motion` acima atende quem já configurou o sistema; isto
-     * atende quem só quer olhar um logo com calma.
+     * NÃO EXISTE PAUSA DURANTE A VISITA, e isso é pedido do cliente
+     * (2026-08-12): a parede deve estar SEMPRE trocando, no desktop e no
+     * celular. Saíram daqui duas regras que congelavam a passagem:
      *
-     * O alvo é a grade, e não a seção. Com `.clientes:hover` a zona de pausa
-     * era a faixa inteira — 1430×693 contra 858×440 da grade —, incluindo os
-     * 128px de respiro de cima e de baixo e todo o terço da direita, onde só
-     * mora o rótulo. Bastava o ponteiro ficar parado no meio da tela enquanto
-     * a página rolava para a passagem congelar sem ninguém ter pedido, e o
-     * sintoma era exatamente esse: "trava em alguns momentos".
+     * - a pausa por ponteiro (`.clientes__trilho:hover`), que já tinha sido
+     *   encolhida da seção para a grade e depois guardada com
+     *   `(hover: hover) and (pointer: fine)` justamente porque parava sem
+     *   ninguém pedir — o sintoma foi sempre o mesmo, "trava em alguns
+     *   momentos";
+     * - a pausa por teclado (`.clientes:has(:focus-visible)`), que parava a
+     *   passagem quando um traço recebia foco.
      *
-     * A barra de passagem não está dentro da grade, daí o `~`: ela é irmã
-     * seguinte.
+     * O que sobra como jeito de parar o movimento é o `prefers-reduced-motion`
+     * do bloco acima — quem configurou o sistema nunca vê a passagem correr. A
+     * WCAG 2.2.2 pediria um controle na própria página para movimento de mais
+     * de 5s; o cliente foi avisado e decidiu assim. Os traços continuam pulando
+     * de grupo, mas pular não é pausar.
      *
-     * `(hover: hover) and (pointer: fine)` desde 2026-08-11, a pedido do
-     * cliente: no toque não existe hover de verdade — o primeiro toque na grade
-     * GRUDA o estado e a passagem fica parada até a pessoa tocar em outro
-     * lugar. Não era pausa, era travamento; ninguém pediu para parar e não é
-     * óbvio como voltar a andar. Mesma guarda do visor da matéria, no Sobre, e
-     * pelo mesmo motivo.
-     *
-     * O que isso custa: no celular sobra só o `prefers-reduced-motion` acima
-     * como jeito de parar a passagem (a WCAG 2.2.2). Os traços continuam
-     * pulando de grupo, mas pular não é pausar. É uma troca consciente — a
-     * pausa que existia lá não era usável.
+     * Se alguém for repor uma pausa, releia isto antes: as duas versões que já
+     * existiram foram removidas por pedido, não por defeito.
      */
-    @media (hover: hover) and (pointer: fine) {
-      .clientes__trilho:hover .clientes__grade,
-      .clientes__trilho:hover ~ .clientes__aparte .passagem__preenchimento {
-        animation-play-state: paused;
-      }
-    }
-
-    /*
-     * A pausa por teclado, e é `:has(:focus-visible)` por necessidade desde que
-     * os traços viraram botões: clicar num deles com o mouse dá foco ao botão, e
-     * com `:focus-within` a passagem ficaria parada PARA SEMPRE depois do
-     * primeiro clique — o pulo funcionaria uma vez e a barra nunca mais andaria.
-     * `:focus-visible` só casa com foco vindo do teclado, que é exatamente quem
-     * precisa da pausa.
-     *
-     * Regra separada de propósito, e não mais um item da lista acima: se algum
-     * navegador não entender `:has()`, cai só esta — a pausa por ponteiro, que é
-     * a que quase todo mundo usa, continua de pé. Junto na mesma lista, a
-     * declaração inteira iria embora.
-     */
-    .clientes:has(:focus-visible) :is(.clientes__grade, .passagem__preenchimento) {
-      animation-play-state: paused;
-    }
 
     /*
      * A passagem espera a visita chegar (pedido do cliente, 2026-07-31): sem
@@ -471,11 +515,13 @@ const ritmo = `
        * Então: correndo, crava no começo e o cruzamento de sempre acontece;
        * parada, crava no fim dele e o grupo pedido aparece na hora.
        *
-       * Na prática isso separa ponteiro de teclado, que é justamente o certo. A
-       * pausa por ponteiro é do `.clientes__trilho`, onde os logos estão — os
-       * traços moram na outra coluna, então quem clica com o mouse não pausou
-       * nada e ganha o cruzamento. Quem chegou de Tab pausou (é o pedido da
-       * WCAG 2.2.2) e ganha a resposta imediata.
+       * Desde 2026-08-12 o ÚNICO estado parado é a espera antes de a visita
+       * chegar (`.clientes--espera`): as pausas por ponteiro e por teclado
+       * saíram a pedido do cliente (ver o comentário no CSS). Quem depende deste
+       * caminho é a largada — o `irPara(0)` de baixo roda com a passagem ainda
+       * segurada, e sem o `+ fade` o primeiro grupo ficaria em opacidade zero e
+       * a parede nasceria em branco. Clique de verdade cai sempre no outro
+       * ramo, com a passagem correndo.
        */
       const parada = getComputedStyle(grades[0]).animationPlayState === 'paused';
       const alvo = (ciclo + i * porGrupo + (parada ? fade : 0)) * 1000;

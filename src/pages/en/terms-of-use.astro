@@ -1,0 +1,17 @@
+---
+/*
+ * Os termos de uso, em inglês. Documento `legal-termos-en`, publicado em
+ * 2026-08-12 — a rota só podia nascer depois, porque `buscarLegal` lança
+ * erro em build se o documento não estiver publicado.
+ *
+ * O `rotas` lista os dois idiomas, igual ao arquivo pt: é o que faz o
+ * `hreflang`/canonical do `Base.astro` cross-linkar as duas versões.
+ */
+import Legal from '../../layouts/Legal.astro';
+---
+
+<Legal
+  chave="termos"
+  idioma="en"
+  rotas={{ 'pt-BR': '/termos-de-uso', en: '/en/terms-of-use' }}
+/>

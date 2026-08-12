@@ -209,9 +209,15 @@ const { pagina, config } = await buscarConteudo(idioma);
     }
   }
 
+  /*
+   * Os 65vh moram em `--freio-camada` (tokens.css) porque a barra da apresentação,
+   * no Sobre, precisa do MESMO número com o sinal trocado para cancelar este
+   * freio e colar na camada de baixo. Dois números cravados divergiriam na
+   * primeira vez que alguém acertasse um só.
+   */
   @keyframes camada-frear {
     to {
-      transform: translateY(65vh);
+      transform: translateY(var(--freio-camada));
     }
   }
 </style>

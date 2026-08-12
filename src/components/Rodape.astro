@@ -56,19 +56,29 @@ const redes = [
 <div class="rodape-palco">
   <footer class="rodape">
     <div class="rodape__colunas">
-      <nav class="rodape__nav" aria-label={t['rodape.aria']}>
-        <ul class="rodape__nav-lista">
-          {
-            rodape.navegacao.map((item) => (
-              <li class="rodape__nav-item">
-                <a class="rodape__nav-link" href={item.href}>
-                  {item.texto}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
+      {/*
+        O chapéu "Menu" (#268:93) é novo em 2026-08-12 e usa `.rodape__bloco`
+        como as outras duas colunas — ele é exatamente "chapéu + lista", com o
+        mesmo vão de 20px. O `aria-label` do `<nav>` fica: ele diz "navegação
+        do rodapé", que descreve melhor do que "Menu" para quem chega por
+        leitor de tela.
+      */}
+      <div class="rodape__bloco">
+        <h2 class="rodape__titulo">{rodape.menuTitulo}</h2>
+        <nav class="rodape__nav" aria-label={t['rodape.aria']}>
+          <ul class="rodape__nav-lista">
+            {
+              rodape.navegacao.map((item) => (
+                <li class="rodape__nav-item">
+                  <a class="rodape__nav-link" href={item.href}>
+                    {item.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
 
       <div class="rodape__coluna">
         <div class="rodape__bloco">
@@ -279,15 +289,18 @@ const redes = [
   /*
    * As quatro colunas são fatias da largura, então vão em `fr`: 482, 338, 357
    * e 205 do arquivo, medidas de divisa a divisa. Em `rem` elas parariam de
-   * acompanhar a tela assim que o `clamp` saturasse.
+   * acompanhar a tela assim que o `clamp` saturasse. Estes quatro números são
+   * os únicos que o rodapé refeito de 2026-08-12 (#268:41) NÃO mexeu.
    *
-   * A altura é a distância do topo da navegação até o pé do selo (368px). É
-   * ela que faz o `space-between` de cada coluna cair onde o arquivo desenha.
+   * A altura é a distância do topo dos chapéus até o pé do selo — 45,27 a
+   * 433,27 no arquivo. É ela que faz o `space-between` de cada coluna cair onde
+   * o desenho manda. Era 368px enquanto as colunas começavam 12px abaixo da
+   * navegação; com todas alinhadas no topo, virou 388.
    */
   .rodape__colunas {
     display: grid;
     grid-template-columns: 482fr 338fr 357fr 205fr;
-    min-height: 23rem; /* 368px */
+    min-height: 24.25rem; /* 388px */
   }
 
   /*
@@ -317,13 +330,16 @@ const redes = [
     min-width: 0;
   }
 
+  /*
+   * Sem `padding-top` desde 2026-08-12: as quatro colunas agora começam na mesma
+   * linha (y≈45,3 no arquivo). Os 12px que moravam aqui eram o degrau entre a
+   * navegação, que abria em y=46, e as três colunas de texto, que abriam em y=58
+   * — e ele desapareceu quando os títulos de 24px viraram chapéus de 11px.
+   */
   .rodape__coluna {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    /* As três colunas da direita começam 12px abaixo da navegação (#52:129 e
-       vizinhos em y=58, contra y=46 do primeiro traço). */
-    padding-top: 0.75rem;
   }
 
   /* Pedido do cliente, 2026-07-31, só no MOBILE: mínimo de 32px entre o
@@ -338,12 +354,38 @@ const redes = [
     }
   }
 
-  /* Nesta coluna o link fica à esquerda da fatia (x=1209) e só o selo vai
-     para a borda direita — desenho original do Figma (#52:21). Some no
-     mobile: "Voltar ao topo" e o selo viram uma linha própria fora da
-     grade, ver `.rodape__fim`. */
+  /*
+   * Os dois encostam na margem direita (#268:55 em x=1237, que somado ao
+   * conteúdo dá 1414 — a borda do gutter; selo em #268:76, x=1364 + 50 = 1414).
+   * Era `flex-start` até 2026-08-12, quando o link ficava solto à esquerda da
+   * fatia (x=1209) e só o selo ia para a borda.
+   *
+   * Some no mobile: "Voltar ao topo" e o selo viram uma linha própria fora da
+   * grade, ver `.rodape__fim`.
+   */
   .rodape__coluna--fim {
-    align-items: flex-start;
+    align-items: flex-end;
+  }
+
+  /*
+   * E o link sobe 7,8px, porque esta coluna é a única sem chapéu: no arquivo ele
+   * está CENTRALIZADO na fileira dos chapéus das outras três, não alinhado ao
+   * topo delas. A conta é a diferença das duas caixas dividida por dois —
+   * o chapéu tem 11px × 1.2 = 13,2 e o link 24px × 1.2 = 28,8, então
+   * (13,2 − 28,8) ÷ 2 = −7,8. É o que põe os dois centros em ~51,8
+   * (arquivo: chapéu em y=45,27, link em y=37,27).
+   *
+   * Sem isto o link nasce 8px baixo demais e desalinha da fileira inteira.
+   *
+   * A CONTA VIROU `calc()` em 2026-08-12, e não é preciosismo. Enquanto as
+   * duas caixas escalavam juntas, `-0.4875rem` era exato em qualquer largura.
+   * Com o piso de 11px no chapéu elas deixaram de escalar juntas: entre 700 e
+   * ~1265px o chapéu para e o link continua encolhendo, e o número cravado
+   * erra até 1,65px. Escrito assim, ele acompanha o piso sozinho — e se o piso
+   * mudar, aqui não há nada para lembrar de acertar.
+   */
+  .rodape__coluna--fim .rodape__topo {
+    margin-top: calc((max(0.6875rem, 11px) * 1.2 - 1.5rem * 1.2) / 2); /* -7,8px na largura de projeto */
   }
 
   @media (max-width: 700px) {
@@ -373,6 +415,13 @@ const redes = [
     border-bottom: 1px solid var(--cor-borda-sutil);
   }
 
+  /* O primeiro item não tem respiro em cima (#268:43 declara `0px 0px 16px`):
+     ele encosta no chapéu "Menu", e é o vão de 20px do `.rodape__bloco` que
+     separa os dois. Com os 16px aqui a navegação inteira descia. */
+  .rodape__nav-item:first-child {
+    padding-top: 0;
+  }
+
   .rodape__nav-link {
     display: block;
     /* 34px Semi Bold (#208:30) — degrau que só existe aqui, por isso não virou
@@ -388,14 +437,38 @@ const redes = [
   .rodape__bloco {
     display: flex;
     flex-direction: column;
-    /* 14px entre o título e a primeira linha (58+29 → 101). */
-    gap: 0.875rem;
+    /* 20px entre o chapéu e o conteúdo, nas três colunas (#268:95, #268:58,
+       #268:68). Eram 14px quando o rótulo ainda era um título de 24px. */
+    gap: 1.25rem;
   }
 
+  /*
+   * O CHAPÉU DE COLUNA — Menu, Contato, Redes sociais (#268:93, #268:69,
+   * #268:59). Até 2026-08-12 isto era um título de 24px Semi Bold em preto;
+   * o rodapé refeito rebaixou os três a 11px em caixa alta, e a hierarquia da
+   * coluna passou a vir do contraste de tamanho, não de peso.
+   *
+   * `letter-spacing` POSITIVO, e é o único do site: todo o resto é negativo,
+   * porque todo o resto é texto em corpo normal ou maior. Caixa alta em 11px
+   * pede o contrário — sem os +0.01em as letras se encavalam.
+   *
+   * A caixa alta é do CSS, não do conteúdo: assim o texto continua em caixa
+   * normal no Studio, legível e traduzível sem ninguém escrever em capslock.
+   *
+   * PISO DE 11px, pedido do cliente em 2026-08-12 — o chapéu já é o menor
+   * texto do site, e `0.6875rem` com a fonte-raiz travada nos 12px do clamp
+   * caía para 8,25px. Em caixa alta e com o marrom de apoio, isso é o que se
+   * lê pior na página inteira. Mesmo `max()` do `--texto-apoio`.
+   *
+   * QUEM DEPENDE DESTA MEDIDA: o recuo do "Voltar ao topo", mais abaixo, é a
+   * metade da diferença entre esta caixa e a dele. Ele deixou de ser número
+   * cravado por causa deste piso — ver o comentário de lá.
+   */
   .rodape__titulo {
-    /* 24px Semi Bold (#52:129, #53:159) — outro degrau de uso único. */
-    font: 600 1.5rem / 1.2 var(--fonte-corpo);
-    letter-spacing: var(--texto-corpo-ls);
+    font: 400 max(0.6875rem, 11px) / 1.2 var(--fonte-corpo); /* 11px, piso 11 */
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--cor-texto-footer);
   }
 
   .rodape__lista {
@@ -414,14 +487,35 @@ const redes = [
     gap: 0.4375rem; /* 7px */
   }
 
-  /* Termos e Políticas ficam colados: 17px de uma linha para a outra (383 →
-     400), e a caixa de 12px já ocupa 14,4 deles. Desenho original — vale só
-     para a cópia do desktop (`.rodape__lista--legais-desktop`, que herda
-     isto); a do mobile sobrescreve tudo abaixo. */
+  /* Termos e Políticas ficam colados: 17px de uma linha para a outra, e a caixa
+     de 12px já ocupa 14,4 deles. Desenho original — vale só para a cópia do
+     desktop (`.rodape__lista--legais-desktop`, que herda isto); a do mobile
+     sobrescreve tudo abaixo. Regular desde 2026-08-12 (#268:74 é 400; era 500). */
   .rodape__lista--legais {
-    gap: 0.1875rem; /* 3px (#208:40) */
-    font: 500 0.75rem / 1.2 var(--fonte-corpo); /* 12px Medium */
+    gap: 0.1875rem; /* 3px (#268:73) */
+    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px Regular */
     letter-spacing: var(--texto-corpo-ls);
+  }
+
+  /*
+   * Os links legais são os únicos do rodapé que nascem no marrom de apoio, então
+   * são os únicos que ACENDEM no hover — o inverso dos outros três grupos, que
+   * nascem escuros e apagam. Mesma inversão que a nav do header faz.
+   *
+   * Precisa vir depois da regra genérica de `.rodape__link` e ter especificidade
+   * maior, senão o hover de lá (que apaga) ganha.
+   */
+  .rodape__lista--legais .rodape__link {
+    /* O 400 do `font` da lista não chega sozinho: `.rodape__link` declara
+       `font-weight: 500` no próprio elemento, e valor próprio ganha de herdado.
+       Enquanto os legais também eram 500 isso passava batido. */
+    font-weight: 400;
+    color: var(--cor-texto-footer);
+  }
+
+  .rodape__lista--legais .rodape__link:hover,
+  .rodape__lista--legais .rodape__link:focus-visible {
+    color: var(--cor-preto);
   }
 
   /* Some no mobile — quem aparece é `.rodape__lista--legais-mobile`, dentro
@@ -445,7 +539,7 @@ const redes = [
        clamp reduz a fonte-raiz a 12px, e 0.8125rem caía para 9,75px —
        ilegível. `max()` crava 13px físicos ali e continua livre para crescer
        fluido dali para cima. */
-    font: 500 max(0.8125rem, 13px) / 1.2 var(--fonte-corpo); /* 13px, era 12px */
+    font: 400 max(0.8125rem, 13px) / 1.2 var(--fonte-corpo); /* 13px, era 12px */
   }
 
   /* Pedido do cliente, 2026-07-31: 12px de respiro em cima de Termos de Uso
@@ -481,18 +575,20 @@ const redes = [
     align-items: center;
     /* O visual medido no arquivo, tanto na seta de subir quanto na diagonal. */
     gap: 0.6875rem;
-    /* Medium (#53:160, #52:131): o corpo do site é 400, e os links do rodapé
+    /* Medium (#268:63, #268:71): o corpo do site é 400, e os links do rodapé
        são o único lugar que sobe um passo. */
     font-weight: 500;
-    color: var(--cor-texto-footer);
-    transition: color 0.2s ease;
-  }
-
-  /* Os links apagados saem da névoa; os que já são pretos (navegação e "Voltar
-     ao topo") clareiam, que é o mesmo hover do header. */
-  .rodape__link:hover,
-  .rodape__link:focus-visible {
+    /*
+     * PRETO CHEIO desde 2026-08-12 — telefone, e-mail, Instagram e LinkedIn
+     * saíram do `rgba(23,23,23,.5)` e foram para a cor cheia no rodapé refeito.
+     * Quem ficou com o marrom de apoio foi o texto pequeno (chapéus, copyright,
+     * links legais), que andou no sentido contrário.
+     *
+     * A seta diagonal das redes acompanha de graça: ela é `currentColor`, e no
+     * arquivo também subiu de #5E5440 para #171717 (#268:62).
+     */
     color: var(--cor-preto);
+    transition: color 0.2s ease;
   }
 
   /*
@@ -505,7 +601,15 @@ const redes = [
    * menu do rodapé mudam de espessura e as letras parecem se assentar de novo.
    * Trocar a opacidade por uma cor com alfa pinta o mesmo cinza sem tirar o
    * texto da camada de fundo, e o efeito colateral some.
+   *
+   * Desde 2026-08-12 esta lista cobre TODOS os links que nascem escuros —
+   * contato e redes entraram nela quando trocaram o 0.5 pelo preto cheio. Antes
+   * eles tinham hover próprio, que os levava ao preto; com o preto virando a cor
+   * de partida, aquela regra passou a não fazer nada e foi embora. Os únicos de
+   * fora são os legais, que nascem no marrom e acendem — ver acima.
    */
+  .rodape__link:hover,
+  .rodape__link:focus-visible,
   .rodape__nav-link:hover,
   .rodape__nav-link:focus-visible,
   .rodape__topo:hover,
@@ -540,9 +644,9 @@ const redes = [
   }
 
   .rodape__topo {
-    /* 24px Semi Bold (#52:89) — no arquivo ele tem o peso de um título de
-       coluna, não de um link. */
-    font: 600 1.5rem / 1.2 var(--fonte-corpo);
+    /* 24px Medium (#268:57) — era Semi Bold até 2026-08-12. Continua o único
+       link do rodapé em 24px: os outros são 18. */
+    font: 500 1.5rem / 1.2 var(--fonte-corpo);
     letter-spacing: var(--texto-corpo-ls);
     color: var(--cor-preto);
     transition: color 0.2s ease;
@@ -575,7 +679,7 @@ const redes = [
   }
 
   /*
-   * A quebra é do arquivo (#52:148), não da largura: são duas frases, e a
+   * A quebra é do arquivo (#268:67), não da largura: são duas frases, e a
    * segunda é mais longa que a primeira. Daí `pre-line` em vez de deixar o
    * navegador escolher.
    *
@@ -588,7 +692,8 @@ const redes = [
    */
   .rodape__copyright-desktop {
     width: 27.4375rem; /* 439px */
-    font: 500 0.75rem / 1.2 var(--fonte-corpo); /* 12px Medium (#52:148) */
+    /* Regular desde 2026-08-12 (#268:67 é 400; era 500). */
+    font: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px Regular */
   }
 
   @media (max-width: 700px) {
@@ -597,14 +702,20 @@ const redes = [
     }
   }
 
-  /* Pedido do cliente, 2026-07-31, só no MOBILE: 12px de respiro acima do
-     copyright (`px`, não `rem`, pelo mesmo motivo dos links legais) e fonte
-     um degrau maior com entrelinha 1.5 — "tá muito grudado" nas duas linhas
-     do texto, que aqui ocupam a largura cheia da coluna (sem o `width` fixo
-     do desktop, que dependia da coluna vizinha vazia para sangrar). */
+  /* Pedido do cliente, 2026-07-31, só no MOBILE: respiro acima do copyright
+     (`px`, não `rem`, pelo mesmo motivo dos links legais) e fonte um degrau
+     maior com entrelinha 1.5 — "tá muito grudado" nas duas linhas do texto,
+     que aqui ocupam a largura cheia da coluna (sem o `width` fixo do desktop,
+     que dependia da coluna vizinha vazia para sangrar).
+
+     32px desde 2026-08-12, também a pedido do cliente (eram 12). Este é o
+     único lugar onde as duas peças são vizinhas: no desktop elas vivem em
+     COLUNAS diferentes da grade (legais na de contato, copyright na de redes)
+     e nunca chegam a se encostar, então não há par desktop para acertar
+     junto. */
   .rodape__copyright-mobile {
-    padding-top: 12px;
-    font: 500 max(0.8125rem, 13px) / 1.5 var(--fonte-corpo);
+    padding-top: 32px;
+    font: 400 max(0.8125rem, 13px) / 1.5 var(--fonte-corpo);
   }
 
   .rodape__selo {

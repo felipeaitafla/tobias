@@ -55,9 +55,20 @@
 
   /* Ponto de partida da revelação do manifesto — o mesmo preto a 20%. */
   --cor-texto-fraco: rgba(23, 23, 23, 0.2);
-  /* Os dois saem literalmente do rodapé no arquivo: os links e o copyright a
-     0.5 (#52:148), os traços da navegação a 0.15 (#77:292). */
-  --cor-texto-footer: rgba(23, 23, 23, 0.5);
+  /*
+   * O texto secundário do rodapé — os três chapéus de coluna (#268:93, #268:59,
+   * #268:69), o copyright (#268:67) e os links legais (#268:74).
+   *
+   * COR, e não preto rebaixado: era `rgba(23, 23, 23, 0.5)` até 2026-08-12, e o
+   * rodapé refeito (#268:41) pinta este marrom sólido, que não aparece em nenhum
+   * outro lugar do site. Mesma correção que `--cor-apoio` recebeu em 2026-08-06,
+   * e pelo mesmo motivo: cor não tira o texto da camada de fundo.
+   *
+   * Na mesma leva os LINKS de contato e redes andaram no sentido contrário —
+   * saíram do 0.5 e foram para `--cor-preto` cheio. Não use este token neles.
+   */
+  --cor-texto-footer: #5e5440;
+  /* Os traços da navegação do rodapé, a 0.15 (#268:43). */
   --cor-borda-sutil: rgba(23, 23, 23, 0.15);
 
   /*
@@ -119,24 +130,43 @@
 
   /*
    * Texto de apoio das colunas laterais. Os cinco nós — chamada do manifesto
-   * (#105:228), rótulo dos clientes (#152:369), das duas Áreas (#152:372,
-   * #218:128) e do Fale conosco (#161:441) — declaram exatamente o mesmo
+   * (#105:228), rótulo dos clientes (#152:369), das duas Áreas (#270:43,
+   * #270:90) e do Fale conosco (#161:441) — declaram exatamente o mesmo
    * estilo. Era 500/1.1/-0.05em até 2026-08-06, quando o designer padronizou
-   * os cinco. A cor é o `--cor-apoio`, lá em cima.
+   * os cinco, e 20px até 2026-08-12. A cor é o `--cor-apoio`, lá em cima.
+   *
+   * PISO DE 14px, pedido do cliente em 2026-08-12 — a mesma exceção
+   * documentada do `.apresentacao__titulo` e do copyright do rodapé: abaixo de
+   * ~1084px a fonte-raiz trava nos 12px do clamp e `1rem` para de encolher
+   * VALENDO 12px, que é pequeno demais para texto de apoio em tela de
+   * celular. `max()` crava 14 físicos e deixa o resto da faixa livre para
+   * crescer fluido.
+   *
+   * Não toca na largura de projeto: com a raiz em 16px o `1rem` já ganha do
+   * piso. Ele só age abaixo de ~1265px de viewport, que é onde `1.1065vw`
+   * cruza os 14px.
    */
-  --texto-apoio: 400 1.25rem / 1.25 var(--fonte-corpo); /* 20px */
+  --texto-apoio: 400 max(1rem, 14px) / 1.25 var(--fonte-corpo); /* 16px, piso 14 */
   --texto-apoio-ls: -0.04em;
 
-  /* Menu do header (#155:419) — Semi Bold, e o tracking é próprio: -0.03em,
-     não os -0.04 do resto do site. O CTA ao lado (#155:407) é Medium/-0.04 e
-     por isso NÃO herda este token. */
-  --texto-menu: 600 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
+  /* Menu do header (#155:419) — Regular (era Semi Bold até 2026-08-12), e o
+     tracking é próprio: -0.03em, não os -0.04 do resto do site. O CTA ao lado
+     (#155:407) é Medium/-0.04 e por isso NÃO herda este token. */
+  --texto-menu: 400 0.75rem / 1.2 var(--fonte-corpo); /* 12px */
   --texto-menu-ls: -0.03em;
 
   /* Escala de corpo (Inter) */
-  /* 18px — corpo do Sobre e das bios. Regular; a frase de abertura de cada bio
-     é o único trecho em 600 (é run próprio no Figma, não o estilo base). */
-  --texto-c2: 400 1.125rem / 1.5 var(--fonte-corpo);
+  /* 16px — corpo do Sobre, das bios e das descrições dos cartões das Áreas
+     (#185:96, #69:143, #I235:30;212:67, #270:50). Era 18px até 2026-08-12.
+     Regular; a frase de abertura de cada bio é o único trecho em 600 (é run
+     próprio no Figma, não o estilo base).
+
+     Piso de 14px pelo mesmo pedido e pela mesma razão do `--texto-apoio`,
+     acima. O pedido nomeou as descrições dos cartões; como o token é um só, as
+     três faixas do Sobre vêm junto — e vêm pelo mesmo motivo, que é 12px de
+     bio no celular. Se um dia isso tiver de valer só para os cartões, o piso
+     desce para `.cartao__texto` e este token volta a `1rem`. */
+  --texto-c2: 400 max(1rem, 14px) / 1.5 var(--fonte-corpo); /* 16px, piso 14 */
   --peso-destaque: 600;
   --texto-c3: 400 1.125rem / 1.2 var(--fonte-corpo); /* 18px — links do footer */
   --texto-corpo-ls: -0.04em;
@@ -161,4 +191,18 @@
      As três faixas do Sobre, essas sim, têm altura do arquivo — em rem, para
      acompanharem a escala junto com o texto que vive dentro delas. */
   --altura-faixa-sobre: 50.625rem; /* 810px */
+
+  /*
+   * O deslocamento do freio de parallax: quanto a camada coberta é empurrada
+   * para baixo enquanto a de cima entra. A faixa `entry` dura exatamente 100vh
+   * de rolagem, então 65vh de empurrão deixam a camada subindo a 35% da
+   * velocidade da página — os mesmos 35% do hero, por outro caminho.
+   *
+   * É TOKEN, e não número cravado, porque tem DOIS consumidores em arquivos
+   * diferentes, com sinais opostos: `camada-frear` em `Site.astro` (o freio) e
+   * `camada-contrapeso` em `Sobre.astro` (a barra da apresentação, que cancela o
+   * freio para colar na camada de baixo). Acertar um e esquecer o outro
+   * descola a barra sem nada gritar.
+   */
+  --freio-camada: 65vh;
 }

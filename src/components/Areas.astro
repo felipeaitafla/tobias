@@ -223,15 +223,30 @@ const { areas: areasAtuacao } = Astro.props;
     }
   }
 
+  /*
+   * O cartão tem a altura do conteúdo, e o que separa título de descrição é um
+   * vão FIXO de 64px (#270:48 e irmãos, desde 2026-08-12).
+   *
+   * Era `justify-content: space-between` com `min-height: 21.875rem` (350px) e a
+   * descrição reservando quatro linhas: o título grudava no topo, a descrição no
+   * rodapé, e o miolo era respiro elástico. O arquivo trocou a mecânica — o
+   * cartão agora fecha onde o texto fecha.
+   *
+   * O PEDIDO DE 2026-07-31 SOBREVIVE À TROCA, e é por isso que as quatro linhas
+   * reservadas puderam sair. O cliente pediu que as descrições da fileira
+   * começassem todas na mesma linha; o vão fixo faz isso por construção, porque o
+   * título tem uma linha só nos oito cartões e a descrição começa sempre em
+   * 32 + 29,76 + 64. O que mudou é onde sobra o excedente: antes embaixo do
+   * texto, agora em nenhum lugar.
+   *
+   * Medido: 253,8px no cartão de descrição mais longa, contra os 254 que o
+   * arquivo desenha na célula vazia (#270:65). Fileira com descrições de tamanho
+   * diferente continua igualada pelo `stretch` da grade.
+   */
   .cartao {
     display: flex;
     flex-direction: column;
-    /* Título no topo, descrição no rodapé — o miolo é respiro. */
-    justify-content: space-between;
-    /* Piso de folga: se o texto crescer (CMS, tela estreita), ele empurra a
-       altura em vez de encostar no título. */
-    gap: 2rem;
-    min-height: 21.875rem; /* 350px */
+    gap: 4rem; /* 64px */
     padding: 2rem; /* 32px */
   }
 
@@ -240,16 +255,17 @@ const { areas: areasAtuacao } = Astro.props;
    *
    * Cada emenda é 1px, nunca duas bordas somadas: o cartão desenha só o topo,
    * a coluna da esquerda desenha a divisa do meio, e a última fileira fecha
-   * embaixo. É o que faz a fileira medir os 350px do arquivo cravados — com
-   * borda em cima E embaixo em todos, cada emenda viraria 2px e a grade
-   * cresceria junto.
+   * embaixo. Com borda em cima E embaixo em todos, cada emenda viraria 2px e a
+   * grade cresceria junto.
    *
    * De fora a grade fica aberta: no Figma o `strokeWeight` zera à esquerda na
    * primeira coluna e à direita na segunda.
    *
-   * A célula vazia NÃO entra aqui: na última fileira do segundo grupo o arquivo
-   * desenha um cartão de 490px sozinho (#105:204), então a linha de cima para na
-   * metade da grade em vez de atravessá-la.
+   * A célula vazia NÃO ganha `border-bottom`: na última fileira o arquivo desenha
+   * um cartão de 490px sozinho (#270:101 no 2º grupo, #270:62 no 1º), então a
+   * linha de baixo para na metade da grade em vez de atravessá-la. Reconferido
+   * nó a nó contra os `strokeWeight` dos cartões novos em 2026-08-12: as três
+   * regras abaixo reproduzem o arquivo sem uma vírgula de mudança.
    */
   .cartao {
     border-top: 1px solid var(--cor-cinza-divisa);
@@ -293,22 +309,16 @@ const { areas: areasAtuacao } = Astro.props;
        2026-07-31, só para a descrição dos cartões. */
     letter-spacing: -0.03em;
     /*
-     * QUATRO LINHAS DE ESPAÇO, sempre — e é isso que alinha as descrições da
-     * fileira pelo TOPO (pedido do cliente, 2026-07-31).
+     * SEM `min-height` desde 2026-08-12, e isso NÃO desfaz o pedido do cliente de
+     * alinhar as descrições pelo topo — ver o comentário do `.cartao`, acima.
      *
-     * O bloco continua ancorado no rodapé do cartão (`space-between`), então
-     * reservar a altura da descrição mais alta faz as de 3 linhas começarem na
-     * mesma linha das de 4, e a linha que sobra cair EMBAIXO em vez de em cima.
-     * Medido antes: as de 4 linhas começavam em y=210 e as de 3 em y=237 — um
-     * degrau de 27px, uma linha inteira, bem no meio da grade.
-     *
-     * `lh` é a própria entrelinha do elemento, então o número se lê como o que
-     * é: quatro linhas. O `em` antes dele é para navegador sem `lh` (4 × 1.5).
-     * Se um dia uma descrição passar de quatro linhas, é este número que sobe
-     * — senão ela volta a começar mais alto que as vizinhas.
+     * Aqui moravam quatro linhas reservadas (`6em` e `4lh`), que eram o que
+     * alinhava os topos enquanto o cartão era `space-between`: com o texto
+     * ancorado no rodapé, reservar a altura da maior descrição fazia as de 3
+     * linhas começarem na mesma linha das de 4 (medido, o degrau era de 27px).
+     * Com o vão fixo de 64px o alinhamento vem de graça, e reservar altura só
+     * voltaria a criar sobra embaixo — que é justamente o que o arquivo tirou.
      */
-    min-height: 6em;
-    min-height: 4lh;
     /* Anula o `text-wrap: pretty` do reset, que evita última linha curta e por
        isso subia uma palavra em quase todo cartão ("…perenidade ao / negócio."
        virava "…perenidade / ao negócio."). */
@@ -324,10 +334,11 @@ const { areas: areasAtuacao } = Astro.props;
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
-    /* Pedido do cliente, 2026-07-31: faltava a linha embaixo do cartão
-       Cível — a célula vazia fica na mesma fileira dele (2ª coluna), e sem
-       borda própria não fechava a divisa entre as duas fileiras do lado
-       direito. Mesmo traço de `.cartao`. */
+    /* Pedido do cliente, 2026-07-31: sem borda própria, o lado DIREITO da divisa
+       acima da última fileira não fechava — o cartão à esquerda desenhava o topo
+       dele e a célula vazia, nada. Mesmo traço de `.cartao`. Vale nos dois
+       grupos desde 2026-08-12, quando o primeiro também passou a ter célula
+       vazia (5 áreas em vez de 6). */
     border-top: 1px solid var(--cor-cinza-divisa);
   }
 
@@ -358,15 +369,16 @@ const { areas: areasAtuacao } = Astro.props;
   }
 
   /*
-   * Largura do arquivo (86.16px) com a altura livre.
+   * Largura do arquivo (82.99px) com a altura livre. Era 86.16 até 2026-08-12,
+   * quando o designer redesenhou os dois nós (#270:168, #270:85).
    *
-   * No Figma o símbolo está esticado ~10% na vertical (86.16 × 62.29, contra
-   * os 1.52 de proporção do SVG). Deformar a marca não é opção; a largura é o
-   * que importa aqui, porque é ela que alinha o símbolo com a margem da
-   * seção. Mesma decisão já tomada no manifesto.
+   * No Figma o símbolo está esticado na vertical (82.99 × 60, contra os 1.52 de
+   * proporção do SVG). Deformar a marca não é opção; a largura é o que importa
+   * aqui, porque é ela que alinha o símbolo com a margem da seção. Mesma decisão
+   * já tomada no manifesto.
    */
   .grupo__simbolo {
-    width: 5.385rem; /* 86.16px */
+    width: 5.187rem; /* 82.99px */
     height: auto;
   }
 </style>

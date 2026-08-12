@@ -430,15 +430,39 @@ Arquivo `hJuV9y2PAHLZdOsrrW0n5X`. Nós usados com frequência:
 | `186:126`, `69:140`, `69:156` | Sobre: as 3 faixas (menta, petróleo, terracota) |
 | `185:108` | componente da 1ª faixa — variante `185:107` normal, `185:109` com a foto trocada (é o hover da matéria) |
 | `212:78` | componente da faixa do Thiago — `212:77` Default, `212:79` com o campo de e-mail, `212:110` com o e-mail escrito e o botão aceso |
-| `54:179`, `105:191` | áreas de atuação: um frame por grupo, com a faixa verde entre eles |
+| `270:41`, `270:84` | áreas de atuação: um frame por grupo, com a faixa verde entre eles |
 | `161:433` | divisória-loop verde, ENTRE os dois grupos de áreas |
 | `194:158` | divisória-loop vermelha (`194:159`, a espelhada), entre áreas e contato |
 | `161:439` | Fale conosco — `161:440` a coluna do rótulo, `161:442` o conteúdo |
 | `161:446` | o card de infos: `181:26` são os três blocos, `181:22` o mapa |
 | `63:79` | formulário — `76:248` título mais eixos, `85:376` a instância do card de campos (componente `85:312`) |
-| `52:21` | rodapé — `52:48` a navegação, `157:427` a assinatura gigante |
+| `268:41` | rodapé — `268:42` a navegação, `268:54` a assinatura gigante |
 | `155:385` | header |
 | `62:10`, `138:55`, `138:81`, `138:294` | abertura: 4 quadros da animação |
+
+### Armadilha: o designer SUBSTITUI o nó em vez de editá-lo, e o antigo fica no arquivo
+
+Quatro nós citados aqui trocaram de id em 2026-08-12, e buscar o antigo devolve
+`node not found` — o que parece link quebrado, ou pior, faz alguém concluir que o
+nó foi deletado do desenho:
+
+| o que é | id anterior | id de hoje |
+|---|---|---|
+| rodapé | `52:21` | **`268:41`** |
+| áreas, 1º grupo | `54:179` | **`270:41`** |
+| áreas, 2º grupo | `105:191` | **`270:84`** |
+| faixa do Thiago (instância) | `212:78` (o set) | **`235:30`** |
+
+**O caso do rodapé é o perigoso, porque o `52:21` NÃO deu erro:** ele continua no
+arquivo, íntegro, só que **fora** do frame "One Page" — é a versão anterior,
+deixada de lado. E como a geometria das quatro colunas (`482/338/357/205`, gutter
+32, `min-height` 368) é justamente a única coisa que a leva não mexeu, conferir o
+rodapé por ele bate com o código em tudo e responde "nada mudou". Mudou toda a
+tipografia, a cor e o ritmo vertical.
+
+A lição vale para a próxima leva: **antes de conferir uma seção por um id
+decorado, confirme que ele é filho do `51:12`.** Uma leitura do "One Page" com
+`depth: 2` lista os filhos de verdade e custa uma chamada.
 
 ### Armadilha: o run só carrega o que ele sobrescreve
 
@@ -505,6 +529,45 @@ O que **não** foi revertido, embora o arquivo discorde: o `letter-spacing` de
 comportamento do breakpoint de 700px. São pedidos do cliente que continuam
 valendo — ver cada seção.
 
+### A leva de 2026-08-12: três tokens de tamanho, e o rodapé refeito
+
+Outra varredura nó a nó. De novo a maior parte foi **token**, e de novo isso é o
+que faz a leva sair barata: três valores mudaram e desceram sozinhos para dez
+lugares, sem tocar em componente nenhum.
+
+| token | era | virou | onde aparece |
+|---|---|---|---|
+| `--texto-apoio` | 20px | **16px** | chamada do manifesto, rótulo dos clientes, os dois das Áreas, o do Fale conosco |
+| `--texto-c2` | 18px | **16px** | as três faixas do Sobre e as descrições dos cartões das Áreas |
+| `--texto-menu` | 600 | **400** | só a nav do header (o CTA ao lado não herda, tem peso próprio) |
+
+Os pesos que mudaram fora de token, e vale notar que **dois pares que eram iguais
+deixaram de ser** — é o tipo de coisa que se conserta errado por simetria:
+
+- **campo do formulário 500 → 400**, e o botão Enviar **continua** 500. O arquivo
+  já mexeu nesse peso em três levas seguidas;
+- **"Voltar ao topo" 600 → 500**, enquanto a nav do rodapé continua 600;
+- **copyright e links legais 500 → 400.**
+
+E um tamanho pontual: `.dado__item` do Fale conosco, 14px → **16px**.
+
+#### O que aprendi conferindo, e economiza a próxima varredura
+
+- **duas notas daqui estavam desatualizadas em relação ao próprio código**, e não
+  por causa desta leva: o `gap` do bloco da apresentação (o texto dizia 10px, o
+  código está em 4px, que é o que o arquivo pede) e a seta do `<select>`, que a
+  leitura do arquivo sugere à esquerda e que **já está** à esquerda. Fui mexer nos
+  dois e descobri que não havia o que mexer. Conferir o código antes de acreditar
+  neste arquivo vale para qualquer seção;
+- **`.materia__logo` encolheu de novo** (105 → 86 em 2026-08-06, 86 → **81,67**
+  agora). São sempre os mesmos três números que precisam andar juntos — `width` no
+  CSS, `larguras` e `sizes` no `imagem()`.
+
+O que **não** foi alinhado, por decisão do cliente nesta leva: as divergências
+que ele já pediu antes seguem valendo (ls -0.03em nas descrições, nav do header
+com 5 itens contra os 4 do arquivo, "LinkedIn" com I maiúsculo, caixa de frase nos
+títulos, o vão de 24px da matéria).
+
 ## Escala fluida — sem breakpoints
 
 O Figma foi desenhado em **1446px** com base 16px. `16 ÷ 1446 = 1.1065vw`, e é essa
@@ -570,6 +633,35 @@ lateral padrão dentro do breakpoint. **`px`, não `rem`** — dentro de
 `rem` ali só reproduziria o mesmo problema que o breakpoint existe para
 resolver. A mesma lógica vale para qualquer valor exato pedido pelo cliente
 nessa faixa (toque de 24px, respiro de 32px): `px` cru, nunca `rem`.
+
+**A exceção da exceção: quando o pedido é "igual ao outro", copie o valor, não
+o converta.** No hero (2026-08-12, pedido do cliente) o vão entre título e
+descrição passou a ser o mesmo que já separa a descrição do link. Esse outro vão
+é o `gap: 2rem` do `.hero__aparte`, e escrever `24px` no `.hero__base` deixaria
+os dois iguais só até alguém mexer num deles. O `px` cru existe para valor que o
+cliente pediu em pixel; para valor que ele pediu **por igualdade**, o que
+preserva o pedido é a mesma expressão.
+
+#### Quando a coluna quebra, o número dela deixa de descrever o desenho
+
+Mesma sessão, mesmo hero: a coluna do aparte tem base de 305px (`35:97`) e o nó
+de texto dentro dela, 289 (`35:98`) — os 16px de folga que o designer deixou
+**dentro** da coluna. Empilhada pelo `flex-wrap`, essa coluna vira uma faixa
+estreita com sobra à direita, e o `max-width` do texto vira um recuo sem razão.
+Dentro do breakpoint os dois saem (`flex-basis: 100%` e `max-width: none`), e a
+descrição vai até o padding da seção. Medido a 375px: 311px de texto, folga zero
+até a borda.
+
+Vale como aviso geral para as outras colunas em `flex`: **medida de fatia não
+sobrevive à quebra de linha.** Quando duas colunas viram duas linhas, quem era
+proporção passa a ser largura solta.
+
+E sobra uma faixa estreita onde o hero empilha **sem** estar no breakpoint —
+medido, de 701 a ~732px: ali o título (base de `30rem`) e o aparte já não cabem
+lado a lado, mas as regras de mobile ainda não valem, então a descrição volta a
+ficar com os 216,75px. Acima de 733 eles cabem de novo e o desenho é o do
+arquivo. São 32px de largura de janela; se um dia incomodar, é subir o teto do
+breakpoint desta seção, não mexer nas bases.
 
 #### Quatro armadilhas que morderam de verdade
 
@@ -727,10 +819,16 @@ usando a **API REST** (não o MCP, que estava com JSON inválido na config):
   *"Representando a Sulpetro, Thiago Tobias Bezerra colabora para reduzir
   carga de ICMS-ST de empresas gaúchas."*;
 - **bloco da apresentação** (`.apresentacao`): padding vertical de 24→48px;
-- **chamada da apresentação** (`.apresentacao__chamada`): `gap` de 32→10px;
+- **chamada da apresentação**: `gap` de 32→10px — e **cuidado, isto está velho.**
+  Quem tem `gap` é `.apresentacao__texto`, não `.apresentacao__chamada` (que é
+  `space-between` e não declara nenhum), e o valor de hoje é **4px**, que é o que o
+  arquivo pede (`212:71`). Conferido em 2026-08-12, quando fui "corrigir" o número
+  e descobri que não havia o que corrigir;
 - **gaveta aberta** (variante ask-email): `margin-bottom: 1rem` (16px extra
   embaixo, que é a diferença entre pB=48 do Default e pB=64 das variantes com
-  gaveta).
+  gaveta) — **e isto saiu em 2026-08-12**, a pedido do cliente: com o campo à
+  mostra o respiro de baixo é igual ao de cima, os 48px do padding do bloco. A
+  divergência do arquivo é assumida; ver a seção do bloco de download.
 
 ### Hover que revela algo interativo: graça na saída
 
@@ -917,8 +1015,22 @@ Quatro coisas que custaram medição ou tempo:
 - **a base é que fica fixa, e o bloco cresce para cima.** Os 704px de topo do
   Default contra os 645 das outras duas variantes são consequência da altura,
   não medida para reproduzir: `bottom: 0` e a gaveta abrindo dão os dois números
-  sozinhos. Medido: 104,83px fechado (o arquivo desenha 106) e 163,42 aberto
-  (165);
+  sozinhos. Medido em 2026-08-12: **152,83px fechado, 208,91 com o campo à
+  mostra e 211,42 com uma frase de estado no lugar dele** — e a invariante que
+  importa é que os TRÊS estados (enviando, sucesso, falha) medem o mesmo, sem
+  pulo. Os 104,83/163,42 que este arquivo trazia são de antes de o padding
+  vertical subir de 24 para 48px, em 2026-08-05 (104,83 + 48 = 152,83 fecha a
+  conta), e os 227,41 são de antes de a margem de baixo da gaveta sair, no mesmo
+  2026-08-12 (227,41 − 16 = 211,41);
+
+- **o respiro de baixo é igual ao de cima com o campo à mostra**, e isso é
+  divergência assumida do arquivo (que pede pB=64 na variante ask-email contra os
+  48 do Default). Pedido do cliente, 2026-08-12. Os 16px que faziam a diferença
+  eram `margin-bottom` na gaveta aberta; hoje os dois vãos são o mesmo
+  `padding: 3rem` do bloco. Medido: 47,98px do topo até o título e 47,98 da linha
+  do campo até a base. **Os 18px do mobile continuam lá** e são só do toque — ver
+  o comentário da media query, que explica por que medir isso encolhendo a janela
+  do desktop dá outro número;
 
 - **a gaveta é uma fileira de grade, e o `0fr` puro não fecha.** `0fr` é
   `minmax(auto, 0fr)`, e esse `auto` devolve o mínimo automático da fileira —
@@ -946,6 +1058,40 @@ Quatro coisas que custaram medição ou tempo:
   caminho para o download; o que saiu foi a caixa, não a indicação. A moldura
   padrão do site também não serviria: a folga dela fica FORA da caixa, e a
   gaveta recorta o que transborda.
+
+#### A barra não acompanha o freio do Sobre: ela cola na camada de baixo
+
+Pedido do cliente, 2026-08-12. Antes, estando dentro da `.camada-sobre`, a barra
+afundava junto com o Sobre e ia sendo **engolida pelas Áreas** (z-index 3 contra 2)
+conforme a camada subia — medido desligando o contrapeso: em toda a faixa de
+entrada a barra não aparece na tinta, está atrás do branco.
+
+Agora ela leva o **contrapeso** (ver a seção dele, mais abaixo): a animação inversa
+do freio, na mesma timeline `--areas` e na mesma faixa `entry`. As duas se cancelam,
+a barra fica na posição de layout dela — que é a base da última faixa do Sobre, ou
+seja **exatamente a emenda com as Áreas**. Como a `.camada-areas` não é freada,
+barra e Áreas passam a andar as duas a 100% da rolagem: a barra fica soldada à borda
+de cima das Áreas e, relativamente ao Sobre, sobe — porque é o Sobre que afunda a
+35%. A faixa `entry` leva essa borda do rodapé da tela até o topo, então a barra
+atravessa a tela inteira à vista.
+
+Medido por pixel (a emenda é preto contra branco, contraste máximo): em **12
+amostras**, seis a 1446×900 e seis a 1446×1300, a base da barra na tinta e o topo
+das Áreas batem em **0,17px** — que é só o arredondamento de subpixel.
+
+**A DEPENDÊNCIA QUE NINGUÉM ADIVINHA: isto só funciona porque a faixa do Thiago é a
+ÚLTIMA do Sobre.** Hoje só o Thiago tem o bloco no Sanity, e é isso que faz a base
+da barra coincidir com a emenda entre as duas camadas. Se a Marjorye ganhar o bloco
+um dia, o dela vai cancelar o mesmo freio contra uma emenda que **não** é a das
+Áreas — vai colar no meio do Sobre. Não é defeito de CSS, é o contrapeso fazendo
+exatamente o que se pede dele no lugar errado.
+
+A barra da matéria (`.materia`) **não** leva contrapeso: continua freada junto com o
+Sobre, de propósito.
+
+Duas coisas que o `transform` do contrapeso **não** quebrou, conferidas: a gaveta
+(que é grade, não transform) abre igual, e o gate continua travando com e-mail
+inválido e liberando com válido — o script não lê geometria nenhuma, só classes.
 
 O gate é a **sexta exceção ao "sem JS"** e não é animação: desativar um link é
 atributo, não estilo — `pointer-events: none` só o esconde do ponteiro e o deixa
@@ -977,11 +1123,21 @@ o arquivo à sorte de um servidor.
 Daí a regra que vale para as frases: **falha de envio não trava o download.** As
 três (enviando, deu certo, não saiu) ocupam o **lugar do campo**, uma de cada
 vez — pedido do cliente. Por isso o campo se esconde em vez de sair do DOM: é o
-valor dele que segura a gaveta aberta e o botão liberado. Medido: o bloco fica em
-163,42px nos três estados, sem pulo.
+valor dele que segura a gaveta aberta e o botão liberado. Medido em 2026-08-12: o
+bloco fica em **211,42px nos três estados**, sem pulo (eram 227,41 antes de a
+margem de baixo da gaveta sair, no mesmo dia, e 163,42 antes de o padding
+vertical dobrar, em 2026-08-05).
 
 Para conferir as frases sem envio nenhum: `?apresentacao=enviando`,
 `?apresentacao=sucesso`, `?apresentacao=falha` — mesma encenação do formulário.
+
+**A encenação não dispara na carga da página.** Ela vive dentro de
+`pedirPorEmail()`, então a URL só arma o cenário: é preciso preencher um e-mail
+válido e **clicar no botão** para a frase aparecer. Abrir a URL e esperar devolve o
+bloco no estado normal — o que parece encenação quebrada e não é. E cuidado ao
+testar: o clique **baixa de verdade** (o `preventDefault` não existe, de propósito),
+então em automação vale `Browser.setDownloadBehavior: deny` antes, senão o teste
+puxa os 63 MB.
 
 #### A função ([`servidor/apresentacao.ts`](servidor/apresentacao.ts))
 
@@ -1250,27 +1406,48 @@ nesse intervalo faz ela subir a 35% da velocidade da página — a mesma conta d
 hero, por outro caminho. É `timeline-scope: --sobre` no `main` que deixa o bloco
 branco enxergar a timeline do irmão seguinte.
 
-### Armadilha: elemento grudado dentro de camada freada
+Os 65vh moram em **`--freio-camada`** (`tokens.css`) e não cravados no keyframe,
+porque desde 2026-08-12 são **dois** consumidores, em arquivos diferentes e com
+sinais opostos: o freio (`camada-frear`, no `Site.astro`) e o contrapeso da barra
+da apresentação (`camada-contrapeso`, no `Sobre.astro`). Dois números divergiriam
+na primeira vez que alguém acertasse um só, e o sintoma seria a barra descolando
+da emenda — visível, mas sem nada apontando para a causa.
 
-Não há nenhum caso ativo hoje — o rótulo das Áreas era o único, e ele deixou de
-ser freado quando o contato virou rolagem linear. Fica registrado porque volta a
-morder na primeira vez que alguém puser um `sticky` dentro de camada com freio.
+### O contrapeso: cancelar o freio de uma camada num filho dela
 
 O freio é `transform`, e `transform` é pintura: ele desloca **tudo** que está
-dentro da camada, inclusive um `position: sticky` que deveria estar parado. O
-`sticky` calcula contra a tela, ignorando o transform do ancestral, e aí o
-resultado pintado vira `top + freio`. O rótulo das Áreas descia meia tela
-enquanto o resto da seção subia — parecia defeito, não parallax.
+dentro da camada. A ferramenta para tirar um filho dessa carona é pendurar nele a
+animação **inversa** — mesma timeline, mesma faixa, deslocamento negado. As duas se
+cancelam e o filho fica parado na posição de LAYOUT dele.
 
-A correção era pendurar no elemento a animação **inversa** (`translateY(-65vh)`),
-na mesma timeline e na mesma faixa (`entry`). As duas se cancelam e ele fica onde
-estava. Quando o sticky se solta, no fim da seção, o contrapeso continua e é ele
-que faz o elemento subir e sair pelo topo — que é o que um sticky faz mesmo ao
-acabar. A mesma armadilha do minificador vale aqui: `animation` e
-`animation-timeline` em regras separadas.
+O número dos dois lados vem de **`--freio-camada`** (`tokens.css`, 65vh). Ele é
+token justamente porque tem dois consumidores com sinais opostos e em arquivos
+diferentes: `camada-frear` no `Site.astro` e `camada-contrapeso` no `Sobre.astro`.
+Acertar um e esquecer o outro descola sem nada gritar.
 
-Cuidado ao herdar isso: só faz sentido para quem é `sticky`. Qualquer outro
-filho da camada **deve** andar junto com o freio.
+A armadilha do minificador vale aqui: `animation` e `animation-timeline` em regras
+separadas, com seletores diferentes.
+
+**Dois usos, e o motivo é oposto em cada um:**
+
+1. **Para segurar um `sticky` no lugar** — o caso original, hoje inativo (o rótulo
+   das Áreas, que deixou de ser freado quando o contato virou rolagem linear). O
+   `sticky` calcula contra a tela, ignorando o transform do ancestral, e o
+   resultado pintado vira `top + freio`: o rótulo descia meia tela enquanto o
+   resto da seção subia, e parecia defeito, não parallax. Aqui o contrapeso
+   conserta um sintoma;
+
+2. **Para colar um filho na camada de BAIXO** — a barra da apresentação, desde
+   2026-08-12, e o primeiro caso ativo. Aqui o contrapeso é o efeito, não o
+   conserto: livre do freio, o elemento passa a andar a 100% da rolagem, igual à
+   camada seguinte (que não é freada), e fica soldado à borda de cima dela
+   enquanto a camada em que ele mora afunda a 35%. Ver a seção do bloco de
+   download.
+
+O que mudou de entendimento com o caso 2: **isto não vale só para `sticky`.** O
+texto aqui dizia "só faz sentido para quem é `sticky`; qualquer outro filho da
+camada DEVE andar junto com o freio" — a segunda metade é falsa. Qualquer filho
+pode sair do freio de propósito; o que ele ganha é a velocidade da camada de baixo.
 
 ### Armadilha: `<Image>` do Astro não estica em flex
 
@@ -1491,7 +1668,7 @@ têm o mesmo `currentTime`, e o grupo `i` está no instante
 `currentTime − i × porGrupo` da própria animação. Cravar todas em `i × porGrupo`
 põe o grupo `i` no quadro zero.
 
-Três coisas que custaram medição, e que voltam a morder se alguém mexer:
+Duas coisas que custaram medição, e que voltam a morder se alguém mexer:
 
 - **o ciclo inteiro somado na frente não é enfeite.** Sem ele, pular para o
   primeiro grupo joga o último para tempo negativo, onde ele ainda está no atraso
@@ -1502,31 +1679,137 @@ Três coisas que custaram medição, e que voltam a morder se alguém mexer:
   grupo pedido em opacidade zero e o anterior ainda aceso, congelados assim para
   sempre. O sintoma é o pior possível: o clique parece não fazer nada. Por isso o
   alvo ganha o tempo do cruzamento quando `animationPlayState` é `paused`.
-  Conferido: sem esse ajuste, Enter num traço mostrava o grupo **anterior**;
-- **a pausa por foco teve de virar `:has(:focus-visible)`.** Com `:focus-within`,
-  clicar num traço com o mouse dá foco ao botão e a passagem fica parada **para
-  sempre** — o pulo funciona uma vez e a barra nunca mais anda. E a regra ficou
-  **separada** da pausa por ponteiro: junto na mesma lista, um navegador sem
-  `:has()` derrubaria as duas.
+  Conferido: sem esse ajuste, Enter num traço mostrava o grupo **anterior**.
+  Desde 2026-08-12 o único estado parado é a **espera** de antes de a visita
+  chegar, e é ela quem depende deste ramo: o `irPara(0)` da largada roda com a
+  passagem segurada, e sem o `+ fade` a parede nasceria em branco. Clique de
+  verdade cai sempre no outro ramo.
 
-Isso ainda divide bem os dois públicos: a pausa por ponteiro é do
-`.clientes__trilho`, onde os logos estão, e os traços moram na outra coluna — quem
-clica com o mouse não pausou nada e ganha o cruzamento; quem chegou de Tab pausou
-(que é o pedido da WCAG 2.2.2) e ganha a resposta imediata.
+### A passagem nunca para durante a visita (2026-08-12)
+
+Pedido do cliente: **sempre trocando, no desktop e no celular.** Saíram as duas
+pausas que existiam, e as duas eram deliberadas quando foram escritas:
+
+- a **pausa por ponteiro** (`.clientes__trilho:hover`). Ela já tinha sido
+  encolhida da seção para a grade (a zona antiga era a faixa inteira, 1430×693
+  contra 858×440 da grade, incluindo os 128px de respiro e todo o terço do
+  rótulo) e depois guardada com `(hover: hover) and (pointer: fine)`, porque no
+  toque o primeiro toque GRUDAVA o estado e a passagem ficava parada até a pessoa
+  tocar em outro lugar. Os dois consertos foram atrás do mesmo relato — "trava em
+  alguns momentos" —, e a terceira resposta foi tirar a pausa;
+- a **pausa por teclado** (`.clientes:has(:focus-visible)`, que já tinha sido
+  `:focus-within` e mudou porque clicar num traço com o mouse dava foco ao botão
+  e parava a passagem **para sempre**).
+
+O que sobra para parar o movimento é o `prefers-reduced-motion`, que envolve todo
+o bloco de animação — quem configurou o sistema nunca vê a passagem correr. A
+**WCAG 2.2.2** pediria um controle na própria página para movimento automático de
+mais de 5s; o cliente foi avisado e decidiu assim. Os traços continuam pulando de
+grupo, mas **pular não é pausar**.
+
+A espera de antes de a visita chegar (`.clientes--espera`) **fica** — ela não é
+pausa durante a visita, é o que garante que os nove primeiros logos sejam vistos
+(ver a seção acima). Sai na primeira interseção e não volta.
 
 Dois detalhes de marcação e desenho:
 
 - **os botões nascem inertes** (`aria-hidden` no container, `tabindex="-1"` em
   cada um) e é o script que os promove. Sem JS não há para onde pular, e botão
   morto anunciado pelo leitor de tela é pior que enfeite nenhum;
-- **o traço continua com 4px**, mas o alvo de clique tem 24. O respiro vai em
-  `padding` com `background-clip: content-box`, e `box-sizing: content-box` é
-  obrigatório: com o `border-box` do reset o padding sairia da altura e o traço
-  sumiria.
+- **o traço tem 3px** (pedido do cliente, 2026-08-12 — eram os 4px do arquivo),
+  mas o alvo de clique tem 24. O respiro vai em `padding` com
+  `background-clip: content-box`, e `box-sizing: content-box` é obrigatório: com o
+  `border-box` do reset o padding sairia da altura e o traço sumiria.
+
+  **Os dois valores são um par: `padding = (24 − altura) ÷ 2`.** Com 3px de traço
+  são 10,5px de cada lado. Mexer na altura sem mexer no padding tira o alvo dos 24
+  que a WCAG 2.5.8 pede.
+
+  E os dois levam `max()` com o valor em `px`, que é a exceção documentada à regra
+  do `rem`: em `rem` puro o piso do clamp (fonte-raiz em 12px abaixo de ~1084px)
+  encolheria o traço para 2,25px e o alvo para 23,25. Com piso nos dois, o traço é
+  3px e o alvo 24 em QUALQUER largura — medido a 1446, 1200, 1000 e 375. Isso de
+  quebra consertou um desvio antigo: enquanto só o padding tinha piso, o alvo caía
+  a 23px no celular.
 
 Com `prefers-reduced-motion` não há animação para buscar, então o pulo troca a
 opacidade direto, em estilo inline. Sem isso o controle existiria e não faria nada
 justamente para quem mais depende dele para ver os outros 27 logos.
+
+### A largura da barra é a da coluna, não a do arquivo (2026-08-12)
+
+`.passagem` **não declara `width`**. Pedido do cliente, e é divergência assumida do
+Figma — que desenha 241px (`104:25`).
+
+Como se chegou aqui: o arquivo desenha o rótulo numa caixa estreita de 171px
+(`152:369`), onde ele quebra em ~3 linhas e a barra fica mais LARGA que o texto. No
+código o rótulo nunca teve `width` — enche a coluna de apoio. Quando
+`--texto-apoio` caiu de 20 para 16px, na leva do mesmo dia, a frase portuguesa
+passou a **caber em uma linha** de 316,5px, e os 241px da barra ficaram 75px mais
+estreitos que ela: a relação do arquivo tinha se invertido, e obedecer ao número
+reproduzia a medida perdendo o desenho.
+
+**O que faltava não era responsividade.** Os 241px estavam em `rem` e já encolhiam
+com o `clamp()` da raiz (241 → 200 → 180,8) — o problema era proporção. Vale
+lembrar antes de "consertar" fluidez que já existe.
+
+Sem `width`, quem estica é o `align-items: stretch` padrão de `.clientes__aparte`
+(que é coluna e não declara alinhamento), então a barra mede a coluna — a mesma
+caixa em que a frase vive. Nada de `width: 100%` nem `align-self`. E os traços são
+`flex: 1`, então repartem sozinhos: **78px** cada na largura de projeto, contra 55,8.
+
+**Funciona até 375px sem breakpoint porque coluna e frase congelam JUNTAS** no piso
+do clamp (247,5 contra 237,6). Medido:
+
+| viewport | coluna = barra | frase (pt) | sobra |
+|---|---|---|---|
+| 1446 | 330 | 316,5 (1 linha) | 13,5 |
+| 1200 | 273,8 | 262,7 | 11,1 |
+| ≤1084 | 247,5 | 237,6 | 9,9 |
+
+#### E o `text-wrap: balance` do reset teve de sair deste rótulo
+
+Só apareceu conferindo o inglês, e **a mudança de largura tinha piorado a página
+inglesa** antes disso. "Companies that have relied on Tobias's experience:" não cabe
+em uma linha, e `balance` — que o reset dá a todo `h1..h4` — iguala as duas,
+**encolhendo o bloco de propósito**: duas linhas de 189,2px numa coluna de 330. Com
+a barra passando a medir 330, a sobra foi de 51,8px (quando a barra tinha 241) para
+**140,8px**.
+
+`text-wrap: wrap` no `.clientes__rotulo` devolve a primeira linha à largura
+disponível: bloco de 270,6px, sobra de 59,4 — de volta ao patamar de antes. **O
+português não muda** (uma linha; `balance` não tinha o que equilibrar).
+
+Fica como alerta para qualquer barra amarrada a texto: **`balance` trabalha contra
+você**, porque o trabalho dele é justamente encolher o bloco. E nenhuma das duas
+opções deixa o inglês rente — a sobra some só medindo a linha pintada, o que pede
+JS e não passa perto do critério das exceções.
+
+#### A cor da barra é preto, não o petróleo do arquivo
+
+Pedido do cliente, 2026-08-12, junto com a altura de 3px. O Figma pinta os quatro
+traços em petróleo a 15% (`104:25`) e o preenchido em petróleo cheio (`76:235`);
+aqui os três viraram **`--cor-preto`**, nas mesmas porcentagens — mudou o pigmento,
+não a hierarquia:
+
+| elemento | valor |
+|---|---|
+| trilha (`.passagem__divisao`) | `--cor-preto` a **15%** |
+| trilha em hover/foco | `--cor-preto` a **40%** |
+| preenchimento | `--cor-preto` cheio |
+
+**O contorno de foco continua petróleo, e isso não é esquecimento:** ele é a cor de
+foco de TODO o site (`global.css`, "o design não especifica, então usamos a cor da
+marca"), e aparece igual em links preto sobre bege em toda a página. Trocá-lo aqui
+por preto tiraria a única coisa que distingue o anel de foco do próprio traço.
+`.passagem__divisao:focus-visible` só existe para mudar o `outline-offset`; a cor
+vem de lá.
+
+Vale como aviso de método: **`getComputedStyle` da página não vê pseudo-estado
+forçado** (a mesma armadilha do hover do rodapé). Para conferir a cor do anel de
+foco use `CSS.forcePseudoState` + `CSS.getComputedStyleForNode`; lendo pelo lado da
+página, um elemento sem foco devolve `outline-color: currentColor` e
+`outline-width: medium` (3px) e o teste parece dizer que o anel virou preto.
 
 ### O que ainda está errado na parede
 
@@ -1601,44 +1884,71 @@ um é a versão do outro para a largura em que está ativo, e os dois leem o
 mesmo `areasAtuacao.rotulo`, então trocar o texto no Sanity troca os dois
 juntos.
 
-### As descrições dos cartões se alinham pelo topo
+### As descrições dos cartões se alinham pelo topo — e desde 2026-08-12 de graça
 
-Pedido do cliente, 2026-07-31, e **diverge do Figma**: no arquivo cada descrição
-fica ancorada no rodapé do cartão e começa onde o texto dela mandar, então uma
-descrição de 3 linhas começava uma linha ABAIXO da vizinha de 4 — a linha branca
-sobrava em cima. Medido antes: 210px contra 237px de degrau, no meio da grade.
+Pedido do cliente, 2026-07-31: no arquivo de então cada descrição ficava ancorada
+no rodapé do cartão e começava onde o texto dela mandasse, então uma descrição de
+3 linhas começava uma linha ABAIXO da vizinha de 4 — a linha branca sobrava em
+cima. Medido na época: 210px contra 237px de degrau, no meio da grade.
 
-A correção é uma linha, e não mexe no `space-between`: `min-height: 4lh` na
-descrição reserva a altura da mais alta, então todas começam na mesma linha e a
-que sobra cai **embaixo**. Medido depois: as nove começam em 209–210px.
+A correção era `min-height: 4lh` na descrição: com o bloco em `space-between`,
+reservar a altura da mais alta punha todas na mesma linha e jogava a sobra para
+BAIXO.
 
-Cuidado com o número: ele é "quantas linhas tem a maior descrição". Se o CMS
-receber uma de cinco linhas, é ele que sobe — senão a nova volta a começar mais
-alto que as vizinhas. O `6em` antes dele é o mesmo valor para navegador sem a
-unidade `lh` (4 × 1.5 de entrelinha).
+**Em 2026-08-12 o arquivo trocou a mecânica e o pedido passou a se cumprir
+sozinho**, então as duas linhas de `min-height` saíram. O cartão (`layout_656a76e8`)
+é hoje coluna com `padding: 32px`, **`gap: 64px`** e altura de conteúdo — sem
+`space-between` e sem `min-height: 350px`. Com o vão fixo, a descrição começa
+sempre em `32 + 29,76 + 64`, porque o título tem uma linha só nos oito cartões: o
+alinhamento é **por construção**, não por reserva de altura. Medido depois:
+as duas descrições da fileira começam no mesmo pixel.
 
-O `letter-spacing` dessas descrições também é próprio: **-0.03em**, contra os
--0.04 do resto do corpo. Mesmo pedido, mesmo dia.
+O que mudou de aparência é a sobra: antes ela ficava embaixo do texto (cartão de
+350px cravado), agora o cartão fecha onde o texto fecha. Medido: **253,7px de
+miolo** no cartão de descrição mais longa, contra os 254 que o arquivo desenha na
+célula vazia (`270:65`).
 
-### A célula vazia não desenha traço
+**Cuidado ao comparar essa altura com o arquivo:** a célula vazia do Figma não tem
+stroke, e os nossos cartões têm borda com `box-sizing: border-box`, então a caixa
+medida sai 1 ou 2px maior (255,7 no cartão da última fileira, que tem as duas). A
+diferença é a divisa, não erro de layout — desconte as bordas antes de achar que
+sobrou pixel.
 
-Na última fileira do segundo grupo o arquivo desenha **um cartão de 490px
-sozinho** (`105:204`): o traço de cima para na metade da grade em vez de
+O `letter-spacing` dessas descrições continua próprio: **-0.03em**, contra os
+-0.04 do resto do corpo (e contra o -0.04 que o arquivo pede). Pedido do cliente,
+mantido em 2026-08-12.
+
+### A célula vazia não desenha traço — e agora são DUAS
+
+Na última fileira o arquivo desenha **um cartão de 490px sozinho** (`270:101` no
+2º grupo, `270:62` no 1º): o traço de baixo para na metade da grade em vez de
 atravessá-la. A célula continua existindo no HTML, mas só para ancorar o símbolo
-no canto inferior direito (`105:219`) — medido, ele fica rente à borda direita e
-à base da fileira, folga zero nas duas.
+no canto inferior direito (`270:168`, `270:85`) — medido, ele fica rente à borda
+direita e à base da fileira, folga **zero** nas duas, nos dois grupos.
+
+**O segundo símbolo apareceu sem uma linha de código, em 2026-08-12**, e é o
+melhor argumento a favor de a decisão de agrupar viver no componente e não no CMS.
+Ao remover "Registro de Marcas e Patentes" o primeiro grupo foi de 6 para 5 áreas;
+o `grupo.itens.length % 2 === 1` que já estava lá viu o número ímpar e criou a
+célula vazia com o símbolo — exatamente o que o designer passou a desenhar. Foram
+duas edições no Sanity e zero em CSS.
+
+Consequência a lembrar: **a quantidade de símbolos nas Áreas é função da paridade
+de cada grupo.** Um item entrando ou saindo pelo Studio acende ou apaga um símbolo,
+e ninguém vai associar as duas coisas se isto não estiver escrito.
 
 Isso mudou em 2026-07-30. Antes a linha atravessava, e era a célula que a
 desenhava; se alguém puser de volta um `border-top` ali, a grade volta a divergir
 do arquivo.
 
-**Correção em 2026-07-31**: faltava a linha embaixo do cartão "Cível", que
-fica na mesma fileira que a célula vazia (2ª coluna). `.cartao` desenha o
-próprio `border-top`, mas `.grupo__vazio` não desenhava nenhum — então o lado
-direito da fileira ficava sem a divisa que o lado esquerdo (o cartão) tinha.
-A correção é dar à célula vazia o mesmo `border-top` do cartão; ela não ganha
-`border-bottom` porque, como o resto da última fileira, quem fecha embaixo é
-`.cartao:nth-last-child(-n + 2)`, e a célula vazia sempre é a última do laço.
+**Correção em 2026-07-31**: sem borda própria, o lado DIREITO da divisa acima da
+última fileira não fechava — o cartão à esquerda desenhava o `border-top` dele e a
+célula vazia, nada. A correção é dar à célula vazia o mesmo `border-top` do cartão;
+ela não ganha `border-bottom` porque, como o resto da última fileira, quem fecha
+embaixo é `.cartao:nth-last-child(-n + 2)`, e a célula vazia sempre é a última do
+laço. **Reconferido nó a nó em 2026-08-12** contra os `strokeWeight` dos cartões
+novos: as três regras de borda reproduzem o arquivo sem uma vírgula de mudança,
+nos dois grupos.
 
 No mobile a célula empilha embaixo do cartão "Outsourcing de Apoio" (a grade
 vira 1 coluna, ver abaixo) e ganha `margin-top: 32px` — em `px` cru, não
@@ -1941,7 +2251,11 @@ Dois detalhes da marcação:
 
 - a seta é **irmã** do campo, porque `<select>` não aceita filho que não seja
   opção. Ela fica por cima da área de padding com `pointer-events: none`, então
-  clicar nela abre a lista igual;
+  clicar nela abre a lista igual. E ela é à **esquerda** (`left: 2rem`, alinhada
+  com o padding), não à direita como manda o hábito: no arquivo o vetor vem antes
+  do rótulo dentro do auto-layout (`131:37` antes de `131:32`), com gap de 16px.
+  Conferido em 2026-08-12 — a leitura do Figma sugere uma seta à esquerda porque
+  ela está mesmo à esquerda;
 - o rótulo "Área de atuação" é uma `<option value="" disabled selected>`. É o
   que mostra o texto no estado vazio sem ele virar resposta — e o
   `:has(option[value=""]:checked)` é quem pinta esse estado de cinza.
@@ -2066,13 +2380,68 @@ faz o código deixar de descrever o arquivo.
 ## O rodapé ([`Rodape.astro`](src/components/Rodape.astro))
 
 Fora do `main` e **último no documento** — a revelação dele depende disso.
-Gutter de 32px, e não os 64 do resto do site: a assinatura gigante (`157:427`)
+Gutter de 32px, e não os 64 do resto do site: a assinatura gigante (`268:54`)
 ocupa a largura toda entre as margens.
 
-Pedido do cliente, 2026-08-05: no bloco "Entre em contato" o **telefone vem
-antes do e-mail** (era o contrário). Os dois links de telefone — aqui e no
-FaleConosco — levam ao **WhatsApp** (`wa.me/…?text=…`), não ao discador.
-Ver a seção do Fale conosco para detalhes.
+Pedido do cliente, 2026-08-05: no bloco de contato o **telefone vem antes do
+e-mail** (era o contrário). Os dois links de telefone — aqui e no FaleConosco —
+levam ao **WhatsApp** (`wa.me/…?text=…`), não ao discador. Ver a seção do Fale
+conosco para detalhes.
+
+### Refeito em 2026-08-12: os títulos viraram chapéus e a cor inverteu
+
+O designer substituiu o frame inteiro (`52:21` → **`268:41`**; ver a armadilha dos
+ids trocados, na seção do Figma — o antigo continua no arquivo e engana). **As
+quatro colunas em `fr` são a única coisa que não mudou.**
+
+Os três títulos de coluna eram 24px Semi Bold em preto e viraram **chapéus de
+11px, Regular, caixa alta, `#5E5440`** — e entrou um quarto, "Menu", em cima da
+navegação, que antes não tinha rótulo nenhum. A hierarquia da coluna passou a vir
+do contraste de TAMANHO (11 contra 18 ou 34), não de peso.
+
+Três coisas que valem registro:
+
+- **`letter-spacing: +0.01em` no chapéu é o único positivo do site.** Todo o resto
+  é negativo, porque todo o resto é corpo normal ou maior; caixa alta em 11px pede
+  o contrário. Se alguém "padronizar" isso para -0.04, as letras se encavalam;
+
+- **a caixa alta é do CSS (`text-transform`), não do conteúdo.** Assim
+  "Menu"/"Contato"/"Redes sociais" ficam em caixa normal no Studio, legíveis e
+  traduzíveis sem ninguém escrever em capslock — e o inglês ganhou "Contact" e
+  "Social media" sem virar grito;
+
+- **a cor inverteu, e isso deixou uma regra de hover morta.** Os links de contato e
+  redes saíram de `rgba(23,23,23,.5)` para o preto cheio, enquanto o texto pequeno
+  (chapéus, copyright, legais) andou no sentido oposto e ficou com o marrom. Com os
+  links nascendo em `--cor-preto`, o `.rodape__link:hover { color: var(--cor-preto) }`
+  que existia virou regra que não faz nada. Hoje: quem nasce escuro **apaga** para
+  `rgba(23,23,23,.6)` (junto com a nav e o "Voltar ao topo"), e os legais, que
+  nascem no marrom, **acendem** para o preto.
+
+  Detalhe que morde: o peso 400 dos legais **não desce por herança**. A lista
+  declara `font: 400 …`, mas `.rodape__link` declara `font-weight: 500` no próprio
+  elemento, e valor próprio ganha de herdado — precisou de um `font-weight: 400`
+  explícito na regra dos legais. Passou batido enquanto os dois eram 500.
+
+#### O ritmo vertical, medido
+
+As quatro colunas agora **começam na mesma linha** (y≈45,3): os 12px de
+`padding-top` que a coluna carregava eram o degrau entre a navegação (y=46) e os
+títulos de 24px (y=58), e ele desapareceu com os chapéus. `min-height` das colunas
+foi de 368 para **388px** (45,27 até o pé do selo, em 433,27).
+
+E "Voltar ao topo" fica **8px acima** das outras três, o que parece deslize e não é:
+a coluna dele não tem chapéu, e o link está **centralizado na fileira dos
+chapéus**. A conta é a diferença das duas caixas dividida por dois — chapéu 11 ×
+1.2 = 13,2 e link 24 × 1.2 = 28,8, logo `(13,2 − 28,8) ÷ 2 = −7,8px` de recuo. É de
+onde vem o `margin-top` negativo, que sem essa explicação lê como número mágico.
+
+Ele também **encostou na margem direita** (x=1209 → 1237, terminando em 1414 junto
+com o selo), então a coluna virou `align-items: flex-end`.
+
+Medido a 1446px, contra o arquivo: altura do rodapé 699,9 (701), chapéus em 45,98
+(45,3), "Voltar ao topo" em 38,19 (37,27) e terminando em 1414,02 (1414), selo em
+381,98 (381,27) e 1414,02 (1414), assinatura em 488,95 (489,74).
 
 ### A revelação: recorte mais contra-deslocamento
 
@@ -2118,7 +2487,9 @@ máximo de **0,4px**.
 - **a fileira da navegação tem `padding: 16px 0 15px`**, não 16 dos dois lados:
   no Figma o traço fica por dentro da medida do frame, então a fileira mede
   72,8 com a linha incluída. Com 16+16+1 cada uma ganhava 1px e as cinco
-  empurravam a navegação 5px;
+  empurravam a navegação 5px. **A primeira fileira não tem respiro em cima**
+  (`268:43` declara `0 0 16px`): ela encosta no chapéu "Menu", e quem separa os
+  dois é o vão de 20px do `.rodape__bloco`;
 - **a seta diagonal mede 12px de tinta contra os 21,21 do nó** — o nó é a caixa
   de um quadrado girado 45°. A do "Voltar ao topo" tem 15 nos dois. As duas
   ficam rentes à borda da coluna; no arquivo a diagonal fica 5px para dentro,

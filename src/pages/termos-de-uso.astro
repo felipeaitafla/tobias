@@ -10,12 +10,15 @@
  * 9), então as duas páginas viajam juntas: publicar só esta deixa dois links
  * mortos no meio de "parte integrante destes Termos".
  *
- * Sem versão inglesa, pela mesma razão da política: traduzir peça com efeito
- * legal é decisão do escritório. Quando existir, é publicar `legal-termos-en` e
- * criar `src/pages/en/terms-of-use.astro` com estas mesmas linhas — nessa
- * ordem, porque o build lê só documento publicado.
+ * Existe versão inglesa desde 2026-08-12 (`src/pages/en/terms-of-use.astro`,
+ * documento `legal-termos-en`) — por isso o `rotas` lista os dois idiomas, e
+ * não só o pt-BR: é o que fecha o `hreflang` nos dois sentidos.
  */
 import Legal from '../layouts/Legal.astro';
 ---
 
-<Legal chave="termos" idioma="pt-BR" rotas={{ 'pt-BR': '/termos-de-uso' }} />
+<Legal
+  chave="termos"
+  idioma="pt-BR"
+  rotas={{ 'pt-BR': '/termos-de-uso', en: '/en/terms-of-use' }}
+/>

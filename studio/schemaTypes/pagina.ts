@@ -312,6 +312,13 @@ export const pagina = defineType({
           of: [defineArrayMember({ type: 'link' })],
           description: 'Não é a mesma do topo: tem lista e ordem próprias.',
         }),
+        /*
+         * Os três rótulos de coluna do rodapé. São desenhados em caixa alta
+         * (#268:93, #268:59, #268:69), mas escreva em caixa normal: quem
+         * transforma é o CSS, e assim o texto continua legível aqui e
+         * traduzível sem capslock.
+         */
+        defineField({ name: 'menuTitulo', title: 'Título da coluna de menu', type: 'string' }),
         defineField({ name: 'contatoTitulo', title: 'Título da coluna de contato', type: 'string' }),
         defineField({ name: 'redesTitulo', title: 'Título da coluna de redes', type: 'string' }),
         defineField({ name: 'topo', title: 'Texto do "Voltar ao topo"', type: 'string' }),

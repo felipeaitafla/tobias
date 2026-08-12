@@ -457,7 +457,10 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
        zoom automático do Safari no iOS ao ganhar foco. Acima da largura de
        projeto `1rem` já passa de 16px sozinho, então o `max()` não muda nada
        lá. */
-    font: 500 max(1rem, 16px) / 1.1 var(--fonte-corpo); /* 16px Medium */
+    /* Regular desde 2026-08-12 (#I85:376;85:300 e irmãos). O arquivo já mandou
+       este peso subir e descer duas vezes; o botão Enviar, esse, continua Medium
+       500 — os dois estavam iguais e deixaram de estar. */
+    font: 400 max(1rem, 16px) / 1.1 var(--fonte-corpo); /* 16px Regular */
     letter-spacing: -0.04em;
     color: var(--cor-preto);
     background: none;

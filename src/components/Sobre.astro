@@ -336,7 +336,10 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
      dentro dela: a faixa preta da matéria e o visor do PDF. */
   .sobre__faixa--abertura {
     position: relative;
-    background: var(--cor-menta);
+    /* Era --cor-menta (#eef6f4); pedido do cliente, 2026-08-13, trocado
+       para o mesmo #dce4e2 que já existe como --cor-cinza-claro (hoje só
+       usado em borda, na parede de clientes) — mesma tinta, contexto novo. */
+    background: var(--cor-cinza-claro);
   }
 
   /* Mesmo motivo, para a faixa que recebe o bloco da apresentação. Modificador

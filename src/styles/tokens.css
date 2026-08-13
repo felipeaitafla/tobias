@@ -26,11 +26,17 @@
   --cor-petroleo: #3c757c; /* seção Marjorye, tela de carregamento, ornamento do formulário */
   --cor-terracota: #7a3225; /* seção Thiago */
   --cor-bege: #bca780; /* footer */
-  --cor-menta: #eef6f4; /* fundos alternados (história, contato) */
-  /* Este cinza é SÓ da parede de clientes (#76:181 e irmãos) — o Figma o
-     confirma lá e em nenhum outro lugar. As divisas das Áreas, do card do
-     Fale conosco e dos campos do formulário são o `--cor-cinza-divisa`
-     abaixo; usá-lo aqui foi um engano que durou até 2026-08-06. */
+  /* Só o hover/ativo da lista de países do formulário usa este verde desde
+     2026-08-13 — até então também era o fundo da história e do formulário,
+     que passaram para o `--cor-cinza-claro` abaixo (pedido do cliente). */
+  --cor-menta: #eef6f4;
+  /* Nasceu SÓ da parede de clientes (#76:181 e irmãos) — o Figma o confirma
+     lá e em nenhum outro lugar; usá-lo como DIVISA em outro lugar foi um
+     engano que durou até 2026-08-06 (as divisas das Áreas, do card do Fale
+     conosco e dos campos do formulário são o `--cor-cinza-divisa` abaixo).
+     Desde 2026-08-13 ele também é FUNDO da primeira faixa do Sobre e da
+     seção do formulário, a pedido do cliente — usos diferentes, mesma
+     tinta, então continua um token só. */
   --cor-cinza-claro: #dce4e2;
   /*
    * A divisa de 1px que abre os cartões das Áreas (#105:76), o card do Fale

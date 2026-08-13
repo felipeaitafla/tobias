@@ -26,8 +26,12 @@ const grupos = Array.from({ length: Math.ceil((clientes?.length ?? 0) / POR_GRUP
 
 /*
  * Ritmo da passagem. Cada grupo fica 5s na tela e cruza com o próximo por
- * 1.2s; a divisória correspondente se enche nesses mesmos 5s e volta a zero
+ * 0.5s; a divisória correspondente se enche nesses mesmos 5s e volta a zero
  * quando o próximo assume.
+ *
+ * O cruzamento era 1.2s e o cliente pediu mais curto e sutil, 2026-08-13 —
+ * a troca demorava demais. 0.5s ainda é fade (não corte seco), só mais
+ * rápido.
  *
  * Os keyframes são montados aqui, e não escritos à mão no CSS, porque as
  * paradas são frações do ciclo inteiro — mudam junto com a quantidade de
@@ -35,7 +39,7 @@ const grupos = Array.from({ length: Math.ceil((clientes?.length ?? 0) / POR_GRUP
  * sozinho. Continua tudo em CSS: nada aqui roda no navegador.
  */
 const SEGUNDOS_POR_GRUPO = 5;
-const SEGUNDOS_DE_FADE = 1.2;
+const SEGUNDOS_DE_FADE = 0.5;
 const ciclo = grupos.length * SEGUNDOS_POR_GRUPO;
 const parada = (segundos: number) => `${((segundos / ciclo) * 100).toFixed(4)}%`;
 

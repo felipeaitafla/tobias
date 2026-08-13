@@ -241,7 +241,11 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
        revisão de 2026-07-30, quando o Fale conosco fechava com 64 e as duas
        seções somavam o respiro. Agora cada uma traz o seu. */
     padding: 6rem var(--gutter);
-    background: var(--cor-menta);
+    /* Era --cor-menta (#eef6f4); pedido do cliente, 2026-08-13, trocado
+       para o mesmo #dce4e2 que já existe como --cor-cinza-claro. O hover
+       da lista de países, abaixo, continua em --cor-menta de propósito —
+       não é fundo de seção, é outro uso do mesmo token. */
+    background: var(--cor-cinza-claro);
     /* O ornamento (1277px) é bem mais ALTO que a seção e sangra de propósito
        — desde que ele passou a ancorar embaixo (2026-07-31), sangra por
        CIMA. Aqui é onde a sobra some. */

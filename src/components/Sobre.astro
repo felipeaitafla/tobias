@@ -858,9 +858,18 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     display: flex;
     flex-direction: column;
     gap: 0.25rem; /* 4px */
-    /* 389px (#212:71). `max-width` e não largura fixa: na largura de projeto
-       sobram 531px de coluna, mas abaixo dela o texto precisa poder encolher. */
-    max-width: 24.3125rem;
+    /* O arquivo desenha 389px (#212:71), mas a frase em português precisa de
+       442px numa linha só — com 389 ela quebrava em duas, com um vão enorme
+       (115px) até o ícone. Pedido do cliente, 2026-08-13: uma linha só, vão
+       menor. 444px (27.75rem) é o piso que cabe a frase; sobrando, quem
+       estica é o `space-between` do pai, não este valor — é por isso que o
+       vão medido na largura de projeto fica em 62px, não em zero.
+       `max-width` e não largura fixa: na largura de projeto sobram 531px de
+       coluna, mas abaixo dela o texto precisa poder encolher — e encolhe
+       menos agora, então o vão soma zero mais cedo (a partir de ~985px de
+       janela, contra ~950px de antes). Mesma zona morta do `.materia__chamada`,
+       já documentada lá; não vale breakpoint para uma frase só. */
+    max-width: 27.75rem;
   }
 
   /* `max()`, não `0.875rem` puro: abaixo da largura de projeto o piso do

@@ -222,6 +222,25 @@ const redes = [
    *
    * Sem `animation-timeline` (Firefox hoje) o rodapé nasce no lugar certo:
    * o estado normal é o final, e a animação só existe dentro do `@supports`.
+   *
+   * ARMADILHA (2026-08-12): a conta de "65% da própria altura = 35% da
+   * velocidade da página" pressupõe que a faixa `entry` dura exatamente a
+   * altura do rodapé — e é isso que quebra quando o rodapé fica MAIS ALTO
+   * que a viewport, que é exatamente o que acontece no mobile (empilhado, o
+   * rodapé mede ~876px a 375×812, contra 812 de tela). Medido: a animação
+   * termina (transform: none, ela chega ao fim) bem antes de a rolagem
+   * acabar, mas como o rodapé é mais alto que a tela, o topo dele — o menu —
+   * segue acima da viewport na posição final, e como o header fica fixo por
+   * cima, o que sobra é o menu do rodapé nascendo ESCONDIDO ATRÁS DO HEADER
+   * pelo resto da rolagem. Sem a animação (rolagem normal, sem recorte) o
+   * mesmo topo aparece de passagem enquanto a página desce — some no fim,
+   * como qualquer rodapé alto demais para a tela, mas nunca fica ilegível.
+   *
+   * A saída não é mexer na conta (ela está certa para quando o rodapé cabe
+   * na tela, e no desktop sempre cabe — ~700px contra 900+ de viewport): é
+   * desligar a revelação abaixo de 700px, a mesma exceção pontual de sempre,
+   * e pelo mesmo motivo dela existir (comportamento que muda, não tamanho) —
+   * é exatamente a largura em que o rodapé empilha e fica alto demais.
    */
   .rodape-palco {
     overflow: clip;
@@ -233,7 +252,7 @@ const redes = [
   }
 
   @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
+    @media (prefers-reduced-motion: no-preference) and (min-width: 701px) {
       .rodape {
         animation: rodape-revelar linear both;
         animation-range: entry;

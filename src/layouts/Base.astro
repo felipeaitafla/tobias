@@ -42,6 +42,14 @@ const urlDe = (caminho: string) => new URL(caminho, Astro.site).href;
 const canonical = urlDe(caminhos[idioma] ?? caminhoDe(idioma));
 const padrao = caminhos[IDIOMA_PADRAO] ?? caminhos[idioma];
 const ogLocale = idioma.replace('-', '_');
+
+/*
+ * Só a assinatura da marca sobre o bege — sem texto nenhum, então a resposta
+ * em inglês é exatamente a mesma imagem (mesma divisa do `configuracoes` no
+ * Sanity: ver CLAUDE.md). Por isso vive em `public/`, como o favicon e o
+ * vídeo do hero, e não é per-idioma.
+ */
+const ogImagem = urlDe('/social-image.png');
 ---
 
 <!doctype html>
@@ -49,7 +57,16 @@ const ogLocale = idioma.replace('-', '_');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/*
+      Dois arquivos, não um só com `@media` interno: o navegador escolhe pelo
+      `media` do próprio `<link>`, e essa é a via com suporte mais amplo hoje
+      (Chrome, Firefox, Safari 17+, Edge) para favicon que segue o tema do
+      SO. `favicon.ico`, na raiz de `public/`, continua como reserva
+      implícita para quem não lê nenhum dos dois (não precisa de tag: é o
+      caminho que todo navegador tenta sozinho).
+    */}
+    <link rel="icon" href="/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
 
     <title>{titulo}</title>
     <meta name="description" content={descricao} />
@@ -67,7 +84,15 @@ const ogLocale = idioma.replace('-', '_');
     <meta property="og:description" content={descricao} />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={ogLocale} />
-    {/* TODO: gerar og:image (1200×630) a partir do hero */}
+    <meta property="og:image" content={ogImagem} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={titulo} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={titulo} />
+    <meta name="twitter:description" content={descricao} />
+    <meta name="twitter:image" content={ogImagem} />
 
     {/*
       `preload` precisa ser filtrado. O provider do Google emite todos os

@@ -22,7 +22,7 @@ const foto = imagem(hero.foto, { larguras: [640, 1024, 1440, 2048], sizes: '100v
 const trechos = hero.aparte?.[0]?.children ?? [];
 ---
 
-<section class="hero">
+<section class="hero gutter-mobile">
   <img
     src={foto.src}
     srcset={foto.srcset}
@@ -135,15 +135,6 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     color: var(--cor-branco);
     isolation: isolate;
     overflow: hidden;
-  }
-
-  /* Pedido do cliente, 2026-07-31: menos respiro lateral no mobile — só os
-     lados, o respiro de cima e de baixo continuam os do arquivo. Padrão de
-     32px (`--gutter-mobile`) igual ao resto do site. */
-  @media (max-width: 700px) {
-    .hero {
-      padding-inline: var(--gutter-mobile);
-    }
   }
 
   .hero__foto {

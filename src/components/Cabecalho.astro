@@ -4,7 +4,8 @@ import Whatsapp from '../assets/icones/whatsapp.svg';
 import Globo from '../assets/icones/idioma-globo.svg';
 import Seta from '../assets/icones/idioma-chevron.svg';
 
-import { IDIOMAS, NOMES_IDIOMA, caminhoDe, textos } from '../lib/interface';
+import { IDIOMAS, NOMES_IDIOMA, caminhoDe } from '../lib/idioma';
+import { textos } from '../lib/dicionario';
 
 interface Props {
   navegacao: { _key: string; texto: string; href: string }[];
@@ -34,7 +35,7 @@ const {
 const t = textos(idioma);
 ---
 
-<header class:list={['cabecalho', { 'cabecalho--sempre': sempreVisivel }]}>
+<header class:list={['cabecalho', 'gutter-mobile', { 'cabecalho--sempre': sempreVisivel }]}>
   <a class="cabecalho__marca" href={inicio} aria-label="Tobias Advogados — início">
     <Assinatura class="cabecalho__assinatura" />
   </a>
@@ -366,7 +367,6 @@ const t = textos(idioma);
      */
     .cabecalho {
       --pad-y: 8px;
-      padding-inline: var(--gutter-mobile);
     }
 
     /* Os três alvos de toque do header. `min-height` e não `height`: o conteúdo

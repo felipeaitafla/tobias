@@ -1,3 +1,5 @@
+import { IDIOMA_PADRAO, type Idioma } from './idioma';
+
 /*
  * Strings de INTERFACE, por idioma — o que o leitor de tela lê e ninguém vê.
  *
@@ -10,7 +12,24 @@
  * A divisa é essa: se some da tela quando o CSS carrega, é daqui. Se o cliente
  * leria e diria "esse texto está errado", é do Sanity.
  */
-const DICIONARIO = {
+const DICIONARIO: Record<
+  Idioma,
+  {
+    'rodape.aria': string;
+    'clientes.grupo': (n: number, total: number) => string;
+    'contato.endereco': string;
+    'contato.telefone': string;
+    'contato.email': string;
+    'contato.atendimento': string;
+    'form.pais': string;
+    'form.buscarPais': string;
+    'socio.alt': (nome: string) => string;
+    'apresentacao.baixar': string;
+    'apresentacao.travado': string;
+    'idioma.escolher': string;
+    'legal.atualizado': string;
+  }
+> = {
   'pt-BR': {
     'rodape.aria': 'Rodapé',
     'clientes.grupo': (n: number, total: number) => `Ver o grupo ${n} de ${total}`,
@@ -46,36 +65,7 @@ const DICIONARIO = {
     'idioma.escolher': 'Choose language',
     'legal.atualizado': 'Last updated: ',
   },
-} as const;
-
-export type Idioma = keyof typeof DICIONARIO;
-
-export const IDIOMAS: Idioma[] = ['pt-BR', 'en'];
-export const IDIOMA_PADRAO: Idioma = 'pt-BR';
-
-/*
- * O nome de cada idioma, escrito NO próprio idioma — "Português", nunca
- * "Portuguese". Quem procura a versão portuguesa não lê inglês para achá-la.
- *
- * Não vai para o Sanity, e a razão é a mesma de `studio/idiomas.ts`: esta lista
- * não muda sem alguém mexer no roteamento do Astro junto. Um campo editável
- * daria a impressão de que acrescentar um terceiro idioma é tarefa de Studio,
- * quando exige uma rota nova.
- */
-export const NOMES_IDIOMA: Record<Idioma, string> = {
-  'pt-BR': 'Português',
-  en: 'English',
 };
-
-/*
- * A rota de cada idioma. `prefixDefaultLocale: false` põe o português na raiz
- * e só o inglês ganha prefixo.
- *
- * Mora aqui, e não no layout, porque DOIS lugares precisam da mesma conta: o
- * `hreflang`/canonical do `Base.astro` e o seletor de idioma do `Cabecalho`.
- * Duas cópias divergiriam na primeira vez que alguém acertasse uma só.
- */
-export const caminhoDe = (id: string) => (id === IDIOMA_PADRAO ? '/' : `/${id}/`);
 
 export function textos(idioma: string) {
   return DICIONARIO[idioma as Idioma] ?? DICIONARIO[IDIOMA_PADRAO];

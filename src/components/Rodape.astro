@@ -11,7 +11,8 @@ import Selo from '../assets/logos/selo-20-anos-positivo.svg';
  * porque os fills viraram `currentColor`.
  */
 import Assinatura from '../assets/logos/assinatura-rodape.svg';
-import { textos } from '../lib/interface';
+import { textos } from '../lib/dicionario';
+import { linkWhatsapp } from '../lib/whatsapp';
 import type { Config, Pagina } from '../lib/conteudo';
 
 interface Props {
@@ -33,8 +34,7 @@ const t = textos(idioma);
    Hoje guardam o mesmo, mas continuam separados: se o cliente quiser voltar a
    ter dois, é uma edição no Studio e não uma mudança de código. Pedido do
    cliente, 2026-08-05: telefone antes do e-mail, e leva ao WhatsApp. */
-const msgWhatsapp = encodeURIComponent('Olá! Gostaria de conversar com a equipe da Tobias Advogados.');
-const whatsappHref = `https://wa.me/${config.telefoneRodape.href.replace(/\D/g, '')}?text=${msgWhatsapp}`;
+const whatsappHref = linkWhatsapp(config.telefoneRodape);
 const contato = [
   { texto: config.telefoneRodape.texto, href: whatsappHref, externo: true },
   { texto: config.email, href: `mailto:${config.email}` },
@@ -54,7 +54,7 @@ const redes = [
   `hidden` criaria um contêiner de rolagem.
 */}
 <div class="rodape-palco">
-  <footer class="rodape">
+  <footer class="rodape gutter-mobile">
     <div class="rodape__colunas">
       {/*
         O chapéu "Menu" (#268:93) é novo em 2026-08-12 e usa `.rodape__bloco`
@@ -293,16 +293,6 @@ const redes = [
     gap: 3.4375rem;
     padding: 2.875rem 2rem 2rem;
     background: var(--cor-bege);
-  }
-
-  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
-     `--gutter-mobile` em tokens.css. Os 2rem acima já dão 32px na largura de
-     projeto, mas caem para 24px físicos abaixo dela (piso do clamp); esta
-     regra crava o padrão em qualquer largura. */
-  @media (max-width: 700px) {
-    .rodape {
-      padding-inline: var(--gutter-mobile);
-    }
   }
 
   /*

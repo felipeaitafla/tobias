@@ -316,7 +316,7 @@ com `language == "en"` e lança. Não é um 404 elegante, é build vermelho.
 Publique primeiro.
 
 O `caminhoDe` que monta a rota de cada idioma mora em
-[`interface.ts`](src/lib/interface.ts), e não no layout, porque **dois** lugares
+[`idioma.ts`](src/lib/idioma.ts), e não no layout, porque **dois** lugares
 precisam da mesma conta: o `hreflang`/canonical do `Base.astro` e o seletor de
 idioma do `Cabecalho`. Duas cópias divergiriam na primeira vez que alguém
 acertasse uma só.
@@ -341,7 +341,7 @@ punhado de ARIA para chegar no mesmo lugar. O preço assumido é que **sem JS el
 não fecha ao clicar fora** — fecha no próprio botão, no Esc, ou escolhendo um
 idioma.
 
-Os nomes dos idiomas ficam em `NOMES_IDIOMA`, no `interface.ts`, escritos **no
+Os nomes dos idiomas ficam em `NOMES_IDIOMA`, no `idioma.ts`, escritos **no
 próprio idioma** ("Português", nunca "Portuguese"): quem procura a versão
 portuguesa não lê inglês para achá-la. Não vão para o Sanity pela mesma razão de
 `studio/idiomas.ts` — a lista não muda sem alguém mexer no roteamento junto.
@@ -377,7 +377,7 @@ errado.
 ### Strings de interface não vão para o Sanity
 
 O que o leitor de tela lê e ninguém vê — "Endereço: ", "Ver o grupo 3 de 4" —
-mora em [`src/lib/interface.ts`](src/lib/interface.ts), por idioma. Pôr isso no
+mora em [`src/lib/dicionario.ts`](src/lib/dicionario.ts), por idioma. Pôr isso no
 Studio encheria o formulário do cliente de campos que ele não sabe para que
 servem, e um deles apagado por engano quebraria a leitura da página sem quebrar
 nada visível. A divisa: **se some da tela quando o CSS carrega, é do código; se o

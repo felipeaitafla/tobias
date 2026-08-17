@@ -20,7 +20,8 @@ import Cabecalho from '../components/Cabecalho.astro';
 import Rodape from '../components/Rodape.astro';
 import TextoLegal from '../components/TextoLegal.astro';
 import { buscarLegal } from '../lib/conteudo';
-import { caminhoDe, textos } from '../lib/interface';
+import { caminhoDe } from '../lib/idioma';
+import { textos } from '../lib/dicionario';
 
 interface Props {
   /* A metade do meio do id no Sanity (`legal-<chave>-<idioma>`). Ver

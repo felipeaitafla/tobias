@@ -16,13 +16,17 @@
  *
  * Os pivôs, ângulos e translados saem da geometria do próprio
  * `simbolo-positivo.svg`: cada barra gira em torno do meio da sua base, e o
- * leque abre em passos exatos de 40°. (Na abertura os mesmos números aparecem
- * arredondados à mão.)
+ * leque abre em passos exatos de 40°.
+ *
+ * `--giro`/`--passo`/`--t1` vêm de `--simbolo-giro`/`--simbolo-passo`/
+ * `--simbolo-t1` (tokens.css): a Abertura anima os mesmos tempos, para um SVG
+ * diferente (`<path>` em vez de `<polygon>`), e os dois precisam ficar em
+ * sincronia — ver o comentário do token.
  */
 .simbolo-monta {
-  --giro: 0.55s;
-  --passo: 0.16s;
-  --t1: 0.15s; /* barra 4, a mais à direita, abre a sequência */
+  --giro: var(--simbolo-giro);
+  --passo: var(--simbolo-passo);
+  --t1: var(--simbolo-t1); /* barra 4, a mais à direita, abre a sequência */
   --t2: calc(var(--t1) + var(--passo));
   --t3: calc(var(--t2) + var(--passo));
   --t4: calc(var(--t3) + var(--passo));

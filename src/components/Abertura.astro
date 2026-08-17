@@ -97,10 +97,14 @@
 
 <style>
   .abertura {
-    /* Tempos concentrados aqui para facilitar ajuste fino. */
-    --giro: 0.55s;
-    --passo: 0.16s;
-    --t1: 0.15s; /* barra 4, a mais à direita, abre a sequência */
+    /* Tempos concentrados aqui para facilitar ajuste fino. `--giro`/`--passo`/
+       `--t1` vêm de `--simbolo-giro`/`--simbolo-passo`/`--simbolo-t1`
+       (tokens.css): o mesmo ritmo que `simbolo.css` usa para montar o símbolo
+       do manifesto e das áreas, num SVG diferente (`<path>`, não `<polygon>`)
+       — os dois precisam ficar em sincronia. */
+    --giro: var(--simbolo-giro);
+    --passo: var(--simbolo-passo);
+    --t1: var(--simbolo-t1); /* barra 4, a mais à direita, abre a sequência */
     --t2: calc(var(--t1) + var(--passo));
     --t3: calc(var(--t2) + var(--passo));
     --t4: calc(var(--t3) + var(--passo));

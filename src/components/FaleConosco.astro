@@ -2,7 +2,8 @@
 import MapaPino from '../assets/icones/mapa-pino.svg';
 import Agenda from '../assets/icones/agenda.svg';
 import Relogio from '../assets/icones/relogio.svg';
-import { textos } from '../lib/interface';
+import { textos } from '../lib/dicionario';
+import { linkWhatsapp } from '../lib/whatsapp';
 import type { Config, Pagina } from '../lib/conteudo';
 
 interface Props {
@@ -17,8 +18,7 @@ const t = textos(idioma);
 /* Os dois canais do bloco da agenda: telefone e e-mail, nesta ordem. O rótulo
    lido pelo leitor de tela acompanha cada um. Pedido do cliente, 2026-08-05:
    o telefone leva ao WhatsApp, não ao discador. */
-const msgWhatsapp = encodeURIComponent('Olá! Gostaria de conversar com a equipe da Tobias Advogados.');
-const whatsappHref = `https://wa.me/${config.telefonePrincipal.href.replace(/\D/g, '')}?text=${msgWhatsapp}`;
+const whatsappHref = linkWhatsapp(config.telefonePrincipal);
 const canais = [
   {
     texto: config.telefonePrincipal.texto,
@@ -30,7 +30,7 @@ const canais = [
 ];
 ---
 
-<section class="fale-conosco" id="contato">
+<section class="fale-conosco gutter-mobile" id="contato">
   <div class="fale-conosco__coluna">
     <div class="fale-conosco__cabecalho">
       {/* Chapéu — pedido do cliente, 2026-07-31: o rótulo "Localização", que
@@ -109,14 +109,6 @@ const canais = [
        próprio; agora as duas seções têm o respiro inteiro. */
     padding: var(--respiro-secao) var(--gutter);
     background: var(--cor-branco);
-  }
-
-  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
-     `--gutter-mobile` em tokens.css. */
-  @media (max-width: 700px) {
-    .fale-conosco {
-      padding-inline: var(--gutter-mobile);
-    }
   }
 
   .fale-conosco__coluna {

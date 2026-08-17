@@ -211,4 +211,16 @@
    * descola a barra sem nada gritar.
    */
   --freio-camada: 65vh;
+
+  /*
+   * Tempos da montagem do símbolo (o leque de 4 barras) — TOKEN pelo mesmo
+   * motivo do `--freio-camada`, acima: DOIS consumidores em arquivos
+   * diferentes, animando elementos SVG diferentes (`simbolo.css` gira
+   * `<polygon>`; `Abertura.astro` gira `<path>`), que precisam do mesmo
+   * ritmo. Acertar um e esquecer o outro desincroniza a montagem sem nada
+   * gritar.
+   */
+  --simbolo-giro: 0.55s;
+  --simbolo-passo: 0.16s;
+  --simbolo-t1: 0.15s;
 }

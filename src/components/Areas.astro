@@ -26,7 +26,7 @@ const { areas: areasAtuacao } = Astro.props;
       {i === 1 && <Divisoria cor="verde" />}
 
       <section
-        class:list={['areas', i === 0 ? 'areas--abertura' : 'areas--fecho']}
+        class:list={['areas', 'gutter-mobile', i === 0 ? 'areas--abertura' : 'areas--fecho']}
         id={i === 0 ? 'areas' : undefined}
       >
         {/* Pedido do cliente, 2026-07-31: os dois grupos carregam o rótulo
@@ -91,14 +91,6 @@ const { areas: areasAtuacao } = Astro.props;
     justify-content: flex-end;
     padding-inline: var(--gutter);
     background: var(--cor-branco);
-  }
-
-  /* Padrão de respiro lateral no mobile, pedido do cliente — ver
-     `--gutter-mobile` em tokens.css. */
-  @media (max-width: 700px) {
-    .areas {
-      padding-inline: var(--gutter-mobile);
-    }
   }
 
   /*

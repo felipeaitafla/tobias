@@ -243,6 +243,20 @@ const { areas: areasAtuacao } = Astro.props;
   }
 
   /*
+   * Pedido do cliente, 2026-08-17: sem padding lateral no mobile. Em 1 coluna
+   * (ver `.grupo__grade` acima) o cartão já é a largura inteira da seção, que
+   * por sua vez já tem os 32px de `--gutter-mobile`; o padding lateral do
+   * cartão dobrava esse recuo (64px) sem necessidade. O vertical fica —
+   * título e descrição continuam com os mesmos 32px de cima e o vão de 64px
+   * entre os dois.
+   */
+  @media (max-width: 700px) {
+    .cartao {
+      padding-inline: 0;
+    }
+  }
+
+  /*
    * --- Divisórias ---
    *
    * Cada emenda é 1px, nunca duas bordas somadas: o cartão desenha só o topo,

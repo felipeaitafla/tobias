@@ -232,6 +232,25 @@ const canais = [
     font-style: normal;
   }
 
+  /*
+   * Pedido do cliente, 2026-08-17, só no MOBILE: sem o recuo de 32px — os
+   * três blocos (endereço, horário, canais) empilham em coluna única aqui, e
+   * o recuo que fazia sentido alinhando com a fileira ao lado da coluna do
+   * rótulo (desktop) só sobrava tela no celular. O traço de cima
+   * (`.cartao-info`, ver acima) não muda: ele é de um elemento ANCESTRAL,
+   * que já não tem padding lateral próprio.
+   *
+   * O `row-gap` de 32px também vinha do respiro lado a lado (pensado para
+   * quando os blocos quebram linha numa grade ainda larga) — empilhados a
+   * largura inteira da coluna, 12px basta para separar um bloco do outro.
+   */
+  @media (max-width: 700px) {
+    .cartao-info__dados {
+      padding-left: 0;
+      row-gap: 0.75rem; /* 12px */
+    }
+  }
+
   .dado {
     display: flex;
     flex-direction: column;

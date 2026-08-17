@@ -101,7 +101,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
       tem ponteiro.
     */}
     <a
-      class="materia gutter-mobile"
+      class="materia"
       href={materia.arquivo}
       target="_blank"
       rel="noopener"
@@ -221,7 +221,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
         */}
         {bloco && (
           <form
-            class="apresentacao gutter-mobile"
+            class="apresentacao"
             novalidate
             data-aviso={t['apresentacao.travado']}
             data-idioma={idioma}
@@ -376,14 +376,21 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
     letter-spacing: var(--texto-corpo-ls);
   }
 
-  /* Pedido do cliente, 2026-07-31: menos respiro no mobile — os 97px laterais
-     (pensados para centralizar o texto na metade da faixa, ver acima) e os
-     64px verticais não fazem sentido numa coluna que já ocupa a tela toda.
-     48px nos quatro lados (ajustado de novo no mesmo dia, `px` e não `rem`
-     para não depender do piso do clamp). */
+  /*
+   * Pedido do cliente, 2026-07-31: menos respiro no mobile — os 97px laterais
+   * (pensados para centralizar o texto na metade da faixa, ver acima) e os
+   * 64px verticais não fazem sentido numa coluna que já ocupa a tela toda.
+   * Foi para 48px nos quatro lados nesse dia (ajustado de novo no mesmo dia),
+   * escolhido sem comparar contra o padrão do site.
+   *
+   * Em 2026-08-17 baixou para 32px: com o resto da página padronizado em
+   * `--gutter-mobile`, os 48px aqui destoavam — o texto do card ficava mais
+   * recuado da borda que qualquer outro conteúdo da página. `px` e não `rem`
+   * pela razão de sempre nesta faixa (fonte-raiz travada no piso do clamp).
+   */
   @media (max-width: 700px) {
     .sobre__texto {
-      padding: 48px;
+      padding: var(--gutter-mobile);
     }
   }
 
@@ -530,6 +537,15 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
   @media (max-width: 700px) {
     .materia {
       width: 100%;
+      /* Padrão de 32px do resto do site (`--gutter-mobile`). Os 96px dos
+         lados são alinhamento com a coluna de texto (ver acima), que só
+         existe lado a lado com ela — desfeito nesta largura, esse motivo
+         não vale mais. `.gutter-mobile`, no HTML deste elemento, não chega a
+         aplicar sozinho: esta regra é MAIS específica (mesmo seletor do
+         `.materia` acima, escopado pelo Astro) e escrita depois, então vence
+         por especificidade e por ordem — sem isso o lateral ficava em 72px
+         (6rem, travado no piso do clamp), o dobro do padrão. */
+      padding-inline: var(--gutter-mobile);
     }
   }
 
@@ -813,6 +829,9 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
   @media (max-width: 700px) {
     .apresentacao {
       width: 100%;
+      /* Mesmo padrão de 32px da faixa da matéria, e pelo mesmo motivo — ver
+         o comentário lá. */
+      padding-inline: var(--gutter-mobile);
     }
 
     /*

@@ -103,16 +103,6 @@ p {
   }
 }
 
-/* Mesmo respiro lateral do mobile que `.secao` aplica, para seções que não
-   usam `.secao` porque o padding delas diverge do par padrão (128/64). */
-.gutter-mobile {
-}
-@media (max-width: 700px) {
-  .gutter-mobile {
-    padding-inline: var(--gutter-mobile);
-  }
-}
-
 .container {
   width: 100%;
   max-width: var(--largura-design);

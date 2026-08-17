@@ -35,7 +35,7 @@ const {
 const t = textos(idioma);
 ---
 
-<header class:list={['cabecalho', 'gutter-mobile', { 'cabecalho--sempre': sempreVisivel }]}>
+<header class:list={['cabecalho', { 'cabecalho--sempre': sempreVisivel }]}>
   <a class="cabecalho__marca" href={inicio} aria-label="Tobias Advogados — início">
     <Assinatura class="cabecalho__assinatura" />
   </a>
@@ -367,6 +367,13 @@ const t = textos(idioma);
      */
     .cabecalho {
       --pad-y: 8px;
+      /* Padrão de 32px do site (`--gutter-mobile`), no lugar do
+         `var(--gutter)` do padding acima — que aqui embaixo, com a
+         fonte-raiz travada no piso do clamp, dá 48px. Local, e não a antiga
+         classe `.gutter-mobile` (removida em 2026-08-17): ela nunca vencia a
+         especificidade da regra escopada pelo Astro — ver o comentário
+         equivalente em Hero.astro para a história completa. */
+      padding-inline: var(--gutter-mobile);
     }
 
     /* Os três alvos de toque do header. `min-height` e não `height`: o conteúdo

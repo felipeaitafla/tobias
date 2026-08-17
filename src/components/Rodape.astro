@@ -54,7 +54,7 @@ const redes = [
   `hidden` criaria um contêiner de rolagem.
 */}
 <div class="rodape-palco">
-  <footer class="rodape gutter-mobile">
+  <footer class="rodape">
     <div class="rodape__colunas">
       {/*
         O chapéu "Menu" (#268:93) é novo em 2026-08-12 e usa `.rodape__bloco`
@@ -293,6 +293,20 @@ const redes = [
     gap: 3.4375rem;
     padding: 2.875rem 2rem 2rem;
     background: var(--cor-bege);
+  }
+
+  /*
+   * Padrão de 32px do site no mobile (`--gutter-mobile`), no lugar do `2rem`
+   * acima — que aqui, com a fonte-raiz travada no piso do clamp, dá 24px, e
+   * não os 32 pretendidos. Local, e não a antiga classe `.gutter-mobile`
+   * (removida em 2026-08-17): ela nunca vencia a especificidade da regra
+   * escopada pelo Astro — ver o comentário equivalente em Hero.astro para a
+   * história completa.
+   */
+  @media (max-width: 700px) {
+    .rodape {
+      padding-inline: var(--gutter-mobile);
+    }
   }
 
   /*

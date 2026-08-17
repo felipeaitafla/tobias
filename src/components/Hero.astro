@@ -22,7 +22,7 @@ const foto = imagem(hero.foto, { larguras: [640, 1024, 1440, 2048], sizes: '100v
 const trechos = hero.aparte?.[0]?.children ?? [];
 ---
 
-<section class="hero gutter-mobile">
+<section class="hero">
   <img
     src={foto.src}
     srcset={foto.srcset}
@@ -135,6 +135,37 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     color: var(--cor-branco);
     isolation: isolate;
     overflow: hidden;
+  }
+
+  /*
+   * Padrão de 32px do resto do site no mobile (`--gutter-mobile`), no lugar
+   * do `var(--gutter)` do padding acima — que abaixo de ~1084px, com a
+   * fonte-raiz travada no piso do clamp, dá 48px.
+   *
+   * Até 2026-08-17 esse padrão vinha de uma classe utilitária,
+   * `.gutter-mobile` (global.css), aplicada no HTML de oito componentes. Ela
+   * nunca funcionou em NENHUM deles: o Astro escopa o `<style>` de cada
+   * componente com um atributo (`[data-astro-cid-x]`), e isso dá à regra
+   * própria do componente mais especificidade que a classe global — a
+   * `padding-inline` da classe sempre perdia para o `padding`/`var(--gutter)`
+   * local, mesmo dentro do breakpoint. Corrigido caso a caso com um
+   * `padding-inline` LOCAL (esta regra), escrito depois da base e com o
+   * mesmo seletor escopado — aí sim vence. A classe `.gutter-mobile` saiu do
+   * `global.css` e de todo componente; um utilitário assim só funciona em
+   * componente que não declare padding lateral próprio, que é o caso de
+   * `.secao` (continua valendo para Clientes e Manifesto).
+   *
+   * Aqui passou despercebido numa medição anterior por causa de um cache do
+   * `astro dev`: uma regra antiga (já removida do código-fonte) continuou
+   * sendo servida por uma sessão do servidor que nunca reiniciou, mascarando
+   * o bug. Só apareceu depois de reiniciar o dev server — os outros quatro
+   * (cabeçalho, áreas, contato, rodapé) tinham o MESMO bug e escaparam da
+   * varredura anterior pelo mesmo motivo.
+   */
+  @media (max-width: 700px) {
+    .hero {
+      padding-inline: var(--gutter-mobile);
+    }
   }
 
   .hero__foto {

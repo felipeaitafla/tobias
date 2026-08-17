@@ -26,7 +26,7 @@ const { areas: areasAtuacao } = Astro.props;
       {i === 1 && <Divisoria cor="verde" />}
 
       <section
-        class:list={['areas', 'gutter-mobile', i === 0 ? 'areas--abertura' : 'areas--fecho']}
+        class:list={['areas', i === 0 ? 'areas--abertura' : 'areas--fecho']}
         id={i === 0 ? 'areas' : undefined}
       >
         {/* Pedido do cliente, 2026-07-31: os dois grupos carregam o rótulo
@@ -91,6 +91,20 @@ const { areas: areasAtuacao } = Astro.props;
     justify-content: flex-end;
     padding-inline: var(--gutter);
     background: var(--cor-branco);
+  }
+
+  /*
+   * Padrão de 32px do site no mobile (`--gutter-mobile`), no lugar do
+   * `var(--gutter)` acima — que aqui, com a fonte-raiz travada no piso do
+   * clamp, dá 48px. Local, e não a antiga classe `.gutter-mobile` (removida
+   * em 2026-08-17): ela nunca vencia a especificidade da regra escopada
+   * pelo Astro — ver o comentário equivalente em Hero.astro para a história
+   * completa. Vale para os dois grupos, que compartilham a classe `.areas`.
+   */
+  @media (max-width: 700px) {
+    .areas {
+      padding-inline: var(--gutter-mobile);
+    }
   }
 
   /*

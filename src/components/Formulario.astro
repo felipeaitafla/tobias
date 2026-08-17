@@ -255,10 +255,10 @@ const gruposDeAreas = areas.grupos.map((grupo) => ({
   /*
    * Padrão de 32px do resto do site no mobile (`--gutter-mobile`), no lugar
    * do `var(--gutter)` do padding acima — que abaixo de ~1084px, com a
-   * fonte-raiz travada no piso do clamp, dá 48px, e não 32. A classe
-   * `.gutter-mobile` no HTML deste elemento (ver o template) não chega a
-   * aplicar sozinha: precisa desta regra, mais específica (mesmo seletor
-   * `.formulario` escopado pelo Astro) e escrita depois, para vencer.
+   * fonte-raiz travada no piso do clamp, dá 48px, e não 32. Local, e não a
+   * antiga classe `.gutter-mobile` (removida em 2026-08-17): ela nunca
+   * vencia a especificidade da regra escopada pelo Astro — ver o comentário
+   * equivalente em Hero.astro para a história completa.
    */
   @media (max-width: 700px) {
     .formulario {

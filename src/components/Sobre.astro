@@ -540,11 +540,12 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
       /* Padrão de 32px do resto do site (`--gutter-mobile`). Os 96px dos
          lados são alinhamento com a coluna de texto (ver acima), que só
          existe lado a lado com ela — desfeito nesta largura, esse motivo
-         não vale mais. `.gutter-mobile`, no HTML deste elemento, não chega a
-         aplicar sozinho: esta regra é MAIS específica (mesmo seletor do
-         `.materia` acima, escopado pelo Astro) e escrita depois, então vence
-         por especificidade e por ordem — sem isso o lateral ficava em 72px
-         (6rem, travado no piso do clamp), o dobro do padrão. */
+         não vale mais. Local, e não a antiga classe `.gutter-mobile`
+         (removida em 2026-08-17, junto com o resto do rastro deste bug): ela
+         nunca vencia a especificidade da regra escopada pelo Astro — ver o
+         comentário equivalente em Hero.astro para a história completa. Sem
+         isso o lateral ficava em 72px (6rem, travado no piso do clamp), o
+         dobro do padrão. */
       padding-inline: var(--gutter-mobile);
     }
   }

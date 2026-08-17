@@ -30,7 +30,7 @@ const canais = [
 ];
 ---
 
-<section class="fale-conosco gutter-mobile" id="contato">
+<section class="fale-conosco" id="contato">
   <div class="fale-conosco__coluna">
     <div class="fale-conosco__cabecalho">
       {/* Chapéu — pedido do cliente, 2026-07-31: o rótulo "Localização", que
@@ -109,6 +109,20 @@ const canais = [
        próprio; agora as duas seções têm o respiro inteiro. */
     padding: var(--respiro-secao) var(--gutter);
     background: var(--cor-branco);
+  }
+
+  /*
+   * Padrão de 32px do site no mobile (`--gutter-mobile`), no lugar do
+   * `var(--gutter)` acima — que aqui, com a fonte-raiz travada no piso do
+   * clamp, dá 48px. Local, e não a antiga classe `.gutter-mobile` (removida
+   * em 2026-08-17): ela nunca vencia a especificidade da regra escopada pelo
+   * Astro — ver o comentário equivalente em Hero.astro para a história
+   * completa.
+   */
+  @media (max-width: 700px) {
+    .fale-conosco {
+      padding-inline: var(--gutter-mobile);
+    }
   }
 
   .fale-conosco__coluna {

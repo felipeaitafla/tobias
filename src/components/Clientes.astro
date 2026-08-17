@@ -154,8 +154,20 @@ const ritmo = `
     justify-content: space-between;
     /* Sem isto a coluna lateral (que não encolhia) esmagava a esteira de
        logos a quase zero de largura abaixo da largura de projeto — a parede
-       inteira ficava invisível. */
-    flex-wrap: wrap;
+       inteira ficava invisível.
+       `wrap-reverse`, não `wrap`: a grade tem mais miolo que a coluna (o
+       `min-content` da grade de 3 colunas é bem maior que o do rótulo, que
+       pode quebrar linha), então ela para de encolher primeiro — o
+       empilhamento começa ~1050px, bem antes do breakpoint de 700px. Com
+       `wrap` simples a grade (1ª no DOM) ficava na linha de cima e a coluna
+       embaixo dela entre 1050 e 700px — só o `order: -1` do mobile, que só
+       existe abaixo de 700px, corrigia o lado de baixo dessa faixa.
+       `wrap-reverse` inverte qual LINHA fica em cima sempre que houver
+       2 linhas, sem precisar de breakpoint nem de `order`: a coluna (2ª no
+       DOM) passa a desenhar acima da grade em qualquer largura empilhada,
+       de 1050px até o mobile. Confirmado por medição: sem isto, entre 1050
+       e 701px a coluna caía abaixo da grade. */
+    flex-wrap: wrap-reverse;
     gap: var(--gutter);
     background: var(--cor-branco);
   }
@@ -174,11 +186,15 @@ const ritmo = `
   /* Pedido do cliente, 2026-07-31, só no MOBILE: o rótulo e os traços da
      passagem sobem para ANTES da grade de logos (no desktop o desenho
      original continua com a grade primeiro, rótulo à direita — ver o
-     comentário no template). `order`, não reordenar o HTML: a grade
-     continua vindo primeiro no DOM (é o conteúdo), só a exibição inverte. */
+     comentário no template). Quem inverte a exibição sem tocar o DOM é o
+     `flex-wrap: wrap-reverse` do `.clientes`, acima — vale para qualquer
+     largura empilhada, não só abaixo de 700px. Um `order: -1` aqui não
+     serve: `order` decide em qual LINHA cada item cai antes do
+     `wrap-reverse` decidir qual linha desenha em cima, e as duas juntas se
+     cancelam — a coluna voltaria para baixo bem no mobile, que é o caso que
+     mais precisa dela em cima. */
   @media (max-width: 700px) {
     .clientes__aparte {
-      order: -1;
       /*
        * Pedido do cliente, 2026-08-12: o rótulo e a barra vão até o padding da
        * seção. É a mesma armadilha já documentada no hero — MEDIDA DE FATIA NÃO

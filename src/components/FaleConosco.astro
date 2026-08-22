@@ -254,14 +254,20 @@ const canais = [
    * (`.cartao-info`, ver acima) não muda: ele é de um elemento ANCESTRAL,
    * que já não tem padding lateral próprio.
    *
-   * O `row-gap` de 32px também vinha do respiro lado a lado (pensado para
-   * quando os blocos quebram linha numa grade ainda larga) — empilhados a
-   * largura inteira da coluna, 12px basta para separar um bloco do outro.
+   * O `gap` de 96px (os dois eixos, via shorthand `gap: 6rem` acima) também
+   * vinha do respiro lado a lado (pensado para quando os blocos ainda cabem
+   * numa fileira larga). No celular a largura da coluna é estreita o
+   * bastante para o endereço encolher (`flex: 0 1 254px`) e sobrar espaço
+   * para o horário ficar do lado dele — e os 96px viravam um vão morto entre
+   * os dois antes de o traço/o próximo bloco quebrar linha. Vai no
+   * `--gutter-mobile` nos DOIS eixos (pedido do cliente, 2026-08-22): o mesmo
+   * 32px que separa o conteúdo da borda da tela separa um bloco do outro,
+   * tanto entre colunas quanto entre linhas empilhadas.
    */
   @media (max-width: 700px) {
     .cartao-info__dados {
       padding-left: 0;
-      row-gap: 0.75rem; /* 12px */
+      gap: var(--gutter-mobile); /* 32px */
     }
   }
 

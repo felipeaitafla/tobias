@@ -387,10 +387,13 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
    * `--gutter-mobile`, os 48px aqui destoavam — o texto do card ficava mais
    * recuado da borda que qualquer outro conteúdo da página. `px` e não `rem`
    * pela razão de sempre nesta faixa (fonte-raiz travada no piso do clamp).
+   *
+   * Em 2026-08-22 o vertical dobrou, a pedido do cliente: 64px em cima e
+   * embaixo, com o lateral parado nos 32 do padrão.
    */
   @media (max-width: 700px) {
     .sobre__texto {
-      padding: var(--gutter-mobile);
+      padding: 64px var(--gutter-mobile); /* 64px 32px */
     }
   }
 

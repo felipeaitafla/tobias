@@ -222,6 +222,16 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     height: auto;
   }
 
+  /* Pedido do cliente, 2026-08-22: 30px de altura no mobile, cravado — e não
+     o `rem` de largura de cima, que no piso do clamp ainda renderiza 37,5px
+     de altura, porque abaixo de ~1084px nada mais na conta depende da tela. */
+  @media (max-width: 700px) {
+    .hero__logo {
+      width: auto;
+      height: 30px;
+    }
+  }
+
   .hero__selo {
     width: 3.5625rem; /* 57px */
     height: auto;

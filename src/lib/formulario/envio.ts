@@ -117,17 +117,12 @@ export function iniciarEnvioFormulario() {
       aplicar('enviando');
 
       const dados = new FormData(forma);
-      // Chaves em português porque viram os rótulos do e-mail que chega.
       const corpo = {
-        _subject: envio.assunto,
-        _template: 'table',
-        _captcha: 'false',
-        Nome: dados.get('nome'),
-        'E-mail': dados.get('email'),
-        Telefone: dados.get('telefone') || '—',
-        'Telefone (E.164)': dados.get('telefoneE164') || '—',
-        'Área de atuação': dados.get('area') || '—',
-        Caso: dados.get('caso'),
+        nome: dados.get('nome'),
+        email: dados.get('email'),
+        telefone: dados.get('telefone'),
+        area: dados.get('area'),
+        caso: dados.get('caso'),
       };
 
       try {

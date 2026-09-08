@@ -163,7 +163,7 @@ export const configuracoes = defineType({
       type: 'object',
       group: 'formulario',
       description:
-        'ATENÇÃO antes do lançamento: o destino é endereço de teste do desenvolvedor, e passar dado de quem procura advogado por um terceiro gratuito é decisão de LGPD, não de código.',
+        'Desde 2026-08-24 o formulário envia por uma função própria (servidor/contato.ts), via Resend, e não mais pelo FormSubmit — dado de quem procura advogado não passa mais por um terceiro gratuito.',
       fields: [
         defineField({
           name: 'destino',
@@ -175,7 +175,9 @@ export const configuracoes = defineType({
           name: 'endpoint',
           title: 'Endpoint',
           type: 'url',
-          description: 'Trocar de provedor é trocar esta string: o script só faz POST de JSON.',
+          validation: (r) => r.uri({ allowRelative: true, scheme: ['http', 'https'] }),
+          description:
+            'Hoje é "/api/contato" — caminho da função própria, não URL de terceiro. Trocar de provedor de novo é trocar esta string.',
         }),
         defineField({ name: 'assunto', title: 'Assunto do e-mail', type: 'string' }),
       ],

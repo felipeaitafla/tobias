@@ -36,8 +36,10 @@ As páginas estão inteiras. **Faltam as duas que o rodapé aponta**,
 eles apontam para a raiz). Falta também o `og:image`, com TODO em
 [`Base.astro`](src/layouts/Base.astro).
 
-O formulário **envia** (FormSubmit, ver a seção dele) e tem as três faixas de
-estado do arquivo. O destino de hoje é de teste.
+O formulário **envia** (Resend, via função própria — ver a seção dele) e tem as
+três faixas de estado do arquivo. O destino é `contato@tobias.adv.br` desde
+2026-08-24, e desde a mesma data o domínio `send.tobias.adv.br` está verificado
+no Resend — falta só `RESEND_API_KEY`/`EMAIL_REMETENTE` no painel da Netlify.
 
 O repositório está no ar em
 [github.com/felipeaitafla/tobias](https://github.com/felipeaitafla/tobias) —
@@ -65,10 +67,11 @@ antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
   2026-08-07** (título e aparte do hero, os dois parágrafos do manifesto, o
   rótulo dos clientes e o título da história). A descrição de SEO foi acertada
   junto, que estava com a redação antiga do hero;
-- **o formulário envia para `felipe@aita.studio`**, que é endereço de teste do
-  desenvolvedor, via FormSubmit — um serviço gratuito de terceiros. Trocar o
-  destino é uma string; decidir se dado de quem procura advogado pode passar por
-  terceiro é LGPD, e é conversa (ver a seção do formulário);
+- ~~o formulário passava por um serviço gratuito de terceiros~~ — **migrado em
+  2026-08-24**: envia por `servidor/contato.ts` (Resend), o mesmo desenho que
+  já existia para a apresentação institucional. Falta só `RESEND_API_KEY` e
+  `EMAIL_REMETENTE` no painel da Netlify — sem isso a função responde 503 (ver
+  a seção do formulário);
 - **três coisas na parede de logos** (os 36 chegaram em 2026-07-31, ver a seção
   dos clientes): o Eko Residence aparece duas vezes, a Ambev aparece no primeiro
   grupo e de novo no arquivo do Cargnelutti (que é co-marcado), e Sayerlack e
@@ -95,11 +98,12 @@ antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
 - **a apresentação institucional tem 63 MB.** É o arquivo que o cliente mandou, e
   está no ar como veio. Ninguém baixa isso de celular — vale pedir uma versão
   comprimida antes do lançamento (a troca é no Studio, sem mexer em código);
-- **o e-mail da apresentação ainda não sai.** A função está escrita e testada,
-  mas depende de conta no Resend, de `RESEND_API_KEY` e `EMAIL_REMETENTE` no
-  painel da hospedagem e — o que costuma demorar — do **domínio verificado** lá.
-  Sem isso ela responde 503, e o bloco avisa que o e-mail não saiu; o download
-  continua acontecendo.
+- **nem o e-mail da apresentação, nem o do formulário de contato saem ainda.**
+  As duas funções estão escritas e testadas, e o domínio (`send.tobias.adv.br`)
+  já está **verificado** no Resend desde 2026-08-24 — falta só `RESEND_API_KEY`
+  e `EMAIL_REMETENTE` no painel da Netlify. Sem isso as duas respondem 503: no
+  bloco da apresentação o download continua acontecendo mesmo assim; no
+  formulário, a faixa de erro aparece e nada chega.
 
 ## Sanity
 
@@ -2182,14 +2186,32 @@ no Sanity (não traduz — é o mesmo destino e a mesma decisão de provedor nos
 dois idiomas) — trocar de provedor é trocar uma string, porque o script só
 faz POST de JSON e olha se a resposta veio OK.
 
-Três coisas a resolver antes do lançamento estão anotadas lá: o destino é de
-teste, o endereço fica visível no HTML (coletor de spam) e passar dado de quem
-procura advogado por um terceiro gratuito é decisão de LGPD. A hospedagem já vai
-ser Vercel ou Netlify, então uma função serverless resolve os três de uma vez —
-e **ela já existe**: [`servidor/apresentacao.ts`](servidor/apresentacao.ts), do
-bloco da apresentação, faz exatamente isso (valida, busca o texto no Sanity,
-manda pelo Resend). Migrar o formulário é reaproveitar aquele arquivo, não
-escrever um novo.
+**Migrado do FormSubmit para o Resend em 2026-08-24.** O destino virou
+`contato@tobias.adv.br` (era `felipe@aita.studio`, do desenvolvedor), o domínio
+verificado no Resend é `send.tobias.adv.br` (subdomínio — a raiz continua com o
+SPF do Google Workspace, e não podia ganhar um segundo), e o campo
+`formulario.endpoint` no Sanity virou `/api/contato`, um caminho da própria
+hospedagem, não mais uma URL de terceiro.
+
+O molde é [`servidor/apresentacao.ts`](servidor/apresentacao.ts), do bloco da
+apresentação institucional — [`servidor/contato.ts`](servidor/contato.ts) é a
+mesma ideia: TEXTO nunca vem do navegador (o servidor busca `destino` e
+`assunto` no Sanity), teto de 5 envios por IP por hora, e a mesma dupla de
+portas por hospedagem ([`api/contato.ts`](api/contato.ts) na Vercel,
+[`netlify/functions/contato.mts`](netlify/functions/contato.mts) na Netlify,
+com o redirecionamento em `netlify.toml`). O script do cliente
+([`envio.ts`](src/lib/formulario/envio.ts)) parou de montar o corpo específico
+do FormSubmit (`_subject`/`_template`/`_captcha`) e manda só
+`{ nome, email, telefone, area, caso }` — é a função quem decide assunto e
+formata o e-mail, não mais o navegador.
+
+**Falta preencher `RESEND_API_KEY` e `EMAIL_REMETENTE` no painel da Netlify**
+(o site está em `tobiasadv.netlify.app`, ver `netlify.toml`) — as mesmas duas
+variáveis que a apresentação institucional já pedia, documentadas no
+`.env.example`. `EMAIL_REMETENTE` precisa ser um endereço em
+`@send.tobias.adv.br` (o domínio verificado), por exemplo
+`Tobias Advogados <contato@send.tobias.adv.br>`. Sem essas variáveis a função
+responde 503 e a faixa mostra "não foi possível enviar agora".
 
 Duas decisões da validação:
 

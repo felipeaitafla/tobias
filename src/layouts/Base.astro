@@ -55,6 +55,18 @@ const ogImagem = urlDe('/social-image.png');
 <!doctype html>
 <html lang={idioma}>
   <head>
+    {/* Google tag (gtag.js). `is:inline` pelo mesmo motivo do Clarity, mais abaixo: sem ele o Astro processa o script como módulo. */}
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-QWQL2DJVGN"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'G-QWQL2DJVGN');
+    </script>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {/*
@@ -111,6 +123,26 @@ const ogImagem = urlDe('/social-image.png');
       e aí o navegador sintetiza o que falta em silêncio, sem aviso no console.
       Custou uma rodada de medição em 2026-08-06.
     */}
+
+    {/*
+      Microsoft Clarity. `is:inline` é obrigatório: sem ele o Astro trata o
+      script como módulo e o processa/agrupa no bundle, e este código de
+      terceiro precisa rodar exatamente como o Clarity o entrega.
+    */}
+    <script is:inline type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = 'https://www.clarity.ms/tag/' + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
+      })(window, document, 'clarity', 'script', 'yf2a6q2t8z');
+    </script>
   </head>
   <body>
     <slot />

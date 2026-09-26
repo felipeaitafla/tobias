@@ -63,8 +63,41 @@
 }
 
 /*
- * Dois gatilhos, mesma montagem: o `:hover` e a classe que o observador do
- * manifesto põe na primeira vez que o símbolo aparece na tela. Os seletores
+ * --- Estado de repouso antes da montagem (só existe com JS) ---
+ *
+ * Sem esta classe, o símbolo nasce montado (o SVG na posição final, sem
+ * transform nenhum) e fica assim até o observador da entrada na tela
+ * disparar — e nesse instante ele SALTA para a pose fechada antes de reabrir,
+ * porque é aí que a animação começa a valer. O resultado, rolando até a
+ * seção: o símbolo aparece pronto por um instante e então pisca — fecha — só
+ * para reabrir.
+ *
+ * `src/lib/simbolo.ts` põe esta classe assim que o script roda, bem antes de
+ * a seção entrar na tela, e só então liga o observador. Quem chega rolando já
+ * encontra o símbolo fechado; a abertura passa a ser a ÚNICA mudança visível.
+ *
+ * Os valores são os mesmos do `from` de `simbolo-abrir`/`simbolo-surgir`, de
+ * propósito: quando o script troca esta classe pela de montagem, a animação
+ * assume dali — sem outro salto.
+ *
+ * Sem JS esta classe nunca chega a existir, e o símbolo continua nascendo
+ * montado, como sempre.
+ */
+.simbolo-monta--pronta polygon {
+  opacity: 0;
+  transform: translate(var(--dx), var(--dy)) rotate(var(--angulo));
+}
+
+/* Barra 1 não translada nem gira nesta animação — só aparece (ver abaixo). */
+.simbolo-monta--pronta polygon:nth-of-type(1) {
+  transform: none;
+}
+
+/*
+ * Dois gatilhos, mesma montagem: o `:hover` e a classe que o observador da
+ * entrada na tela põe na primeira vez que o símbolo aparece (ver
+ * `src/lib/simbolo.ts`, usado pelo manifesto e pelo fim de cada grupo das
+ * Áreas de atuação). Os seletores
  * andam sempre em par — se um ganhar regra que o outro não tem, a montagem sai
  * diferente dependendo de quem disparou.
  *

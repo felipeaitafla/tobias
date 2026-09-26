@@ -67,9 +67,12 @@ const { areas: areasAtuacao } = Astro.props;
             */}
             {grupo.itens.length % 2 === 1 && (
               <div class="grupo__vazio" aria-hidden="true">
-                {/* `simbolo-monta`: o mesmo leque que o símbolo do manifesto
-                    abre no hover, da folha comum (src/styles/simbolo.css).
-                    Pedido do cliente, 2026-07-31. */}
+                {/* `simbolo-monta`: o mesmo leque que o símbolo do manifesto —
+                    abre no hover (pedido do cliente, 2026-07-31) e monta
+                    sozinho na primeira vez que aparece na tela (pedido do
+                    cliente, 2026-09-21), da folha comum
+                    (src/styles/simbolo.css) acionada por
+                    src/lib/simbolo.ts. */}
                 <Simbolo class="grupo__simbolo simbolo-monta" />
               </div>
             )}
@@ -402,3 +405,15 @@ const { areas: areasAtuacao } = Astro.props;
     height: auto;
   }
 </style>
+
+<script>
+  import { montarSimboloAoAparecer } from '../lib/simbolo';
+
+  /*
+   * Mesmo gatilho do símbolo do manifesto, mesma função — ver
+   * src/lib/simbolo.ts. `.grupo__simbolo` pode existir duas vezes na página
+   * (um por grupo com número ímpar de itens); a função cuida de cada um com
+   * o próprio observador.
+   */
+  montarSimboloAoAparecer('.grupo__simbolo');
+</script>

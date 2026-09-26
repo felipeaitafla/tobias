@@ -11,6 +11,11 @@ Site institucional de página única. Astro 7, saída estática, sem framework d
   conteúdo por props. Ver a seção do Sanity, abaixo.
 - **Hospedagem: Vercel ou Netlify**, não cPanel. O build é estático, então uma edição
   no CMS só aparece depois de rebuild — isso exige webhook, que o cPanel não tem.
+  **Ligado desde 2026-09-23:** o webhook "Deploy na Netlify" (id
+  `xvK0IY4EW6gnepUO`, em sanity.io/manage → API → Webhooks) chama o build hook
+  "Sanity" da Netlify a cada create/update/delete **publicado** em `production`
+  (`includeDrafts: false` — abrir documento no Studio cria rascunho e não
+  dispara build). A URL do build hook fica só nos dois painéis, nunca no repo.
   Desde 2026-07-31 existe **uma** função de servidor (o pedido da apresentação,
   em [`servidor/apresentacao.ts`](servidor/apresentacao.ts)), e ela está escrita
   para rodar nas duas — a escolha continua em aberto. A saída do site não mudou:
@@ -764,11 +769,28 @@ movimento e está na seção do formulário.)
 **1. O símbolo do manifesto** monta sozinho na primeira vez que aparece na tela.
 Não dá em CSS — `animation-timeline` amarra a animação à barra de rolagem, e a
 montagem congelaria no meio se a pessoa parasse de rolar; aqui ela precisa
-correr no tempo dela, igual à abertura. São ~15 linhas de
-`IntersectionObserver` em [`Manifesto.astro`](src/components/Manifesto.astro):
-sem JS o símbolo já está montado e o `:hover` roda igual. Se for preciso outro
-gatilho de "apareceu, toque uma vez", reaproveite esse padrão em vez de arrastar
-animação por rolagem.
+correr no tempo dela, igual à abertura. O `IntersectionObserver` mora em
+[`src/lib/simbolo.ts`](src/lib/simbolo.ts), compartilhado desde 2026-09-21 com
+o símbolo do fim de cada grupo das Áreas de atuação (ver a seção deles, mais
+abaixo) — sem JS os símbolos já nascem montados e o `:hover` roda igual. Se for
+preciso outro gatilho de "apareceu, toque uma vez", reaproveite esse padrão em
+vez de arrastar animação por rolagem.
+
+**Pedido do cliente, 2026-09-21: o símbolo não pode nascer montado e só depois
+"piscar" para fechado.** Antes desta data, sem outra classe, o SVG mostrava a
+posição final desde o primeiro quadro (é o estado que sustenta a promessa de
+"sem JS o símbolo já está pronto") — e como o observador só age quando a
+seção cruza o limiar, quem rolava até lá via o símbolo já montado por um
+instante e depois via ele fechar de repente para só então reabrir, porque é
+nesse instante que a animação passa a valer. A correção é uma terceira classe,
+`simbolo-monta--pronta` (`src/styles/simbolo.css`), com os MESMOS valores do
+`from` de `simbolo-abrir`/`simbolo-surgir`: `montarSimboloAoAparecer` (em
+`simbolo.ts`) põe essa classe assim que o script roda — bem antes de a seção
+entrar na tela — e só troca por `simbolo-monta--montando` quando o observador
+dispara. Como o estado de repouso já É o quadro 0 da animação, a troca não
+salta: a abertura passa a ser a única coisa que muda. E como só o script põe
+`--pronta`, sem JS ela nunca chega a existir e o símbolo continua nascendo
+montado, como sempre — a promessa não mudou, só ganhou um degrau no meio.
 
 **2. O Lenis**, para a rolagem suave, em [`Base.astro`](src/layouts/Base.astro).
 Também não dá em CSS: o navegador não expõe a inércia da roda do mouse. Sem JS
@@ -1110,27 +1132,50 @@ para o arquivo em vez de baixá-lo. Quem manda a CDN responder
 `Content-Disposition: attachment` é esse parâmetro. Conferido no cabeçalho da
 resposta.
 
-#### O clique faz duas coisas, e uma delas não pode esperar a outra
+#### O clique só manda por e-mail — reversão em 2026-09-23
 
-Decisão do cliente, 2026-07-31: o clique **baixa na hora e manda o link para o
-e-mail preenchido**. As duas, não uma ou outra — o lead é o ponto, e fazer quem
+~~Decisão do cliente, 2026-07-31: o clique baixa na hora e manda o link para o
+e-mail preenchido. As duas, não uma ou outra — o lead é o ponto, e fazer quem
 preencheu esperar a caixa de entrada para ver um arquivo que já está pronto
-seria cobrar duas vezes pelo mesmo dado.
+seria cobrar duas vezes pelo mesmo dado.~~ **Revertido em 2026-09-23, a pedido
+do cliente:** sem custo nenhum para clicar, o escritório passou a ser
+contatado por gente que só estava curiosa e nunca virou lead de verdade.
+Exigir a volta à caixa de entrada é o preço que filtra isso — hoje o clique só
+**pede** o envio, o arquivo chega exclusivamente pelo e-mail, e o texto acima
+fica só como histórico de por que o script já foi desenhado do jeito oposto.
 
-**O download não passa pelo JS**, e isso é deliberado: o `click` do botão **não**
-leva `preventDefault` quando está liberado. Quem baixa é o navegador, seguindo o
-link como faria sozinho, e o envio sai em paralelo do mesmo tratador. Disparar o
-download depois do `await` do envio custaria o gesto do usuário — download
-programático fora de gesto é coisa que o navegador bloqueia — e ainda amarraria
-o arquivo à sorte de um servidor.
+**A reversão não fecha uma fresta que já existia, e vale registrar por quê.**
+O link real do arquivo continua no HTML da página o tempo todo —
+`href={pdfApresentacao}` em [`Sobre.astro`](src/components/Sobre.astro), sem
+`pointer-events: none` nem nada que impeça navegação fora do clique esquerdo
+comum. Botão do meio, "abrir em nova aba" do menu de contexto ou visualizar o
+código-fonte pulam o `click` do script inteiro — sempre puderam, antes e
+depois desta mudança. O que a reversão filtra é o clique comum, que é a
+maioria de quem só está curioso; fechar essa fresta de vez pediria trocar o
+link direto por um endpoint que só libera o arquivo com um token vindo do
+e-mail, o que não foi pedido aqui.
 
-Daí a regra que vale para as frases: **falha de envio não trava o download.** As
-três (enviando, deu certo, não saiu) ocupam o **lugar do campo**, uma de cada
-vez — pedido do cliente. Por isso o campo se esconde em vez de sair do DOM: é o
-valor dele que segura a gaveta aberta e o botão liberado. Medido em 2026-08-12: o
-bloco fica em **211,42px nos três estados**, sem pulo (eram 227,41 antes de a
-margem de baixo da gaveta sair, no mesmo dia, e 163,42 antes de o padding
-vertical dobrar, em 2026-08-05).
+`click` agora leva `preventDefault` **sempre**, não só quando travado — com JS,
+o link nunca navega sozinho (ver
+[`src/lib/sobre/apresentacao.ts`](src/lib/sobre/apresentacao.ts)). Sem JS nada
+disso existe: não há como pedir qualquer coisa ao servidor sem script, então o
+botão continua baixando direto — é a única saída que não quebra a promessa de
+a página continuar inteira sem JS.
+
+Consequência que virou o oposto do texto revogado: **falha de envio agora
+tranca o download de vez**, porque não sobra outro caminho para o arquivo. As
+três frases (enviando, deu certo, não saiu) continuam ocupando o **lugar do
+campo**, uma de cada vez — pedido do cliente, mantido da leva anterior. Por
+isso o campo se esconde em vez de sair do DOM: é o valor dele que segura a
+gaveta aberta e o botão liberado. Medido em 2026-08-12: o bloco fica em
+**211,42px nos três estados**, sem pulo (eram 227,41 antes de a margem de
+baixo da gaveta sair, no mesmo dia, e 163,42 antes de o padding vertical
+dobrar, em 2026-08-05).
+
+**Os textos de "deu certo" e "não saiu" mudaram no Sanity** (`socios[].apresentacao.estados.sucesso`
+e `.falha`, nos dois idiomas) — os antigos prometiam um download que já tinha
+acontecido ("Download realizado, também enviamos para o seu e-mail."), e isso
+deixou de ser verdade.
 
 Para conferir as frases sem envio nenhum: `?apresentacao=enviando`,
 `?apresentacao=sucesso`, `?apresentacao=falha` — mesma encenação do formulário.
@@ -1138,10 +1183,11 @@ Para conferir as frases sem envio nenhum: `?apresentacao=enviando`,
 **A encenação não dispara na carga da página.** Ela vive dentro de
 `pedirPorEmail()`, então a URL só arma o cenário: é preciso preencher um e-mail
 válido e **clicar no botão** para a frase aparecer. Abrir a URL e esperar devolve o
-bloco no estado normal — o que parece encenação quebrada e não é. E cuidado ao
-testar: o clique **baixa de verdade** (o `preventDefault` não existe, de propósito),
-então em automação vale `Browser.setDownloadBehavior: deny` antes, senão o teste
-puxa os 63 MB.
+bloco no estado normal — o que parece encenação quebrada e não é. E **o clique de
+verdade não baixa mais nada sozinho** — só dispara o POST; o arquivo só chega
+clicando no link de dentro do e-mail. O aviso antigo sobre `Browser.setDownloadBehavior:
+deny` ainda vale para testar o **fallback sem JS** (que continua baixando direto,
+de propósito) — não para o clique com script ligado.
 
 #### A função ([`servidor/apresentacao.ts`](servidor/apresentacao.ts))
 
@@ -1172,7 +1218,19 @@ o `dist/` continua um monte de arquivo parado, e a função vive ao lado.
   hospedagem;
 
 - **sem chave, ela responde 503** em vez de fingir que enviou. O bloco trata como
-  falha de envio, e o download acontece igual.
+  falha de envio, e o download acontece igual;
+
+- **desde 2026-09-23, o domínio do e-mail precisa conseguir RECEBER e-mail.**
+  Formato correto não significa domínio real — `nome@gmial.com` passa na regex
+  de sempre —, então antes de enviar a função confere o domínio por MX e, sem
+  MX, pelo próprio A/AAAA (RFC 5321, fallback que provedor pequeno usa).
+  **Não confirma que a caixa existe** — isso pediria uma conversa SMTP (RCPT
+  TO, que a maioria dos provedores recusa ou mente) ou um serviço pago, e não
+  foi o que se pediu aqui. DNS lento não trava o pedido: 3s de teto e falha
+  **aberta** (deixa passar), porque a checagem roda ao lado do download, não
+  antes dele — o clique já navegou para o arquivo sem esperar este POST, então
+  o único efeito de recusar é a pessoa ver a frase de falha em vez de receber
+  um e-mail que nunca chegaria.
 
 `RESEND_API_KEY` e `EMAIL_REMETENTE` são do servidor, não do build (ver
 `.env.example`): elas precisam existir **no painel da hospedagem**. E o remetente
@@ -1212,6 +1270,17 @@ Manifesto e virou folha comum,
 [`src/styles/simbolo.css`](src/styles/simbolo.css), com a classe
 `simbolo-monta` — quem usa dá só o tamanho. Duas cópias de noventa linhas de
 pivô e keyframe divergiriam na primeira vez que alguém acertasse uma só.
+
+**Desde 2026-09-21 os dois também montam sozinhos ao entrar na tela, não só no
+hover** — o gatilho do manifesto (ver "Animações", acima) passou a valer para
+as Áreas também, pedido do cliente. O `IntersectionObserver` saiu de
+`Manifesto.astro` e virou `montarSimboloAoAparecer`, em
+[`src/lib/simbolo.ts`](src/lib/simbolo.ts): cada componente chama a função com
+o próprio seletor (`.manifesto__simbolo`, `.grupo__simbolo`), e a função lida
+sozinha com mais de um elemento casando o mesmo seletor — as Áreas chegam a ter
+dois `.grupo__simbolo` ao mesmo tempo, um por grupo com número ímpar de itens,
+cada um com o próprio observador. Mesma razão da folha de CSS: duas cópias do
+script divergiriam na primeira vez que alguém acertasse uma só.
 
 Folha comum resolve de quebra o escopo: dentro de um componente, cada regra
 precisaria de `:global()`, porque o Astro não carimba os polígonos que ele

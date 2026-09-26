@@ -174,8 +174,29 @@ export const configuracoes = defineType({
         defineField({
           name: 'endpoint',
           title: 'Endpoint',
-          type: 'url',
-          validation: (r) => r.uri({ allowRelative: true, scheme: ['http', 'https'] }),
+          /*
+           * `string`, e não `url`: o tipo `url` traz validação de URI própria,
+           * que recusa caminho relativo independente da regra abaixo. O valor
+           * gravado é string nos dois casos, então a troca não pede migração.
+           */
+          type: 'string',
+          /*
+           * NÃO usar `r.uri({ allowRelative: true, scheme: [...] })` aqui: é
+           * bug conhecido do Sanity (issues #7559, #3419, #3298 no
+           * sanity-io/sanity) — combinar `scheme` com `allowRelative` aplica
+           * a checagem de esquema também a valores relativos, que por
+           * definição não têm esquema, e a validação falhava até para
+           * "/api/contato", que é exatamente o valor certo. Isso bloqueava o
+           * botão de publicar do documento inteiro, não só deste campo.
+           * Regra escrita à mão, sem passar pelo bug.
+           */
+          validation: (r) =>
+            r.custom((valor?: string) => {
+              if (!valor) return true;
+              if (valor.startsWith('/')) return true;
+              if (/^https?:\/\//.test(valor)) return true;
+              return 'Use um caminho relativo (começando com "/") ou uma URL http(s)://';
+            }),
           description:
             'Hoje é "/api/contato" — caminho da função própria, não URL de terceiro. Trocar de provedor de novo é trocar esta string.',
         }),

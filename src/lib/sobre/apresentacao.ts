@@ -7,10 +7,14 @@
  * sem o script a página continua inteira: a gaveta nem aparece e o botão
  * baixa direto, que é exatamente a variante Default do arquivo.
  *
- * O clique faz DUAS coisas, e essa é a decisão do cliente: o download começa
- * na hora e o mesmo e-mail recebe o link, por
- * [`servidor/apresentacao.ts`](servidor/apresentacao.ts). Se o envio falhar,
- * o download acontece do mesmo jeito — quem preencheu fez a parte dele.
+ * COM JS, o download só chega pelo e-mail — nunca no clique. Decisão do
+ * cliente, 2026-09-23, revertendo a de 2026-07-31 (baixar na hora E mandar
+ * por e-mail): sem custo nenhum para clicar, o escritório passou a receber
+ * contato de gente que só estava curiosa, nunca virou lead de verdade. Exigir
+ * a volta à caixa de entrada é o preço que filtra isso — e só quem tem JS
+ * paga esse preço: sem script não há como pedir nada ao servidor, então ali o
+ * link continua baixando direto, que é a única saída que não quebra a
+ * promessa de a página continuar inteira sem JS.
  */
 export function iniciarGateApresentacao() {
   for (const bloco of document.querySelectorAll<HTMLFormElement>('.apresentacao')) {
@@ -101,25 +105,20 @@ export function iniciarGateApresentacao() {
           mostrar('sucesso');
         })
         .catch(() => {
-          /* O download já aconteceu; o que falhou foi só o e-mail, e a frase
-             fala disso. */
+          /* Sem e-mail não há download — a frase manda para o escritório
+             direto, já que o link não chegou por lugar nenhum. */
           mostrar('falha');
         });
     };
 
     baixar.addEventListener('click', (evento) => {
+      /* Sempre — com JS, o link nunca navega sozinho. O download vem só pelo
+         e-mail (ver o comentário do topo do arquivo). */
+      evento.preventDefault();
       if (!liberado()) {
-        evento.preventDefault();
         entrada.focus();
         return;
       }
-      /*
-       * SEM `preventDefault` aqui: quem baixa é o navegador, seguindo o link
-       * como faria sozinho. Disparar o download depois do `await` do envio
-       * custaria o gesto do usuário — download programático fora de gesto é
-       * coisa que o navegador bloqueia —, e ainda faria quem preencheu esperar
-       * a resposta de um servidor para receber um arquivo que já está pronto.
-       */
       pedirPorEmail();
     });
 

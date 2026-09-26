@@ -238,45 +238,17 @@ const { manifesto } = Astro.props;
 </style>
 
 <script>
+  import { montarSimboloAoAparecer } from '../lib/simbolo';
+
   /*
-   * Único script de animação do site, e por um motivo: o CSS não tem gatilho
-   * "apareceu na tela, toque uma vez". O que existe é `animation-timeline`, que
-   * amarra a animação à barra de rolagem — o símbolo montaria conforme a rolagem
-   * e congelaria no meio se a pessoa parasse. Aqui a montagem tem que rodar no
-   * tempo dela, igual à abertura.
+   * O CSS não tem gatilho "apareceu na tela, toque uma vez" — o que existe é
+   * `animation-timeline`, que amarra a animação à barra de rolagem, e a
+   * montagem congelaria no meio se a pessoa parasse de rolar. A lógica do
+   * observador mora em `src/lib/simbolo.ts`, compartilhada com o símbolo do
+   * fim das Áreas de atuação (mesmo comportamento, mesma folha de CSS).
    *
-   * Nada de conteúdo depende disto: sem JS o símbolo já está montado na tela, e
-   * o `:hover` continua funcionando sozinho.
+   * Nada de conteúdo depende disto: sem JS o símbolo já nasce montado na
+   * tela, e o `:hover` continua funcionando sozinho.
    */
-  const simbolo = document.querySelector<SVGElement>('.manifesto__simbolo');
-  /* Da folha comum, não do componente: é ela que carrega os keyframes. */
-  const MONTANDO = 'simbolo-monta--montando';
-
-  if (simbolo) {
-    const observador = new IntersectionObserver(
-      ([entrada]) => {
-        if (!entrada.isIntersecting) return;
-        observador.disconnect();
-        simbolo.classList.add(MONTANDO);
-
-        /*
-         * A classe SAI no fim. Se ficasse, as barras seguiriam com a mesma
-         * animação aplicada (parada no último quadro) e o `:hover` não teria o
-         * que reiniciar — o navegador só recomeça quando as propriedades da
-         * animação mudam, e elas seriam idênticas. Tirar não pisca: o fim da
-         * animação é o estado normal.
-         */
-        const barras = simbolo.querySelectorAll('polygon').length;
-        let terminadas = 0;
-        simbolo.addEventListener('animationend', () => {
-          if (++terminadas >= barras) simbolo.classList.remove(MONTANDO);
-        });
-      },
-      // O símbolo inteiro na tela: ele é pequeno, e assim ninguém vê a montagem
-      // acontecendo cortada na borda de baixo.
-      { threshold: 1 },
-    );
-
-    observador.observe(simbolo);
-  }
+  montarSimboloAoAparecer('.manifesto__simbolo');
 </script>

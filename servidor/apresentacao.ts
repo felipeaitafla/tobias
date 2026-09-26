@@ -17,6 +17,8 @@
  * escreveria o que quisesse num e-mail assinado pelo domínio do escritório.
  */
 
+import { promises as dns } from 'node:dns';
+
 const SANITY = 'https://b4ibcfka.api.sanity.io/v2024-01-01/data/query/production';
 
 /* O e-mail sai deste endereço, e ele tem que ser de um domínio verificado no
@@ -49,6 +51,40 @@ function excedeu(ip: string) {
    recusar o que o campo aceitou (nem o contrário). */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/*
+ * Formato correto não significa domínio real — `nome@gmial.com` passa na
+ * regex acima. Aqui checa se o domínio consegue RECEBER e-mail: primeiro por
+ * MX, e sem MX ainda cabe o domínio aceitar pelo próprio A/AAAA (RFC 5321,
+ * fallback que provedores pequenos usam). Não confirma que a CAIXA existe —
+ * isso exigiria uma conversa SMTP (RCPT TO) ou um serviço pago, e a maioria
+ * dos provedores grandes recusa ou mente para esse tipo de sondagem.
+ *
+ * Roda em paralelo com o download, não antes dele: o clique já navega para o
+ * arquivo sem esperar este POST (ver `src/lib/sobre/apresentacao.ts`), então
+ * a latência do DNS não atrasa nada visível — só decide se o e-mail sai ou se
+ * a pessoa vê a frase de falha.
+ */
+async function dominioAceitaEmail(dominio: string): Promise<boolean> {
+  const consulta = (async () => {
+    try {
+      const registros = await dns.resolveMx(dominio);
+      if (registros.length > 0) return true;
+    } catch {
+      /* sem MX: ainda cabe o fallback de A/AAAA, abaixo */
+    }
+    try {
+      await dns.lookup(dominio);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  /* DNS lento não pode travar o pedido — falha aberta, deixa passar. */
+  const semResposta = new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 3000));
+  return Promise.race([consulta, semResposta]);
+}
+
 const escapar = (t: string) =>
   t
     .replace(/&/g, '&amp;')
@@ -78,6 +114,11 @@ export async function pedirApresentacao(pedido: Pedido, ip: string): Promise<Res
 
   const email = typeof pedido?.email === 'string' ? pedido.email.trim() : '';
   if (!EMAIL.test(email)) return { status: 400, corpo: { ok: false, erro: 'email' } };
+
+  const dominio = email.slice(email.lastIndexOf('@') + 1);
+  if (!(await dominioAceitaEmail(dominio))) {
+    return { status: 400, corpo: { ok: false, erro: 'dominio' } };
+  }
 
   const idioma = pedido?.idioma === 'en' ? 'en' : 'pt-BR';
 

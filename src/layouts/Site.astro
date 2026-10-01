@@ -23,6 +23,7 @@ import FaleConosco from '../components/FaleConosco.astro';
 import Formulario from '../components/Formulario.astro';
 import Rodape from '../components/Rodape.astro';
 import { buscarConteudo } from '../lib/conteudo';
+import { grafoInicio } from '../lib/dadosEstruturados';
 
 interface Props {
   idioma: string;
@@ -32,7 +33,12 @@ const { idioma } = Astro.props;
 const { pagina, config } = await buscarConteudo(idioma);
 ---
 
-<Base titulo={pagina.seo.titulo} descricao={pagina.seo.descricao} idioma={idioma}>
+<Base
+  titulo={pagina.seo.titulo}
+  descricao={pagina.seo.descricao}
+  idioma={idioma}
+  dadosEstruturados={(contexto) => grafoInicio(contexto, pagina, config)}
+>
   <Abertura />
   <Cabecalho
     navegacao={pagina.navegacao}

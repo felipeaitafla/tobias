@@ -8,10 +8,11 @@
  * `hreflang`/canonical do `Base.astro` cross-linkar as duas versões.
  */
 import Legal from '../../layouts/Legal.astro';
+import { PAGINAS } from '../../lib/rotas';
 ---
 
 <Legal
   chave="privacidade"
   idioma="en"
-  rotas={{ 'pt-BR': '/politica-de-privacidade', en: '/en/privacy-policy' }}
+  rotas={PAGINAS.privacidade}
 />

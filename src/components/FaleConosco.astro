@@ -36,7 +36,11 @@ const canais = [
       {/* Chapéu — pedido do cliente, 2026-07-31: o rótulo "Localização", que
           era coluna grudada à direita, vira texto de apoio acima do título. */}
       <p class="fale-conosco__chapeu">{faleConosco.rotulo}</p>
-      <h3 class="fale-conosco__titulo">{faleConosco.titulo}</h3>
+      {/* `h2`, e o rótulo lateral é `<p>` (2026-09-28): a coluna do rótulo vem
+          DEPOIS no HTML, e com ela como `h2` o documento abria a seção por um
+          `h3` — subtítulo antes do título, para buscador e leitor de tela. Os
+          estilos são todos por classe, então a tela não muda. */}
+      <h2 class="fale-conosco__titulo">{faleConosco.titulo}</h2>
     </div>
 
     <div class="cartao-info">
@@ -95,7 +99,7 @@ const canais = [
     (ver `.fale-conosco__lateral` e `.fale-conosco__chapeu` no style).
   */}
   <div class="fale-conosco__lateral">
-    <h2 class="fale-conosco__rotulo">{faleConosco.rotulo}</h2>
+    <p class="fale-conosco__rotulo">{faleConosco.rotulo}</p>
   </div>
 </section>
 

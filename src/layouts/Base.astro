@@ -3,6 +3,7 @@ import { Font } from 'astro:assets';
 import '../styles/global.css';
 
 import { IDIOMAS, IDIOMA_PADRAO, caminhoDe } from '../lib/idioma';
+import type { ContextoPagina } from '../lib/dadosEstruturados';
 
 interface Props {
   titulo: string;
@@ -20,9 +21,16 @@ interface Props {
    * Idioma que não está no mapa simplesmente não é declarado.
    */
   rotas?: Record<string, string>;
+  /*
+   * O JSON-LD da página (ver `src/lib/dadosEstruturados.ts`). É função, e não o
+   * objeto pronto, porque ele precisa do canonical — e o canonical é calculado
+   * AQUI. Montar o grafo na rota exigiria refazer a mesma conta num segundo
+   * lugar, e as duas divergiriam na primeira vez que alguém acertasse uma só.
+   */
+  dadosEstruturados?: (contexto: ContextoPagina) => object;
 }
 
-const { titulo, descricao, idioma, rotas } = Astro.props;
+const { titulo, descricao, idioma, rotas, dadosEstruturados } = Astro.props;
 
 /*
  * O português mora na raiz e o inglês em `/en/` (`prefixDefaultLocale: false`).
@@ -50,6 +58,17 @@ const ogLocale = idioma.replace('-', '_');
  * vídeo do hero, e não é per-idioma.
  */
 const ogImagem = urlDe('/social-image.png');
+
+/*
+ * `<` escapado: o texto vem do Sanity, e um `</script>` dentro de um campo
+ * fecharia a tag no meio do JSON. `<` é o mesmo caractere para o parser de
+ * JSON e invisível para o de HTML.
+ */
+const jsonLd =
+  dadosEstruturados &&
+  JSON.stringify(
+    dadosEstruturados({ site: Astro.site!, canonical, idioma, titulo, descricao }),
+  ).replace(/</g, '\\u003c');
 ---
 
 <!doctype html>
@@ -105,6 +124,8 @@ const ogImagem = urlDe('/social-image.png');
     <meta name="twitter:title" content={titulo} />
     <meta name="twitter:description" content={descricao} />
     <meta name="twitter:image" content={ogImagem} />
+
+    {jsonLd && <script type="application/ld+json" is:inline set:html={jsonLd} />}
 
     {/*
       `preload` precisa ser filtrado. O provider do Google emite todos os

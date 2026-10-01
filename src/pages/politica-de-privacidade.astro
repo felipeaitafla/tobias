@@ -11,10 +11,11 @@
  * idiomas, e não só o pt-BR: é o que fecha o `hreflang` nos dois sentidos.
  */
 import Legal from '../layouts/Legal.astro';
+import { PAGINAS } from '../lib/rotas';
 ---
 
 <Legal
   chave="privacidade"
   idioma="pt-BR"
-  rotas={{ 'pt-BR': '/politica-de-privacidade', en: '/en/privacy-policy' }}
+  rotas={PAGINAS.privacidade}
 />

@@ -17,7 +17,15 @@ const LATINO =
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://tobias.adv.br',
+  /*
+   * COM www: é o domínio principal na Netlify, e `tobias.adv.br` responde 301
+   * para cá. Tudo que sai daqui — canonical, `hreflang`, `og:url`, `og:image`,
+   * sitemap, JSON-LD — apontava para o domínio que redireciona até 2026-09-28.
+   */
+  site: 'https://www.tobias.adv.br',
+
+  /* Ver `src/lib/rotas.ts`: a Netlify redireciona o caminho sem barra. */
+  trailingSlash: 'always',
 
   /*
    * Roteamento i18n nativo do Astro.

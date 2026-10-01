@@ -2759,6 +2759,39 @@ régua (`div` de 1px em `position: fixed` na altura esperada) e compare capturas
 em rolagens diferentes. Foi assim que confirmei o rótulo cravado nos 126,6px em
 três pontos enquanto o conteúdo subia a 35%.
 
+## Buscadores e IAs (2026-09-28)
+
+Auditado com curl, sem JS: o conteúdo inteiro já estava no HTML (é estático), e
+os oito robôs testados (Googlebot, Bingbot, OAI-SearchBot, ChatGPT-User, GPTBot,
+Claude-SearchBot, ClaudeBot, PerplexityBot) recebem os mesmos bytes que um
+navegador. O que faltava entrou assim:
+
+- **`site` passou a ter www.** `tobias.adv.br` responde 301 para
+  `www.tobias.adv.br`, e canonical, `hreflang`, `og:url` e `og:image` apontavam
+  todos para o endereço que redireciona;
+- **barra no fim de todo caminho** (`trailingSlash: 'always'`). A Netlify
+  redireciona `/termos-de-uso` para `/termos-de-uso/`;
+- **[`src/lib/rotas.ts`](src/lib/rotas.ts) é a lista de páginas.** As rotas
+  legais e o sitemap leem dela. Página nova que não entrar ali fica fora do
+  sitemap sem nada avisar;
+- **`/sitemap.xml` e `/robots.txt` são endpoints** em `src/pages/`, gerados no
+  build. O robots dá uma diretiva própria a cada robô, todos liberados. O
+  comentário do arquivo explica como barrar só os de treino;
+- **JSON-LD** em [`src/lib/dadosEstruturados.ts`](src/lib/dadosEstruturados.ts):
+  `LegalService` + sócios + `WebSite` + `WebPage` na one page, e `WebPage` nas
+  legais. Quase tudo vem do Sanity, **menos `FATOS`**: razão social, ano de
+  fundação, nome completo e formação dos sócios, e horário. Na página esses dados
+  são prosa, então se o cliente mudar um deles no Studio, `FATOS` tem de mudar
+  junto. É a mesma armadilha dos dois lugares da OAB;
+- **`public/logo.png`** (600×600) existe só para o JSON-LD, porque o Vite embute
+  SVG pequeno como `data:`;
+- no Fale conosco, **"Como nos encontrar" virou `h2`** e o rótulo lateral virou
+  `<p>`, porque o `h3` abria a seção antes do `h2`.
+
+**Pendente no Sanity:** `rodape.legais` nos dois documentos `pagina` ainda
+aponta sem a barra (`/termos-de-uso`, `/en/privacy-policy`…). Funciona, mas
+cada clique passa por um 301.
+
 ## Convenções
 
 - Classes e variáveis em português, seguindo o vocabulário da marca

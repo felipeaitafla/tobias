@@ -1,0 +1,49 @@
+---
+/*
+ * As credenciais da landing de postos (#352:146): quatro cartões lado a lado,
+ * com título e descrição centrados — a `Faixa`, que nasceu daqui e hoje serve
+ * também ao passo a passo e aos artigos.
+ *
+ * Até 2026-10-08 havia uma fileira em cima, com o símbolo à esquerda e o rótulo
+ * "Credenciais" à direita. O designer a escondeu no arquivo (#352:241, oculta),
+ * e o cliente pediu o desenho novo. O rótulo continua no HTML só para o leitor
+ * de tela: sem ele a seção abriria direto nos `h3` dos cartões, sem o `h2` que
+ * diz do que ela trata.
+ */
+import Faixa from './Faixa.astro';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  credenciais: Postos['credenciais'];
+}
+
+const { credenciais } = Astro.props;
+---
+
+<section class="credenciais" id="credenciais" aria-labelledby="credenciais-rotulo">
+  <h2 class="sr-only" id="credenciais-rotulo">{credenciais.rotulo}</h2>
+  <Faixa itens={credenciais.itens} tom="bege" centrada />
+</section>
+
+<style>
+  /* 64px nos quatro lados (#352:146), e não o `.secao` do site, que tem 128 em
+     cima e embaixo. O fundo é o bege claro da pílula do hero: a única faixa
+     colorida entre o hero cinza e A Reforma, cinza também. */
+  .credenciais {
+    /*
+     * 230px de faixa, as duas réguas incluídas (#352:226 é `fixed`, e os outros
+     * três cartões esticam até ela), com o conteúdo centrado no meio. É a única
+     * faixa da landing com altura desenhada — por isso ela entra por variável,
+     * e não como regra da `Faixa`. Com os 64 de cada lado, a seção mede 358.
+     */
+    --faixa-altura: 14.375rem; /* 230px */
+    padding: var(--gutter);
+    background: var(--cor-bege-claro);
+  }
+
+  @media (max-width: 700px) {
+    .credenciais {
+      padding-inline: var(--gutter-mobile);
+    }
+  }
+</style>

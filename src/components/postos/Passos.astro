@@ -1,0 +1,61 @@
+---
+/*
+ * O passo a passo do diagnóstico (seção 6 da copy). Sem desenho no Figma.
+ *
+ * Quatro passos lado a lado pedem a largura inteira (1318px dão 329,5 por
+ * cartão, a medida das credenciais) — na coluna de 980px das outras seções de
+ * texto cada um ficaria com 245 e os títulos quebrariam. Por isso o chapéu vem
+ * acima do título, e não numa coluna grudada ao lado.
+ *
+ * O fundo é o cinza do hero. É a seção que explica o que o botão do hero
+ * promete, e o mesmo fundo amarra as duas.
+ */
+import Faixa from './Faixa.astro';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  passos: Postos['passos'];
+}
+
+const { passos } = Astro.props;
+---
+
+<section class="passos secao" id="como-funciona">
+  <div class="passos__cabecalho">
+    <p class="passos__chapeu">{passos.rotulo}</p>
+    <h2 class="passos__titulo">{passos.titulo}</h2>
+  </div>
+
+  <Faixa itens={passos.itens} ordenada tom="cinza" />
+</section>
+
+<style>
+  .passos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gutter); /* 64px, do título até a faixa — o mesmo das Áreas */
+    background: var(--cor-cinza-divisa);
+  }
+
+  .passos__cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px */
+  }
+
+  .passos__chapeu {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  /* O título de seção do site; a largura é a do título do hero (756px), para a
+     frase quebrar em duas linhas e não correr a tela inteira. */
+  .passos__titulo {
+    max-width: 47.25rem;
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    text-wrap: wrap;
+    padding-bottom: 1.25rem; /* a sobra de métrica da Noto Serif KR */
+  }
+</style>

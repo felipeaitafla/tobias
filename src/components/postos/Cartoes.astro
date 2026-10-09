@@ -1,0 +1,119 @@
+---
+/*
+ * Os cartões das perdas e dos ganhos: empilhados, um por linha, na largura
+ * inteira da coluna — pedido do cliente (2026-10-08). O cartão é o das Áreas
+ * de atuação (#270:41): 32px de padding com 64 entre título e descrição, e
+ * divisa de 1px que nunca soma duas bordas.
+ *
+ * Até essa data era a grade de duas colunas das Áreas, com o símbolo na célula
+ * que sobrava quando a lista era ímpar. O símbolo agora mora no pé da coluna do
+ * rótulo (`simbolo` em Secao.astro), nas duas seções.
+ *
+ * Cada título abre com um ícone de traço (pedido do cliente, 2026-10-08). Sem
+ * nó no Figma: os sete foram desenhados para cá, em grade de 24 com traço de
+ * 1.5, e pegam a cor do título por `currentColor`. O item diz qual pelo nome
+ * (`icone`), que é o que vai para o Studio quando o texto migrar.
+ */
+import Bifurcacao from '../../assets/icones/bifurcacao.svg';
+import Etiqueta from '../../assets/icones/etiqueta.svg';
+import TelaCodigo from '../../assets/icones/tela-codigo.svg';
+import Troca from '../../assets/icones/troca.svg';
+import Reembolso from '../../assets/icones/reembolso.svg';
+import Contrato from '../../assets/icones/contrato.svg';
+import BombaCombustivel from '../../assets/icones/bomba-combustivel.svg';
+
+const ICONES: Record<string, typeof Bifurcacao> = {
+  bifurcacao: Bifurcacao,
+  etiqueta: Etiqueta,
+  'tela-codigo': TelaCodigo,
+  troca: Troca,
+  reembolso: Reembolso,
+  contrato: Contrato,
+  'bomba-combustivel': BombaCombustivel,
+};
+
+interface Props {
+  itens: { _key: string; titulo: string; texto: string; icone: string }[];
+}
+
+const { itens } = Astro.props;
+
+/* Nome que não existe derruba o build, com o nome no erro: um cartão sem
+   ícone no meio dos outros passaria despercebido. */
+for (const item of itens) {
+  if (!ICONES[item.icone]) {
+    throw new Error(`Cartoes: o ícone "${item.icone}" (item "${item._key}") não existe.`);
+  }
+}
+---
+
+<div class="cartoes">
+  {
+    itens.map((item) => {
+      const Icone = ICONES[item.icone];
+      return (
+        <div class="cartoes__cartao">
+          <h3 class="cartoes__titulo">
+            <Icone class="cartoes__icone" aria-hidden="true" />
+            {item.titulo}
+          </h3>
+          <p class="cartoes__texto">{item.texto}</p>
+        </div>
+      );
+    })
+  }
+</div>
+
+<style>
+  .cartoes {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Cada cartão desenha o topo, e o último fecha embaixo. */
+  .cartoes__cartao {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem; /* 64px */
+    padding: 2rem; /* 32px */
+    border-top: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .cartoes__cartao:last-child {
+    border-bottom: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .cartoes__titulo {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* 16px */
+    font: var(--texto-d4);
+    letter-spacing: var(--texto-d4-ls);
+    text-wrap: wrap;
+  }
+
+  /* 28px, um pouco acima do corpo de 24 do título: o traço fino some se o
+     ícone for menor que a letra ao lado. `flex-shrink: 0` segura o tamanho
+     quando o título quebra em duas linhas, no celular. */
+  .cartoes__icone {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: auto;
+  }
+
+  /* O 0.7 como cor, e o -0.04 do corpo — ver `.faixa__texto` (Faixa.astro). */
+  .cartoes__texto {
+    font: var(--texto-c2);
+    letter-spacing: var(--texto-corpo-ls);
+    color: rgb(23 23 23 / 0.7);
+    text-wrap: wrap;
+  }
+
+  /* No celular, sem padding lateral, como nas Áreas: o texto encosta no
+     respiro da seção, junto com o título. */
+  @media (max-width: 700px) {
+    .cartoes__cartao {
+      padding-inline: 0;
+    }
+  }
+</style>

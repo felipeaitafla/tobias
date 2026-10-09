@@ -1,0 +1,147 @@
+---
+/*
+ * Quem conduz (seção 7 da copy). Sem desenho no Figma.
+ *
+ * É a faixa terracota do Thiago na one page (#69:156) com outro texto: texto e
+ * foto em meia tela cada, a mesma altura de 810px, os mesmos 64/97 de respiro
+ * na coluna de texto. A foto é a MESMA, lida do Sanity — duas fotos do mesmo
+ * sócio no site sairiam de sincronia na primeira troca.
+ *
+ * O que fica de fora da faixa de lá: o bloco da apresentação institucional e o
+ * contrapeso do parallax. Esta página não tem camadas.
+ */
+import { imagem, type ImagemSanity } from '../../lib/imagem';
+import { textos } from '../../lib/dicionario';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  sobre: Postos['sobre'];
+  socio: { nome: string; foto: ImagemSanity };
+}
+
+const { sobre, socio } = Astro.props;
+const t = textos('pt-BR');
+
+/* Meia tela na largura de projeto e o dobro para telas densas — os mesmos
+   candidatos do Sobre da one page. */
+const foto = imagem(socio.foto, { larguras: [722, 1444], sizes: '(max-width: 700px) 100vw, 50vw' });
+---
+
+<section class="sobre-postos" id="sobre">
+  <div class="sobre-postos__texto">
+    <div class="sobre-postos__cabecalho">
+      <p class="sobre-postos__chapeu">{sobre.rotulo}</p>
+      <h2 class="sobre-postos__titulo">{sobre.titulo}</h2>
+    </div>
+    {sobre.paragrafos.map((paragrafo) => <p>{paragrafo}</p>)}
+  </div>
+
+  <div class="sobre-postos__moldura">
+    <img
+      class="sobre-postos__foto"
+      src={foto.src}
+      srcset={foto.srcset}
+      sizes={foto.sizes}
+      width={foto.width}
+      height={foto.height}
+      alt={t['socio.alt'](socio.nome)}
+      loading="lazy"
+    />
+  </div>
+</section>
+
+<style>
+  /*
+   * Sem padding e sem gap na faixa, como na one page: assim os 50% da moldura
+   * são metade da tela de verdade, e todo o espaçamento vive na coluna de texto.
+   */
+  .sobre-postos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    min-height: var(--altura-faixa-sobre); /* 810px */
+    color: var(--cor-branco);
+    background: var(--cor-terracota);
+  }
+
+  .sobre-postos__texto {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.25rem; /* 20px entre os parágrafos */
+    padding: var(--gutter) 6.0625rem; /* 64px 97px — os da faixa da one page */
+    font: var(--texto-c2);
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  /* O título fica 32px acima do primeiro parágrafo — o `gap` da coluna de
+     texto da one page —, e os parágrafos entre si, mais juntos. */
+  .sobre-postos__cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px */
+    margin-bottom: 0.75rem; /* + os 20 do gap = 32px */
+  }
+
+  /* O cinza de apoio não lê sobre o terracota; o chapéu recua com o branco a
+     0.7, a mesma proporção da descrição dos cartões sobre o branco. */
+  .sobre-postos__chapeu {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  /*
+   * 48px, e não os 58 do título de seção: três linhas no máximo, pedido do
+   * cliente (2026-10-08). A 58px eram quatro, com "advogado" sozinho na
+   * segunda — a coluna tem 529px e "Thiago Tobias, advogado" mede ~630. A 52px
+   * ainda são quatro; 48 é o primeiro degrau que fecha em três, e fecha de
+   * 1084 a 1920px de tela, medido.
+   *
+   * `balance` em vez de `wrap`: as duas dão três linhas, mas o `wrap` deixa o
+   * "de" no fim da segunda ("…no setor de / combustíveis"), e o `balance`
+   * leva ele para a terceira ("…no setor / de combustíveis").
+   */
+  .sobre-postos__titulo {
+    font: var(--texto-titulo-secao);
+    font-size: 3rem; /* 48px */
+    letter-spacing: var(--texto-titulo-secao-ls);
+    text-wrap: balance;
+    padding-bottom: 1.25rem; /* a sobra de métrica da Noto Serif KR */
+  }
+
+  /* A moldura dá altura definida à foto, que não estica em flex sozinha (ver
+     "a armadilha do flex" no CLAUDE.md). */
+  .sobre-postos__moldura {
+    position: relative;
+    flex: 0 1 50%;
+    align-self: stretch;
+    overflow: hidden;
+  }
+
+  .sobre-postos__foto {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * O celular da faixa da one page: texto com 64/32 de respiro, e a foto
+   * sozinha numa linha inteira, em retrato 3:4 (pedido do cliente,
+   * 2026-07-31, para foto de pessoa).
+   */
+  @media (max-width: 700px) {
+    .sobre-postos__texto {
+      padding: 64px var(--gutter-mobile);
+    }
+
+    .sobre-postos__moldura {
+      flex-basis: 100%;
+      align-self: auto;
+      aspect-ratio: 3 / 4;
+    }
+  }
+</style>

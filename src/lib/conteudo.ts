@@ -155,3 +155,52 @@ export async function buscarLegal(chave: string, idioma: string) {
 
 export type ConteudoLegal = Awaited<ReturnType<typeof buscarLegal>>;
 export type Legal = ConteudoLegal['legal'];
+
+/*
+ * --- A landing de postos de combustível ---
+ *
+ * O TEXTO dela ainda não mora no Sanity (ver `src/data/postos.ts`). Daqui ela
+ * só leva o que já é dado do escritório e não pode ter duas cópias:
+ *
+ *   - o telefone, que monta o "Agendar diagnóstico" enquanto a agenda não tem
+ *     link. Telefone escrito na landing seria a segunda cópia de um número que
+ *     já esteve errado uma vez (ver "Os telefones agora são WhatsApp");
+ *   - o rodapé, que é o da one page (só a navegação é trocada, na rota);
+ *   - a foto do Thiago, a mesma da faixa dele na one page.
+ *
+ * Consulta própria, e não a da one page, pelo mesmo motivo das legais: não faz
+ * sentido buscar 36 logos para usar um telefone.
+ *
+ * O sócio é achado pelo NOME, e é o único ponto frágil: renomear "Thiago" no
+ * Studio derruba o build desta página (com a mensagem abaixo, não em silêncio).
+ */
+const CONSULTA_POSTOS = defineQuery(/* groq */ `{
+  "pagina": *[_type == "pagina" && language == "pt-BR"][0]{
+    ${CHROME_PAGINA},
+    "thiago": socios[nome == "Thiago"][0]{ nome, foto ${IMAGEM} }
+  },
+  "config": *[_id == "configuracoes"][0]{ ${CHROME_CONFIG}, telefonePrincipal }
+}`);
+
+export async function buscarPostos() {
+  const dados = await sanity.fetch(CONSULTA_POSTOS);
+
+  if (!dados?.pagina) {
+    throw new Error(
+      'Não há documento "pagina" em pt-BR no Sanity, e a landing de postos ' +
+        'reaproveita o rodapé dele.',
+    );
+  }
+  if (!dados.pagina.thiago?.foto) {
+    throw new Error(
+      'A landing de postos procura o sócio com nome "Thiago" na `pagina` pt-BR ' +
+        '(para a foto da pílula do hero e da seção "Quem conduz") e não achou. Se o nome mudou no ' +
+        'Studio, mude o filtro em `CONSULTA_POSTOS`.',
+    );
+  }
+  if (!dados?.config) {
+    throw new Error('Não há documento "configuracoes" no Sanity.');
+  }
+
+  return dados;
+}

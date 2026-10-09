@@ -9,8 +9,24 @@ import { textos } from '../lib/dicionario';
 
 interface Props {
   navegacao: { _key: string; texto: string; href: string }[];
-  whatsapp: string;
-  whatsappTexto: string;
+  /*
+   * O CTA de WhatsApp e o seletor de idioma são OPCIONAIS desde 2026-10-08: a
+   * landing de postos (#352:193) usa este mesmo header só com marca e
+   * navegação. O seletor lá mentiria — a página não tem versão inglesa, e os
+   * dois itens levariam à home.
+   *
+   * O mesmo componente, e não um segundo header, porque marca, navegação, hover
+   * e o comportamento do celular são os mesmos; duas cópias divergiriam na
+   * primeira vez que alguém acertasse uma só.
+   */
+  whatsapp?: string;
+  whatsappTexto?: string;
+  seletorIdioma?: boolean;
+  /*
+   * `cinza` é o header sobre o hero cinza da landing de postos — ver a regra
+   * `.cabecalho--cinza`, no estilo.
+   */
+  tom?: 'branco' | 'cinza';
   idioma: string;
   /* Para onde a assinatura leva. Na one page é o topo dela mesma; em qualquer
      outra página é a home — daí o padrão ser `#` e não um caminho. */
@@ -28,6 +44,8 @@ const {
   navegacao,
   whatsapp,
   whatsappTexto,
+  seletorIdioma = true,
+  tom = 'branco',
   idioma,
   inicio = '#',
   sempreVisivel = false,
@@ -35,7 +53,12 @@ const {
 const t = textos(idioma);
 ---
 
-<header class:list={['cabecalho', { 'cabecalho--sempre': sempreVisivel }]}>
+<header
+  class:list={[
+    'cabecalho',
+    { 'cabecalho--sempre': sempreVisivel, 'cabecalho--cinza': tom === 'cinza' },
+  ]}
+>
   <a class="cabecalho__marca" href={inicio} aria-label="Tobias Advogados — início">
     <Assinatura class="cabecalho__assinatura" />
   </a>
@@ -49,8 +72,14 @@ const t = textos(idioma);
     Até 2026-08-06 o CTA era filho direto do header — o designer o embrulhou
     junto com o seletor, e reaproveitou os nós: #155:405 e #155:407 ERAM o CTA
     de WhatsApp e hoje são o seletor. Não se guie pelo número do nó aqui.
+
+    Sem nenhum dos dois (a landing de postos), o grupo inteiro sai: um `<div>`
+    vazio viraria o terceiro filho do `space-between` e puxaria a navegação
+    para o MEIO do header, em vez de encostá-la à direita como o arquivo pede.
   */}
+  {(seletorIdioma || whatsapp) && (
   <div class="cabecalho__acoes">
+    {seletorIdioma && (<>
     {/*
       Seletor de idioma. `<details>` e nada mais: o chevron do arquivo promete
       uma lista, e uma lista de verdade sai daqui sem uma linha de JS — com
@@ -97,7 +126,9 @@ const t = textos(idioma);
         }
       </ul>
     </details>
+    </>)}
 
+    {whatsapp && (
     <a class="cabecalho__zap" href={whatsapp} target="_blank" rel="noopener noreferrer">
       <Whatsapp class="cabecalho__icone" />
       {/* Pedido do cliente, 2026-07-31: some no mobile, fica só o ícone — mas
@@ -105,7 +136,9 @@ const t = textos(idioma);
           `display: none`, que apagaria o nome acessível do link). */}
       <span class="cabecalho__zap-texto">{whatsappTexto}</span>
     </a>
+    )}
   </div>
+  )}
 </header>
 
 <style>
@@ -144,6 +177,31 @@ const t = textos(idioma);
     /* 6px, e não os 12 que aparecem no Figma: o raio de lá equivale ao dobro
        do desvio que o CSS usa, então 12 no arquivo = blur(6px) aqui. */
     backdrop-filter: blur(6px);
+  }
+
+  /*
+   * Sobre o cinza da landing de postos (#352:193). O arquivo não pinta fundo
+   * nenhum ali — o header deixa ver o `#ebebeb` do hero — e a divisa de baixo
+   * escurece para `#d1d1d1`, porque o `#e8e8e8` daqui some sobre aquele cinza.
+   *
+   * O fundo é BRANCO a 73%, com desfoque de 16px — pedido do cliente,
+   * 2026-10-08, depois de cinco passos no mesmo dia: o cinza do hero a 85%;
+   * transparente (a marca preta sumia sobre a foto do hero e a faixa preta do
+   * CTA); o cinza a 50% (aí quem sumia era a navegação, que tem o mesmo cinza do
+   * fundo composto sobre o escuro); o cinza a 73%; e o branco, porque "a cor do
+   * header deve ser branca, não esse cinza". O branco é o do header da one page —
+   * só a opacidade e o desfoque são daqui. No alto da página o header fica um
+   * tom mais claro que o hero, e não some nele como no arquivo. Os contrastes
+   * medidos estão no CLAUDE.md, na seção da landing.
+   *
+   * O desfoque mais forte é só daqui: o de 6px da regra base é o da one page,
+   * que não mudou. Com 16 o que passa por baixo vira mancha, e a navegação deixa
+   * de disputar com as letras da página.
+   */
+  .cabecalho--cinza {
+    background: rgb(255 255 255 / 0.73);
+    border-bottom-color: var(--cor-cinza-divisa-forte);
+    backdrop-filter: blur(16px);
   }
 
   .cabecalho__assinatura {

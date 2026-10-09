@@ -37,18 +37,41 @@ interface Opcoes {
   sizes?: string;
   /** Recorte fixo, quando o desenho pede proporção e não a do arquivo. */
   altura?: number;
+  /**
+   * Um pedaço do arquivo, em frações da largura e da altura dele (0 a 1) —
+   * quando o desenho mostra só parte da foto (o rosto, na pílula do hero da
+   * landing de postos). Fração e não pixel: a foto é trocável no Studio, e um
+   * recorte em pixel apontaria para fora do arquivo no dia em que viesse um
+   * menor. Precisa de `dimensoes` na consulta; sem elas, vai a foto inteira.
+   */
+  recorte?: { x: number; y: number; largura: number; altura: number };
 }
 
 /** Devolve o pacote que um `<img>` precisa: src, srcset, width, height. */
-export function imagem(fonte: ImagemSanity, { larguras, sizes, altura }: Opcoes) {
+export function imagem(fonte: ImagemSanity, { larguras, sizes, altura, recorte }: Opcoes) {
+  const dim = fonte.dimensoes;
+  /* O recorte em pixels do arquivo, que é o que a CDN entende (`rect`). */
+  const rect =
+    recorte && dim
+      ? {
+          x: Math.round(recorte.x * dim.width),
+          y: Math.round(recorte.y * dim.height),
+          w: Math.round(recorte.largura * dim.width),
+          h: Math.round(recorte.altura * dim.height),
+        }
+      : undefined;
+
   const monta = (largura: number) => {
-    let url = urlDe(fonte).width(largura).auto('format').quality(82);
+    let url = urlDe(fonte);
+    if (rect) url = url.rect(rect.x, rect.y, rect.w, rect.h);
+    url = url.width(largura).auto('format').quality(82);
     if (altura) url = url.height(Math.round((altura / larguras[0]) * largura)).fit('crop');
     return url.url();
   };
 
-  const dim = fonte.dimensoes;
   const larguraBase = larguras[0];
+  /* A proporção que a imagem vai chegar: a do recorte, quando há um. */
+  const proporcao = rect ? rect.w / rect.h : dim?.aspectRatio;
 
   return {
     src: monta(larguraBase),
@@ -57,6 +80,6 @@ export function imagem(fonte: ImagemSanity, { larguras, sizes, altura }: Opcoes)
     /* A altura sai da proporção do arquivo, não de um palpite: é o que mantém a
        caixa reservada igual à imagem que vai chegar. */
     width: larguraBase,
-    height: altura ?? (dim ? Math.round(larguraBase / dim.aspectRatio) : undefined),
+    height: altura ?? (proporcao ? Math.round(larguraBase / proporcao) : undefined),
   };
 }

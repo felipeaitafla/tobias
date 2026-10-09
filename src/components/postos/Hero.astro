@@ -1,0 +1,422 @@
+---
+/*
+ * O hero da landing de postos (#352:189).
+ *
+ * Não é o hero da one page, e não tenta ser: lá a foto ocupa a tela inteira
+ * por baixo do texto; aqui o texto vem em cima, sobre o cinza, e a foto entra
+ * depois como um bloco que sangra pela base da seção. Nada de parallax nem de
+ * vídeo — é uma página de venda, e o que importa nela é o título e o botão.
+ */
+import { Picture } from 'astro:assets';
+import Botao from './Botao.astro';
+import foto from '../../assets/fotos/posto-combustivel.jpg';
+import { imagem, type ImagemSanity } from '../../lib/imagem';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  hero: Postos['hero'];
+  /* O "Agendar diagnóstico", com o link já resolvido na rota (ver
+     `postos.agendar` em src/data/postos.ts). */
+  agendar: { texto: string; href: string };
+  /* Para onde o "Saiba mais" desce. */
+  saibaMais: string;
+  /* A foto do Thiago, do Sanity — a mesma do "Quem conduz". */
+  fotoAutor: ImagemSanity;
+}
+
+const { hero, agendar, saibaMais, fotoAutor } = Astro.props;
+
+/*
+ * A pílula mostra só o rosto (#373:161, 36px). O arquivo do Figma é o retrato
+ * original (2067×3100) e o do Sanity, um recorte dele na mesma escala,
+ * deslocado em (59, 285) — achado comparando os dois pixel a pixel. Levada
+ * para o arquivo do Sanity, a janela do Figma é um quadrado de 1166px em
+ * (308, −77): começa ACIMA da foto. O recorte encosta no topo, e o rosto sai
+ * ~2px mais alto na pílula do que no arquivo; o tamanho dele é o mesmo.
+ *
+ * `sizes` acompanha os 2.25rem do CSS (27 a 63px com o clamp da raiz) — um px
+ * cravado mentiria fora da largura de projeto.
+ */
+const retrato = imagem(fotoAutor, {
+  larguras: [72, 144],
+  sizes: 'clamp(27px, 2.49vw, 63px)',
+  recorte: { x: 0.1744, y: 0, largura: 0.661, altura: 0.5891 },
+});
+---
+
+<section class="hero-postos">
+  <div class="hero-postos__conteudo">
+    <div class="hero-postos__linha">
+      <h1 class="hero-postos__titulo">
+        {hero.titulo.texto} <strong>{hero.titulo.destaque}</strong>
+      </h1>
+
+      <div class="hero-postos__aparte">
+        {/* Numa linha só: com o texto na linha de baixo, o Astro come o espaço
+            entre o `</strong>` e a expressão, e sai "societáriapara". */}
+        <p class="hero-postos__resumo">
+          <strong>{hero.resumo.destaque}</strong> {hero.resumo.texto}
+        </p>
+
+        {/* `alt` vazio: o nome está escrito logo ao lado, e um `alt` com ele
+            faria o leitor de tela dizê-lo duas vezes.
+
+            A pílula inteira é um link para o "Quem conduz" (pedido do cliente,
+            2026-10-09) — quem quer saber quem é o Thiago clica nele. */}
+        <a class="hero-postos__autor" href="#sobre">
+          <img
+            class="hero-postos__retrato"
+            src={retrato.src}
+            srcset={retrato.srcset}
+            sizes={retrato.sizes}
+            width={retrato.width}
+            height={retrato.height}
+            alt=""
+            loading="eager"
+          />
+          <span><strong class="hero-postos__nome">{hero.autor.nome}</strong> <span class="hero-postos__registro">• {hero.autor.registro}</span></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-postos__acoes">
+      <Botao href={agendar.href} seta="externa" evento="agendar_diagnostico" posicao="hero">
+        {agendar.texto}
+      </Botao>
+      <Botao href={saibaMais} variante="contorno" seta="descer">{hero.saibaMais}</Botao>
+    </div>
+  </div>
+
+  {/*
+    A foto é a maior coisa acima da dobra — candidata a LCP —, então carrega
+    na hora e com prioridade, contra o `lazy` padrão do componente.
+
+    O arquivo que veio do Figma tem só 1024px de largura, para um bloco que
+    mede 1318 na largura de projeto: o `srcset` para no 1024 porque não há de
+    onde tirar mais. Ver o relatório da sessão.
+  */}
+  <div class="hero-postos__foto">
+    <Picture
+      src={foto}
+      alt={hero.fotoAlt}
+      formats={['avif', 'webp']}
+      widths={[640, 1024]}
+      sizes="(max-width: 700px) calc(100vw - 64px), 92vw"
+      loading="eager"
+      fetchpriority="high"
+    />
+
+    {/*
+      O vídeo por cima da foto (pedido do cliente, 2026-10-09): 9s, cinco
+      planos — o posto na neblina (o corte acontece na pessoa que cruza a
+      frente da câmera), o bico voltando ao suporte, o frentista limpando o
+      para-brisa, o trânsito visto de cima e o pagamento no balcão. Os três
+      primeiros são clipes escolhidos pelo cliente; os dois últimos, do Pexels.
+      Uma cor só nos cinco, dessaturada e puxada para o petróleo. O loop emenda
+      num corte. Clipes, trechos e recortes estão no AGENTS.md.
+
+      O mesmo esquema do hero da one page, sem JS: a foto continua embaixo —
+      é o que aparece até o vídeo carregar, o que conta como LCP e o que fica
+      para quem pediu sem movimento (o vídeo nasce escondido, ver o style).
+
+      Duas versões porque o bloco muda de PROPORÇÃO no breakpoint: 2,23:1 acima
+      de 700px e 3:2 abaixo. Por isso o corte aqui é o 700 do layout, e não um
+      degrau de resolução como os da one page. O `media` só é lido na carga;
+      quem cruza os 700 redimensionando fica com o arquivo da outra proporção,
+      e o `cover` recorta — nada quebra.
+    */}
+    <video
+      class="hero-postos__video"
+      autoplay
+      muted
+      loop
+      playsinline
+      aria-hidden="true"
+    >
+      <source src="/video-postos-celular.mp4" media="(max-width: 700px)" type="video/mp4" />
+      <source src="/video-postos-desktop.mp4" type="video/mp4" />
+    </video>
+  </div>
+</section>
+
+<style>
+  /*
+   * O cinza é o `#ebebeb` do arquivo, o mesmo das divisas do site (ver o
+   * comentário do token). Sem `min-height` de tela: a seção mede o que o
+   * conteúdo mede, 1085px na largura de projeto, e termina na base da foto.
+   */
+  .hero-postos {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem; /* 40px, do conteúdo até a foto */
+    /*
+     * 139px em cima (#352:239 em y=139): o header é `fixed`, então o respiro
+     * que o separa do título tem que morar aqui. Embaixo, zero — quem fecha a
+     * seção é a foto (#352:191, de y=494 até 1085, a altura do frame).
+     */
+    padding: 8.6875rem var(--gutter) 0;
+    background: var(--cor-cinza-divisa);
+  }
+
+  .hero-postos__conteudo {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem; /* 40px */
+  }
+
+  /*
+   * Título à esquerda, resumo e pílula à direita, centrados um contra o outro
+   * (#352:238, `space-between` + `center`).
+   *
+   * `flex-wrap` e não media query: quando os dois deixam de caber, o aparte
+   * desce sozinho — a mesma solução do hero da one page.
+   */
+  .hero-postos__linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem var(--gutter);
+  }
+
+  /*
+   * 45px/1.28/-0.05em, Medium 500 (#352:190).
+   *
+   * EXCEÇÃO DE ESCALA, pedido do cliente: este título não usa nenhum degrau
+   * do site (`--texto-hero` é 69px, `--texto-titulo-secao` é 58). É o tamanho
+   * que ficou no arquivo, e fica como regra local — um token com um consumidor
+   * só seria um nome a mais para o mesmo número.
+   */
+  .hero-postos__titulo {
+    /* Cresce até os 756px do arquivo; a base de 30rem é onde ele prefere
+       quebrar a linha a espremer o título. */
+    flex: 1 1 30rem;
+    max-width: 47.25rem; /* 756px */
+    /*
+     * 179px, a altura do NÓ (#352:190), e não as três linhas de 57,6 que a
+     * `line-height` dá: a Noto Serif KR tem métricas de CJK e o Figma monta a
+     * caixa maior que a linha (ver "a caixa do nó de texto é maior que a
+     * linha", no CLAUDE.md). É contra os 179 que o resumo ao lado se centra.
+     * `min-height`, para o bloco ainda crescer se a frase quebrar em quatro.
+     */
+    min-height: 11.1875rem;
+    font: 500 2.8125rem / 1.28 var(--fonte-display);
+    letter-spacing: -0.05em;
+    color: var(--cor-preto);
+    /* Anula o `balance` do reset: ele reequilibra as três linhas e tira as
+       quebras do lugar em que o arquivo as desenha. */
+    text-wrap: wrap;
+  }
+
+  .hero-postos__titulo strong {
+    font-weight: 700;
+  }
+
+  /*
+   * O resumo com a pílula embaixo, encostados à direita (#373:165: coluna,
+   * `gap` de 24, `items-end`). O frame do arquivo tem os 179px do título e
+   * centra o conteúdo nele; aqui quem centra é o `align-items` da fileira, e o
+   * resultado é o mesmo.
+   */
+  .hero-postos__aparte {
+    display: flex;
+    flex: 0 1 20.625rem; /* 330px */
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1.5rem; /* 24px */
+    /* Quando o aparte desce para a linha de baixo, ele continua encostado na
+       margem direita — que é onde o alinhamento à direita faz sentido. Na
+       largura de projeto não muda nada: o `space-between` já o põe lá. */
+    margin-left: auto;
+  }
+
+  /*
+   * Inter Regular 18/1.5/-0.05em, alinhado à direita (#352:192) — era 24px
+   * numa caixa de 424 até a leva de 2026-10-08.
+   *
+   * Piso de 14px, o de leitura do resto do site (ver `--texto-apoio`): abaixo
+   * de ~1084px a raiz trava em 12 e o 1.125rem iria a 13,5.
+   */
+  .hero-postos__resumo {
+    font: 400 max(1.125rem, 14px) / 1.5 var(--fonte-corpo);
+    letter-spacing: -0.05em;
+    text-align: right;
+    color: var(--cor-preto);
+    text-wrap: wrap;
+  }
+
+  .hero-postos__resumo strong {
+    font-weight: 700;
+  }
+
+  /*
+   * A pílula com o rosto, o nome e a OAB (#373:164): bege, raio de 100 (que é
+   * "redondo até a ponta" em qualquer altura), e o respiro assimétrico do
+   * arquivo — 4px em volta da foto, 20 depois do texto.
+   *
+   * O bege é o `--cor-bege-claro`, o mesmo do fundo das credenciais logo
+   * abaixo.
+   *
+   * Inter 16/1.5/-0.05em; o nome em Semi Bold, o resto Regular. Piso de 14px,
+   * o mesmo do `--texto-apoio`.
+   */
+  .hero-postos__autor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5625rem; /* 9px */
+    padding: 0.25rem 1.25rem 0.25rem 0.25rem; /* 4 20 4 4 */
+    border-radius: 6.25rem; /* 100px */
+    font: 400 max(1rem, 14px) / 1.5 var(--fonte-corpo);
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    color: var(--cor-preto);
+    background: var(--cor-bege-claro);
+  }
+
+  .hero-postos__autor strong {
+    font-weight: var(--peso-destaque);
+  }
+
+  /*
+   * O hover da pílula é o dos cartões de artigo (pedido do cliente,
+   * 2026-10-09): o nome no petróleo da marca, a OAB no mesmo petróleo mais
+   * claro. Cor, e não `opacity`, como em todo hover do site.
+   */
+  .hero-postos__nome,
+  .hero-postos__registro {
+    transition: color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .hero-postos__autor:hover .hero-postos__nome {
+      color: var(--cor-petroleo);
+    }
+
+    .hero-postos__autor:hover .hero-postos__registro {
+      color: rgb(60 117 124 / 0.8); /* o --cor-petroleo a 0.8 */
+    }
+  }
+
+  /* 36px, redondo (#373:161). Tamanho cravado nas duas medidas e `cover`: a
+     proporção do recorte é quadrada hoje, mas a foto é trocável no Studio. */
+  .hero-postos__retrato {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /*
+   * A régua (#352:237) é a borda de cima desta fileira, e não um `<hr>`: ela não
+   * separa assuntos, separa o texto dos botões. Os 40px acima dela são o `gap`
+   * do conteúdo; os 40 abaixo, este padding.
+   *
+   * Menos 1px: no arquivo a régua é um LINE de altura zero — o traço não ocupa
+   * lugar no auto-layout, e os botões ficam a 40 do título + 40. Aqui a borda
+   * ocupa, e sem o desconto a seção inteira crescia 1px.
+   */
+  .hero-postos__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem; /* 32px entre os dois (#352:230) */
+    padding-top: calc(2.5rem - 1px); /* 40px, com o traço dentro */
+    border-top: 1px solid var(--cor-cinza-divisa-forte);
+  }
+
+  /*
+   * 1318×591 (#352:191). Em `aspect-ratio`, e não com a altura em `rem`: as duas
+   * contas dão o mesmo entre 1084 e 2560px, mas abaixo de 1084 a fonte-raiz trava
+   * no piso do clamp e a altura em `rem` pararia de encolher enquanto a largura
+   * encolhe — a foto ia virando retrato.
+   */
+  .hero-postos__foto {
+    position: relative;
+    aspect-ratio: 1318 / 591;
+  }
+
+  /*
+   * `:global` com ancestral escopado: a `<img>` sai de dentro do `<Picture>`, e
+   * o Astro não carimba o atributo de escopo no que outro componente desenha.
+   *
+   * Moldura relativa com a foto absoluta dentro, e não a foto no fluxo: o
+   * `width`/`height` que o `<Picture>` escreve no atributo voltaria a mandar na
+   * altura (a armadilha do flex, no CLAUDE.md).
+   *
+   * O recorte do arquivo não é centrado: ele mostra a faixa de 19,8% a 87% da
+   * altura da imagem (`cropTransform` do nó). Em `object-position`, isso é
+   * 0,198 ÷ (1 − 0,672) = 60,3%.
+   */
+  .hero-postos__foto :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 60.3%;
+  }
+
+  /*
+   * A mesma caixa da foto, por cima dela (vem depois no DOM). Nasce escondido e
+   * só aparece sem `prefers-reduced-motion` — o inverso do resto do site, e
+   * pela mesma razão do vídeo da one page: sem `animation-timeline` nenhum
+   * segurando a troca, nascer escondido é o jeito simples de garantir que quem
+   * pediu sem movimento não o veja rodar nem por um quadro.
+   */
+  .hero-postos__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-postos__video {
+      display: block;
+    }
+  }
+
+  /*
+   * O breakpoint de sempre (ver "A exceção do mobile" no CLAUDE.md), e só para
+   * comportamento:
+   *
+   *   - o respiro lateral do site no celular (`--gutter-mobile`);
+   *   - o aparte empilhado deixa de ser coluna da direita: resumo e pílula
+   *     alinhados à esquerda e o resumo na largura toda, como a descrição do
+   *     hero da one page (medida de fatia não sobrevive à quebra de linha);
+   *   - os botões dividem a largura, um por linha quando não cabem lado a lado —
+   *     alvo de toque inteiro em vez de duas pílulas soltas;
+   *   - a foto deixa o panorama de 2,23:1, que numa tela de 375 vira uma tira de
+   *     139px, e volta ao 3:2 do próprio arquivo — a imagem inteira, sem recorte.
+   */
+  @media (max-width: 700px) {
+    .hero-postos {
+      padding-inline: var(--gutter-mobile);
+    }
+
+    .hero-postos__aparte {
+      flex-basis: 100%;
+      align-items: flex-start;
+      margin-left: 0;
+    }
+
+    .hero-postos__resumo {
+      text-align: left;
+    }
+
+    .hero-postos__acoes :global(.botao) {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+
+    .hero-postos__foto {
+      aspect-ratio: 3 / 2;
+    }
+
+    .hero-postos__foto :global(img) {
+      object-position: 50% 50%;
+    }
+  }
+</style>

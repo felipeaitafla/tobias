@@ -17,4 +17,8 @@ export const PAGINAS = {
   inicio: Object.fromEntries(IDIOMAS.map((id) => [id, caminhoDe(id)])) as Record<Idioma, string>,
   privacidade: { 'pt-BR': '/politica-de-privacidade/', en: '/en/privacy-policy/' },
   termos: { 'pt-BR': '/termos-de-uso/', en: '/en/terms-of-use/' },
+  /* Só português: é uma landing para revenda de combustível no Brasil, e não
+     há tradução prevista. Uma entrada só é como o `Base.astro` deixa de
+     declarar `hreflang` para o inglês. */
+  postos: { 'pt-BR': '/postos-de-combustivel/' },
 } satisfies Record<string, Partial<Record<Idioma, string>>>;

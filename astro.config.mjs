@@ -45,12 +45,20 @@ export default defineConfig({
     routing: { prefixDefaultLocale: false },
   },
 
+  /*
+   * O 700 entrou nas duas famílias em 2026-10-08, para a landing de postos: o
+   * título do hero dela (#352:190) e a descrição ao lado (#352:192) põem o
+   * trecho de destaque em Bold de verdade, e sem a face o navegador SINTETIZA o
+   * negrito em silêncio (ver "Fontes" no CLAUDE.md). Na one page ele não custa
+   * nada: `@font-face` declarado e não usado não é baixado, e o `preload` do
+   * `Base.astro` continua filtrado no 400.
+   */
   fonts: [
     {
       provider: fontProviders.fontsource(),
       name: 'Noto Serif KR',
       cssVariable: '--fonte-display-astro',
-      weights: [400, 500, 600],
+      weights: [400, 500, 600, 700],
       styles: ['normal'],
       subsets: ['latin'],
       unicodeRange: [LATINO],
@@ -60,7 +68,7 @@ export default defineConfig({
       provider: fontProviders.fontsource(),
       name: 'Inter',
       cssVariable: '--fonte-corpo-astro',
-      weights: [400, 500, 600],
+      weights: [400, 500, 600, 700],
       styles: ['normal'],
       subsets: ['latin'],
       unicodeRange: [LATINO],

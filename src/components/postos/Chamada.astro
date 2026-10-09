@@ -1,0 +1,120 @@
+---
+/*
+ * O CTA final (seção 8 da copy). Sem nó no Figma: refeito em 2026-10-08 a
+ * partir de uma captura que o cliente mandou — tudo numa coluna centrada
+ * (chapéu, título em duas linhas, texto, botão e a nota embaixo dele), sobre o
+ * cinza `#ebebeb`. Até essa data era a disposição do hero numa faixa preta.
+ *
+ * Os números saem da captura, em 1440px de tela (quase a largura de projeto):
+ * o título é o de seção, o texto é o corpo de 16/24, e o botão é o mesmo do
+ * hero, só mais largo.
+ */
+import Botao from './Botao.astro';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  cta: Postos['cta'];
+  agendar: { texto: string; href: string };
+}
+
+const { cta, agendar } = Astro.props;
+---
+
+<section class="chamada" id="contato">
+  <p class="chamada__chapeu">{cta.rotulo}</p>
+  <h2 class="chamada__titulo">{cta.titulo}</h2>
+  <p class="chamada__texto">{cta.texto}</p>
+
+  <div class="chamada__acao">
+    <Botao href={agendar.href} seta="externa" evento="agendar_diagnostico" posicao="cta">
+      {agendar.texto}
+    </Botao>
+    <p class="chamada__nota">{cta.nota}</p>
+  </div>
+</section>
+
+<style>
+  /*
+   * O `#ebebeb` da Reforma e do passo a passo, pedido do cliente (2026-10-08)
+   * — a captura era branca. Com a cor separando a seção dos artigos (brancos)
+   * logo abaixo, o respiro volta aos 128/128 de sempre; enquanto era branca,
+   * embaixo eram 64, para não somar 256px de branco com eles.
+   */
+  .chamada {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--respiro-secao) var(--gutter);
+    text-align: center;
+    background: var(--cor-cinza-divisa);
+  }
+
+  .chamada__chapeu {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  /*
+   * A quebra da captura é "…para a reforma / com quem conhece o setor". A
+   * primeira linha mede ~822px; com 55rem de teto o "com" não cabe nela e desce,
+   * e a segunda (~670) cabe inteira. `wrap`, e não o `balance` do reset, que
+   * igualaria as duas e quebraria em outro lugar.
+   */
+  .chamada__titulo {
+    max-width: 55rem; /* 880px */
+    margin-top: 2rem; /* 32px */
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    text-wrap: wrap;
+  }
+
+  /* O corpo de 16/24 em preto cheio — na captura ele não recua para o cinza.
+     O teto quebra a primeira linha depois de "relatório", como lá. */
+  .chamada__texto {
+    max-width: 44rem; /* 704px */
+    margin-top: 2rem; /* 32px */
+    font: var(--texto-c2);
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-preto);
+    text-wrap: wrap;
+  }
+
+  .chamada__acao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem; /* 16px: a nota é do botão, não um bloco à parte */
+    margin-top: 2rem; /* 32px */
+  }
+
+  /* 12px, com piso: abaixo de ~1084px a fonte-raiz trava em 12 e `0.75rem`
+     daria 9. */
+  .chamada__nota {
+    font: 400 max(0.75rem, 12px) / 1.25 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-apoio);
+  }
+
+  @media (max-width: 700px) {
+    .chamada {
+      padding-inline: var(--gutter-mobile);
+    }
+
+    /* A quebra da captura não existe numa coluna de 311px; aqui o `balance`
+       evita o "o setor" sozinho na última linha. */
+    .chamada__titulo {
+      text-wrap: balance;
+    }
+
+    /* O botão na largura toda, como os do hero no celular. */
+    .chamada__acao {
+      align-self: stretch;
+    }
+
+    .chamada__acao :global(.botao) {
+      align-self: stretch;
+      justify-content: center;
+    }
+  }
+</style>

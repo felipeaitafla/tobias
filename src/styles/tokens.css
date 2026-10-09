@@ -26,6 +26,11 @@
   --cor-petroleo: #3c757c; /* seção Marjorye, tela de carregamento, ornamento do formulário */
   --cor-terracota: #7a3225; /* seção Thiago */
   --cor-bege: #bca780; /* footer */
+  /* O bege claro da landing de postos: a pílula do hero (#373:164) e o fundo
+     das credenciais (#352:146). Cor própria do arquivo, e não o `--cor-bege`
+     com alfa — a 47% sobre o cinza ele quase bate, mas a conta não fecha nos
+     três canais. */
+  --cor-bege-claro: #d5cbb7;
   /* Só o hover/ativo da lista de países do formulário usa este verde desde
      2026-08-13 — até então também era o fundo da história e do formulário,
      que passaram para o `--cor-cinza-claro` abaixo (pedido do cliente). */
@@ -44,6 +49,17 @@
    * MESMO cinza no arquivo. Um token só para as três, então.
    */
   --cor-cinza-divisa: #ebebeb;
+  /*
+   * A divisa quando o FUNDO é o `--cor-cinza-divisa` — o hero da landing de
+   * postos (#352:189), que pinta exatamente esse cinza. Lá dois traços usam este
+   * tom: a borda de baixo do header (#352:193) e a régua entre o título e os
+   * botões (#352:237). O `#ebebeb` de cima some sobre o próprio `#ebebeb`, e o
+   * `#e8e8e8` do header da one page também.
+   *
+   * O `#ebebeb` virou FUNDO lá, além de divisa — usos diferentes, mesma tinta,
+   * então continua um token só (o mesmo caso do `--cor-cinza-claro`, acima).
+   */
+  --cor-cinza-divisa-forte: #d1d1d1;
   /* Só a lista de países do telefone, que é acréscimo nosso e não tem nó no
      Figma para copiar. */
   --cor-cinza-borda: #bdbdbd;
@@ -209,6 +225,9 @@
    * `camada-contrapeso` em `Sobre.astro` (a barra da apresentação, que cancela o
    * freio para colar na camada de baixo). Acertar um e esquecer o outro
    * descola a barra sem nada gritar.
+   *
+   * Desde 2026-10-08 há um terceiro, o freio do hero da landing de postos
+   * (`hero-postos-frear`, na rota), que o usa como teto: `min(65%, 65vh)`.
    */
   --freio-camada: 65vh;
 

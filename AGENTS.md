@@ -35,6 +35,9 @@ A página, na ordem em que aparece — cada nome é um componente em
 tem as mesmas três linhas do da raiz, com outro `idioma`. O seletor de idioma
 vive no `Cabecalho` (ver a seção dele).
 
+Desde 2026-10-08 existe uma terceira, a landing de postos de combustível
+(`/postos-de-combustivel/`), em construção — ver a seção dela, no fim.
+
 As páginas estão inteiras. **Faltam as duas que o rodapé aponta**,
 `/termos-de-uso` e `/politica-de-privacidade` — os links já existem e hoje dão
 404 **nos dois idiomas** (os `href` não têm prefixo de idioma, então em `/en/`
@@ -99,7 +102,10 @@ antes de o site ir ao ar. Tudo renderiza bonito e está mentindo:
   renderiza** — a linha visível é um texto livre único, `rodape.copyright`, na
   `pagina`, com o CNPJ e a OAB escritos por dentro. Editar só o campo do Studio
   não muda o site. Ou o rodapé passa a montar a linha a partir dos campos, ou
-  eles saem do esquema; enquanto isso, quem mexer tem de mexer nos dois;
+  eles saem do esquema; enquanto isso, quem mexer tem de mexer nos dois.
+  **Desde 2026-10-08 são TRÊS:** a pílula do hero da landing de postos escreve
+  "OAB/RS 61.313" em `src/data/postos.ts` (`hero.autor.registro`), porque o
+  campo do Studio é prosa ("OAB/RS sob o nº 61.313") e não cabe na pílula;
 - **a apresentação institucional tem 63 MB.** É o arquivo que o cliente mandou, e
   está no ar como veio. Ninguém baixa isso de celular — vale pedir uma versão
   comprimida antes do lançamento (a troca é no Studio, sem mexer em código);
@@ -2791,6 +2797,213 @@ navegador. O que faltava entrou assim:
 **Pendente no Sanity:** `rodape.legais` nos dois documentos `pagina` ainda
 aponta sem a barra (`/termos-de-uso`, `/en/privacy-policy`…). Funciona, mas
 cada clique passa por um 301.
+
+## A landing de postos de combustível (`/postos-de-combustivel/`)
+
+Começou em 2026-10-08: landing de reforma tributária para postos, só em
+português. Figma: canvas "Landing Page" (`329:41`), frame `352:212` — hero
+`352:189`, credenciais `352:146`. **Só essas duas seções têm desenho**; a copy
+das dez está em `copy-tobias-postos.md`, na raiz.
+
+**Da seção 3 em diante não há Figma** — o cliente aprovou montá-las com peças
+da one page, e o mapa é este (cada componente explica a escolha no cabeçalho):
+
+| seção | peça | de onde vem |
+|---|---|---|
+| A Reforma, perdas, ganhos, artigos, perguntas | `Secao` (rótulo grudado + coluna de 980) | as Áreas |
+| perdas e ganhos | `Cartoes`, uma coluna; o símbolo no pé da coluna do rótulo (`simbolo`) e o rótulo parado (`grudado={false}`); nas perdas, espelhado — rótulo e símbolo à direita (`lado="direita"`); coluna de conteúdo com 90% da largura (`estreita`, 882px — 75% foi tentado e ficou estreito); ícone de traço antes de cada título (sete SVGs desenhados para cá, escolhidos pelo campo `icone` do item) — pedidos do cliente, 2026-10-08. A grade de 2 colunas e a faixa verde entre as duas saíram nessa data | o cartão das Áreas |
+| credenciais, passo a passo, artigos | `Faixa` (fileira com réguas, `subgrid`) | as credenciais do Figma |
+| Quem conduz | `Sobre` | a faixa terracota do Thiago, com a MESMA foto do Sanity |
+| CTA final | `Chamada`, colada na terracota do Sobre | uma captura do cliente (2026-10-08): coluna centrada, no cinza `#ebebeb` (a captura era branca; o cinza foi pedido no mesmo dia). Antes era a disposição do hero numa faixa preta, aberta pela faixa vermelha |
+
+- **A composição mora na rota** ([`postos-de-combustivel.astro`](src/pages/postos-de-combustivel.astro)),
+  não num layout: uma rota só. Os componentes ficam em `src/components/postos/`.
+- **As credenciais sobem por cima do hero, e o hero sobe a 35%** (pedido do
+  cliente, 2026-10-08) — a passagem do Sobre sobre os clientes, na one page.
+  São duas camadas na rota: `.camada-hero` e `.camada-conteudo`, que leva
+  **tudo** o que vem depois, com fundo branco, porque o hero freado pinta até
+  65vh abaixo do próprio lugar e qualquer seção nessa faixa tem de passar por
+  cima dele.
+
+  **A conta não é a da one page, e não dá para copiar.** Lá quem freia é a
+  faixa `entry` da camada de CIMA, que dura 100vh porque ela é mais alta que a
+  tela. Aqui o hero é mais BAIXO que a janela em telas quase quadradas e tablets
+  em pé (960px em 1280×1024, 756 em 768×1024): as credenciais já aparecem na
+  carga, a faixa já começou, e o hero nascia empurrado — 174px no tablet, com o
+  título fora do lugar antes de qualquer rolagem. A saída é a faixa **`exit` do
+  próprio hero**, que nunca começa antes da rolagem zero e dura min(H, 100vh),
+  com deslocamento `min(65%, var(--freio-camada))` — o `%` do translate é a
+  altura do hero, então as duas pontas dão 35%. Medido em pixel (topo da foto
+  e da faixa bege) em 1446×900 e 1280×1024: previsão e tela batem em 0,2px em
+  todas as rolagens, e nada se mexe na rolagem zero.
+
+  `--freio-camada` ganhou o terceiro consumidor.
+- **O texto está em [`src/data/postos.ts`](src/data/postos.ts), e isso é
+  PROVISÓRIO** — decisão do cliente: fecha a página assim e migra para o Studio
+  depois, de uma vez. Do Sanity ela já lê o telefone, o rodapé e a foto do
+  Thiago (`buscarPostos`). **O sócio é achado pelo nome** (`nome == "Thiago"`):
+  renomeá-lo no Studio derruba o build desta página, com mensagem dizendo isso.
+- **"Agendar diagnóstico" vai para uma agenda online cujo link ainda não
+  existe.** Enquanto `postos.agendar.url` for `null`, os dois botões (hero e CTA)
+  caem no WhatsApp com mensagem própria. Os dois mandam o evento
+  `agendar_diagnostico` ao Analytics, com `posicao: hero | cta`.
+- **Os três "Ler artigo" estão desativados** (`role="link"` +
+  `aria-disabled`, sem `href`, fora do Tab) porque os artigos não existem.
+  Preencher o `href` de um item em `postos.artigos` o liga sozinho.
+- **O cartão de artigo é um alvo de clique inteiro** (pedido do cliente,
+  2026-10-09): o `::after` do "Ler artigo" se estica sobre o cartão, em vez de
+  um `<a>` em volta de tudo (que faria o leitor de tela ler o cartão inteiro
+  como nome do link). No hover do cartão, título e link vão ao
+  `--cor-petroleo`, a descrição ao petróleo a 0.8, e a capa dá zoom de 1.06
+  (só sem `prefers-reduced-motion`). A capa **sangra o padding**: margem
+  negativa de 32px em cima e dos lados, encostando nas réguas. A pílula do
+  Thiago no hero ganhou o mesmo hover de cor (nome e OAB) e virou link para
+  `#sobre`. **Contraste:** o petróleo sobre o bege da pílula dá ~3,2:1, e a
+  OAB a 0.8, ~2,5; nos cartões, o título dá 5,2 e a descrição a 0.8, ~3,5.
+  É estado passageiro, mas a descrição e a pílula não passam no AA.
+- **As capas dos artigos são do Pexels** (2026-10-08), em
+  `src/assets/fotos/artigos/`, já recortadas em 16:9 e reduzidas a 1600×900 —
+  os originais tinham de 5 a 8 MB. O critério que eliminou quase todas as
+  candidatas: nada de texto legível, e nada de fora do Brasil (bomba com preço em
+  dólar, formulário 1040, "TAXES"). Autor e link de cada uma estão no topo de
+  `postos.ts`. `alt` vazio: a capa ilustra o título, não acrescenta informação.
+  Item sem `capa` mantém o espaço cinza.
+- **O prazo do relatório é 15 dias.** A copy dizia "24 horas" no CTA e na última
+  pergunta; o cliente confirmou 15.
+- **O rodapé é o da one page com a navegação da landing** (a mesma lista do
+  header).
+- **O rótulo grudado da `Secao` tem base de 12rem**, e o das Áreas não: com
+  `flex: 1` puro ele ia a ~45px entre 700 e 1084px, e os chapéus daqui são
+  frases. Na largura de projeto os dois são idênticos (306/980).
+- **JSON-LD próprio** (`grafoPostos`): `WebPage`, `Service` e `FAQPage` com as
+  mesmas perguntas da seção — o escritório é citado pelo `@id`, não redeclarado.
+- **O header é o `Cabecalho` de sempre**, com `seletorIdioma={false}`, sem
+  `whatsapp` e `tom="cinza"`. Sem nenhuma das duas peças da direita o grupo
+  inteiro sai — um `<div>` vazio puxaria a navegação para o meio.
+- **O header da landing é BRANCO a 73%, com desfoque de 16px** (pedido do
+  cliente, 2026-10-08, em cinco passos no mesmo dia: cinza do hero a 85% →
+  transparente → cinza a 50% → cinza a 73% → branco a 73%, "a cor do header deve
+  ser branca"). O modificador ainda se chama `tom="cinza"` porque nasceu para o
+  hero cinza; hoje só a borda (`#d1d1d1`) é desse tom. Transparente, a marca
+  preta sumia sobre as áreas escuras; com o cinza a 50%, quem sumia era a
+  navegação, porque o cinza dela (`#848484`) coincide com o fundo composto
+  sobre o escuro. No topo, o header fica um tom mais claro que o hero, e não
+  some nele como no arquivo. Contraste medido contra o fundo atrás de cada uma:
+
+  | sob o header | cinza 50% (marca / nav) | **branco 73% + 16px (marca / nav)** |
+  |---|---|---|
+  | hero (topo) | 15,0 / 3,1 | **17,2 / 3,6** |
+  | texto branco | 16,4 / 3,3 | **17,9 / 3,6** |
+  | foto do hero | 8,0 / 1,7 | **12,1 / 2,5** |
+  | faixa terracota | 6,2 / 1,5 | **11,1 / 2,3** |
+  | faixa preta do CTA | 4,6 / 1,0 | **9,9 / 2,1** |
+
+  O desfoque de 16px é só da landing; o header da one page não mudou (branco a
+  85%, desfoque de 6px).
+- **O título do hero é 45px, fora da escala** (pedido do cliente): regra local,
+  sem token. É por ele (e pela descrição ao lado) que as duas famílias carregam
+  o peso 700 desde esta data.
+- **O título do "Quem conduz" é 48px, e não os 58 do título de seção**
+  (pedido do cliente: no máximo três linhas). A 58 e a 52 eram quatro; 48 fecha
+  em três de 1084 a 1920px. Abaixo disso ele cai na zona morta de toda faixa de
+  meia tela (4–5 linhas entre 800 e 1000px, e 4–5 no celular).
+- **As credenciais não têm mais a fileira do símbolo com o rótulo** (o
+  designer a ocultou, #352:241, e o cliente pediu o desenho novo em
+  2026-10-08). O "Credenciais" ficou como `h2` em `.sr-only`, para a seção não
+  abrir direto nos `h3` dos cartões. Seção de **358px**: 64 + 230 + 64.
+- **Os cartões das credenciais são centrados** (`centrada` na `Faixa`): título
+  e descrição no meio do cartão nas duas direções, a 24px um do outro. Quem
+  centra é a grade — duas fileiras de sobra em volta das duas de conteúdo —, e
+  não `align-content`, que encolheria os cartões e cortaria o traço vertical.
+  Continuam `subgrid`, então as descrições alinham pelo topo quando só alguns
+  títulos quebram.
+- **A primeira descrição do arquivo tem caixa de 222px**, contra 265 das
+  outras, só para "para" descer e "empresas." não ficar sozinha. Aqui quem faz
+  isso é `text-wrap: pretty`, sem medida por item — e por isso continua certo
+  com os cartões em outra ordem. Medido: as quatro quebram como no arquivo.
+- **O fundo das credenciais é o `--cor-bege-claro` (`#d5cbb7`)**, o mesmo da
+  pílula do hero — desde 2026-10-08; antes era o `--cor-bege` do rodapé. As
+  réguas são **preto PURO a 15%**, não o `#ebebeb` das seções brancas, e entram
+  pela `Faixa` com `tom="bege"`.
+- **A ordem das credenciais é do cliente, não do arquivo:** o Figma ainda põe
+  "Advogado e especialista" por último.
+- **A Reforma é cinza** (`#ebebeb`, `fundo="cinza"` na `Secao`, pedido do
+  cliente em 2026-10-08). Com isso ela deixou de ser `respiro="abertura"`: o
+  64px embaixo só existia para não somar 256px de branco com as perdas, e agora
+  quem separa as duas é a cor. 128/128, como o passo a passo.
+- **`simbolo-positivo.svg` não declara `fill`**, então o símbolo sai `#000` onde
+  ninguém põe `fill: currentColor` — e o `color` sozinho não chega nos
+  polígonos. O manifesto, as Áreas e os `Cartoes` desta landing não põem
+  (diferença de `#000` para `#171717`, quase invisível); as credenciais punham,
+  até o símbolo sair delas.
+- **A foto do hero veio do Figma com 1024px** para um bloco de 1318 — o
+  `srcset` para no 1024 porque não há de onde tirar mais.
+- **Desde 2026-10-09 há um vídeo por cima da foto do hero** (pedido do cliente:
+  "colagem de vídeos de postos, 8 segundos, conceitual"). Mesmo esquema do hero
+  da one page — `<video autoplay muted loop playsinline>` em `public/`, nasce
+  escondido e só aparece sem `prefers-reduced-motion`, a foto embaixo como
+  fallback e LCP. Duas versões, trocadas no **700px do layout** (e não num
+  degrau de resolução como na one page) porque o bloco muda de PROPORÇÃO ali:
+  `video-postos-desktop.mp4` (1920×860, 2,23:1, 2,9 MB) e
+  `video-postos-celular.mp4` (960×640, 3:2, 1,1 MB).
+
+  **9s, cinco planos** (refeito em 2026-10-09 com três clipes que o cliente
+  pôs na raiz do projeto — `posto.mp4`, `bomba.mp4`, `limpeza.mp4` —,
+  mantidos do Pexels só a vista aérea e o cartão):
+
+  | s | clipe | trecho | recorte desktop / celular |
+  |---|---|---|---|
+  | 0–1,8 | `posto.mp4`, posto na neblina; o carro branco passa e uma pessoa cruza a frente da câmera | 6,0–7,8s | `1920:860:0:110` / `1620:1080:150:0` |
+  | 1,8–3,8 | `bomba.mp4`, o bico voltando ao suporte da bomba | 2,0–4,0s | `1920:860:0:110` / `1620:1080:150:0` |
+  | 3,8–5,4 | `limpeza.mp4`, frentista limpando o para-brisa, visto de dentro do carro | 1,0–2,6s | `1920:860:0:110` / `1620:1080:150:0` |
+  | 5,4–7,2 | Pexels 2053855, rodovias à noite vistas de cima (Tom Fisk) | 10,0–11,8s | `1920:860:0:110` / `1620:1080:150:0` |
+  | 7,2–9,0 | Pexels 8657613, cartão na maquininha do balcão (cottonbro studio) | 10,2–12,0s | `2976:1333:1120:827` / `2976:1984:1120:176` |
+
+  **O primeiro corte é a pessoa**, pedido do cliente: ela entra pela esquerda
+  por volta de 7,4s e o corte cai em 7,8, com o corpo dela na frente da câmera
+  — a passagem para o bico fica escondida no vulto.
+
+  **Marca à vista, por escolha do cliente:** o `posto.mp4` é um posto Shell
+  (logo na marquise e no totem) e o `limpeza.mp4` tem "TOTAL" no boné do
+  frentista. Os dois foram escolhidos por ele, contra o critério que guiou a
+  montagem anterior (abaixo). Os brutos ficam na raiz e **não estão no
+  `.gitignore`** — quem vai ao ar são os dois `.mp4` de `public/`.
+
+  O pagamento é recortado fechado na mão, no cartão e na maquininha: o quadro
+  inteiro tem um frasco conta-gotas no balcão, que lia como farmácia.
+
+  Cor única nos cinco: `eq=saturation=0.42:contrast=1.06:brightness=-0.01,
+  colorbalance=rs=-0.05:gs=0.01:bs=0.04:rm=-0.02:bm=0.01:rh=0.02:gh=0.01:bh=-0.01`
+  — dessaturada, sombras puxadas para o petróleo. Tudo a 30 qps, cortes secos, `concat`, depois
+  `libx264 -preset slow -crf 23` (celular: 24) `-pix_fmt yuv420p -profile:v high
+  -level 4.1 -movflags +faststart -an`. Os brutos do Pexels não ficam no repo; baixam de
+  `https://www.pexels.com/download/video/<id>/` (redireciona para o arquivo de
+  maior resolução — a página do vídeo dá 403 fora do navegador, esse link não).
+
+  **O critério que mais custou: nenhuma marca à vista, conferido em TAMANHO
+  REAL.** Postos de banco de imagem são quase todos de bandeira (Shell, Total,
+  JET, st1, Texaco, IP, HP) ou americanos (galão, dólar, 87/89/93). Duas montagens
+  caíram depois de prontas: miniatura e quadro em 960px escondiam o logo da
+  Shell na marquise de um posto visto de drone e um "Praxis" num totem da cena
+  de neblina — só apareceram no quadro de 1318px. Marca de distribuidora aqui
+  sugeriria vínculo, e Shell no Brasil é a Raízen — dono de posto de outra
+  bandeira leria mal.
+- **A leva de 2026-10-08 no hero** (`#352:239`): o resumo caiu de 24 para
+  **18px** numa coluna de **330** (era 424), e embaixo dele entrou a **pílula**
+  do Thiago (`#373:164`) — rosto, nome e OAB, no `--cor-bege-claro`
+  (`#d5cbb7`), o mesmo fundo das credenciais. Os dois botões passaram a ter **48px** de padding lateral (286 e 203px), o
+  que tornou inútil o ajuste local que o CTA final tinha para isso; o traço do
+  "Saiba mais" virou `#dedede`, e o hover dele (pedido do cliente, acréscimo ao
+  arquivo) acende o traço no petróleo.
+- **O rosto da pílula é a foto do Sanity, recortada pela CDN** (`recorte` no
+  `imagem()`, em frações do arquivo). O retrato do Figma é o original
+  (2067×3100) e o do Sanity, um recorte dele na mesma escala, deslocado em
+  (59, 285) — achado comparando os dois pixel a pixel. A janela do Figma começa
+  77px ACIMA do arquivo do Sanity, então o rosto sai ~2px mais alto na pílula de
+  36px. Trocar a foto no Studio troca a pílula junto, mas o recorte foi medido
+  nesta: uma foto com outro enquadramento pede recorte novo.
+- `#D1D1D1` virou token (`--cor-cinza-divisa-forte`): a divisa quando o fundo é
+  o próprio `#ebebeb`.
 
 ## Convenções
 

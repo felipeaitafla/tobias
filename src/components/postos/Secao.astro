@@ -1,0 +1,342 @@
+---
+/*
+ * A moldura das seções de texto da landing de postos (A Reforma, perdas,
+ * ganhos, artigos, perguntas): o chapéu da copy numa coluna grudada à esquerda,
+ * e o título e o conteúdo numa coluna de 980px à direita.
+ *
+ * Nenhuma delas tem desenho no Figma (só o hero e as credenciais têm). A
+ * disposição é a das Áreas de atuação da one page (#54:179), escolhida por ser
+ * a seção do site que já resolve "rótulo + título + conteúdo" — e é ela que
+ * faz a landing ler como o mesmo site. Os números são os de lá: coluna de
+ * 61.25rem, 32px de vão, rótulo grudando a 128px do topo com 12px de recuo.
+ *
+ * Não é o componente das Áreas porque o de lá é feito para os dados da one page
+ * (um rótulo para dois grupos, o `<h2>` no rótulo, cartões fixos). Aqui o
+ * chapéu é de cada seção e o título é o `<h2>`.
+ */
+import Simbolo from '../../assets/logos/simbolo-positivo.svg';
+
+interface Props {
+  id?: string;
+  rotulo: string;
+  titulo: string;
+  /*
+   * O respiro de cima e de baixo. `cheio` é o par de sempre (128/128).
+   * `abertura` é para a primeira de duas seções brancas SEGUIDAS: com as duas
+   * em `cheio`, os 128 de baixo e os 128 de cima somavam 256px de branco entre
+   * elas. Fechando a primeira com 64, o vão fica em 192 — o mesmo que já separa
+   * as credenciais (64 embaixo) da seção seguinte (128 em cima).
+   *
+   * Existiu também um `fecho` (64 em cima), o par espelhado das Áreas para as
+   * perdas e os ganhos com a faixa verde no meio. A faixa saiu em 2026-10-08, e
+   * as duas viraram um caso comum de seções brancas seguidas.
+   */
+  respiro?: 'cheio' | 'abertura';
+  /* `cinza` é o `#ebebeb` do hero e do passo a passo — A Reforma, pedido do
+     cliente (2026-10-08). */
+  fundo?: 'branco' | 'cinza';
+  /*
+   * O símbolo da marca no pé da coluna do rótulo, alinhado com ele — as perdas
+   * e os ganhos, pedido do cliente (2026-10-08), quando os cartões de lá
+   * viraram uma coluna só e a célula vazia que levava o símbolo deixou de
+   * existir.
+   */
+  simbolo?: boolean;
+  /* `false`: o rótulo fica parado no topo da coluna em vez de acompanhar a
+     rolagem — as perdas e os ganhos, pedido do cliente (2026-10-08). */
+  grudado?: boolean;
+  /*
+   * De que lado fica a coluna do rótulo. `direita` é o espelho: título e
+   * conteúdo encostam na margem esquerda, e rótulo e símbolo na direita — as
+   * perdas, pedido do cliente (2026-10-08), para alternar com os ganhos logo
+   * abaixo. É o mesmo espelho do Fale conosco da one page.
+   */
+  lado?: 'esquerda' | 'direita';
+  /* A coluna de conteúdo com 90% da largura (882px em vez de 980) — as perdas
+     e os ganhos, pedido do cliente (2026-10-08): título e cartões estavam
+     compridos demais. 75% (735px) foi tentado no mesmo dia e ficou estreito.
+     A coluna do rótulo cresce com a sobra. */
+  estreita?: boolean;
+  /*
+   * Tudo numa coluna só: sem a coluna do rótulo, o chapéu acima do título (o
+   * mesmo do celular), os dois centrados, e o conteúdo de margem a margem —
+   * os artigos, pedido do cliente (2026-10-08).
+   */
+  centrada?: boolean;
+  /* Um teto para o título, quando a quebra é pedido de desenho e não a da
+     coluna — em `rem`, para escalar junto com o resto. */
+  larguraTitulo?: string;
+}
+
+const {
+  id,
+  rotulo,
+  titulo,
+  respiro = 'cheio',
+  fundo = 'branco',
+  simbolo = false,
+  grudado = true,
+  lado = 'esquerda',
+  estreita = false,
+  centrada = false,
+  larguraTitulo,
+} = Astro.props;
+---
+
+<section
+  class:list={[
+    'secao-postos',
+    `secao-postos--${respiro}`,
+    `secao-postos--${fundo}`,
+    {
+      'secao-postos--simbolo': simbolo,
+      'secao-postos--parado': !grudado,
+      'secao-postos--espelhada': lado === 'direita',
+      'secao-postos--estreita': estreita,
+      'secao-postos--centrada': centrada,
+    },
+  ]}
+  id={id}
+>
+  {/*
+    O chapéu existe DUAS vezes, e só um aparece de cada vez: a coluna grudada no
+    desktop, o texto acima do título no celular — o mesmo par das Áreas e do Fale
+    conosco. `<p>`, e não título: o `<h2>` da seção é o título dela; um chapéu
+    em `<h2>` abriria a seção antes do assunto (a correção que o Fale conosco
+    recebeu em 2026-09-28).
+  */}
+  <div class="secao-postos__lateral">
+    {/* O trilho é o que o rótulo percorre grudado: com o símbolo embaixo, ele
+        termina acima dele, e o rótulo para ali em vez de passar por cima. */}
+    <div class="secao-postos__trilho">
+      <p class="secao-postos__rotulo">{rotulo}</p>
+    </div>
+    {/* aria-hidden: é ornamento, e o símbolo já identifica a marca nas
+        credenciais. */}
+    {simbolo && <Simbolo class="secao-postos__simbolo simbolo-monta" aria-hidden="true" />}
+  </div>
+
+  <div class="secao-postos__corpo">
+    <div class="secao-postos__cabecalho">
+      <p class="secao-postos__chapeu">{rotulo}</p>
+      <h2 class="secao-postos__titulo" style={larguraTitulo && `max-width: ${larguraTitulo}`}>
+        {titulo}
+      </h2>
+    </div>
+
+    <slot />
+  </div>
+</section>
+
+<style>
+  .secao-postos {
+    display: flex;
+    align-items: flex-start;
+    /* A coluna de conteúdo encosta na margem direita; o rótulo (`flex: 1`)
+       ocupa a sobra à esquerda dela. */
+    justify-content: flex-end;
+    gap: 2rem; /* 32px */
+    padding: var(--respiro-secao) var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  .secao-postos--cinza {
+    background: var(--cor-cinza-divisa);
+  }
+
+  .secao-postos--abertura {
+    padding-bottom: var(--gutter);
+  }
+
+  /*
+   * A coluna do rótulo estica até a altura da seção: é dentro dela que o rótulo
+   * gruda, e é no pé dela que o símbolo fica, com a base na linha de baixo do
+   * último cartão.
+   *
+   * Cresce com a sobra, como nas Áreas (306px na largura de projeto), mas NÃO
+   * encolhe abaixo de 12rem — diferença deliberada em relação a lá. Entre ~700
+   * e ~1084px a fonte-raiz trava no piso do clamp, a coluna de conteúdo quase
+   * não encolhe e, com `flex: 1` puro, o rótulo ficava com ~45px: medido a
+   * 900px, "IBS, CBS e o novo modelo tributário" ia a quatro linhas de uma
+   * palavra. Os chapéus daqui são frases, e não o "Áreas de atuação" de lá.
+   * Com a base, quem cede é a coluna de conteúdo (`0 1`).
+   */
+  .secao-postos__lateral {
+    display: flex;
+    flex: 1 0 12rem;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 2rem; /* 32px entre o rótulo, quando ele assenta, e o símbolo */
+  }
+
+  .secao-postos__trilho {
+    flex: 1;
+  }
+
+  /*
+   * Gruda a 128px do topo da tela e só se solta quando o trilho acaba — o fim
+   * da seção, ou o topo do símbolo. 128 é o mesmo respiro de cima da seção,
+   * então parado ele já está nessa altura e não dá salto no instante em que
+   * passa a grudar. Os 12px de recuo descem o rótulo até a primeira linha do
+   * título, bem maior que ele (#154:384 nas Áreas).
+   */
+  .secao-postos__rotulo {
+    position: sticky;
+    top: var(--respiro-secao);
+    padding-top: 0.75rem; /* 12px */
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  .secao-postos--parado .secao-postos__rotulo {
+    position: static;
+  }
+
+  /* A largura do símbolo das Áreas (82,99px), com a altura da proporção da
+     marca. `align-self`, porque SVG esticado em flex não deforma, centraliza
+     — e o símbolo sairia do alinhamento com o rótulo. */
+  .secao-postos__simbolo {
+    align-self: flex-start;
+    flex-shrink: 0;
+    width: 5.187rem;
+    height: auto;
+    color: var(--cor-preto);
+  }
+
+  /*
+   * O espelho troca só a ordem visual (`row-reverse`): no HTML o rótulo
+   * continua vindo antes do título, que é a ordem de leitura. O rótulo encosta
+   * na margem direita pelo `text-align` e o símbolo pelo `align-self` — o
+   * desenho do símbolo NÃO é invertido, porque é a marca.
+   */
+  .secao-postos--espelhada {
+    flex-direction: row-reverse;
+  }
+
+  .secao-postos--espelhada .secao-postos__rotulo {
+    text-align: right;
+  }
+
+  .secao-postos--espelhada .secao-postos__simbolo {
+    align-self: flex-end;
+  }
+
+  .secao-postos__corpo {
+    display: flex;
+    /* `0 1`: encolhe junto com a tela, como o grupo das Áreas — abaixo da
+       largura de projeto o clamp trava e 980px deixam de caber. */
+    flex: 0 1 61.25rem; /* 980px */
+    flex-direction: column;
+    gap: var(--gutter); /* 64px */
+    min-width: 0;
+  }
+
+  .secao-postos--estreita .secao-postos__corpo {
+    flex-basis: 55.125rem; /* 882px, 90% dos 980 */
+  }
+
+  .secao-postos__cabecalho {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px, o respiro chapéu–título das Áreas */
+  }
+
+  .secao-postos__chapeu {
+    display: none;
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  .secao-postos__titulo {
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+    /* Anula o `balance` do reset: a quebra é a da largura. */
+    text-wrap: wrap;
+    /* A sobra de métrica da Noto Serif KR — o mesmo `padding-bottom` dos
+       títulos das Áreas e do Sobre, e pelo mesmo motivo (ver Areas.astro). */
+    padding-bottom: 1.25rem; /* 20px na largura de projeto */
+  }
+
+  /*
+   * Centrada: a seção vira coluna e o corpo estica de margem a margem. A coluna
+   * do rótulo sai (e com ela o vão de 32px, que `display: none` não conta) e o
+   * chapéu assume, como no celular.
+   *
+   * O título volta ao `balance` do reset: centrado, ele iguala as linhas em vez
+   * de deixar a última curta pendurada no meio. Nos artigos é ele quem dá
+   * "Reforma tributária no / posto, explicada em detalhe" (556 e 703px), a
+   * quebra pedida — com `wrap` e o mesmo teto saía "…no posto, / explicada em
+   * detalhe" (721 e 538). O `larguraTitulo` só garante que sejam duas linhas;
+   * QUAL é a quebra, quem decide é o `balance`.
+   */
+  .secao-postos--centrada {
+    flex-direction: column;
+  }
+
+  .secao-postos--centrada .secao-postos__lateral {
+    display: none;
+  }
+
+  .secao-postos--centrada .secao-postos__corpo {
+    flex: none;
+  }
+
+  .secao-postos--centrada .secao-postos__cabecalho {
+    align-items: center;
+    text-align: center;
+  }
+
+  .secao-postos--centrada .secao-postos__chapeu {
+    display: block;
+  }
+
+  .secao-postos--centrada .secao-postos__titulo {
+    text-wrap: balance;
+  }
+
+  /*
+   * No celular a coluna grudada some e o chapéu aparece acima do título — o
+   * mesmo comportamento das Áreas. E o respiro lateral é o `--gutter-mobile`
+   * do site.
+   *
+   * Com o símbolo, a coluna fica, só com ele: desce para uma linha própria
+   * embaixo dos cartões, à esquerda como o chapéu, com os mesmos 32px que a
+   * célula vazia das Áreas ganha no celular.
+   */
+  @media (max-width: 700px) {
+    .secao-postos {
+      padding-inline: var(--gutter-mobile);
+    }
+
+    .secao-postos__lateral {
+      display: none;
+    }
+
+    .secao-postos--simbolo {
+      flex-wrap: wrap;
+      row-gap: 32px;
+    }
+
+    .secao-postos--simbolo .secao-postos__lateral {
+      display: flex;
+      flex-basis: 100%;
+      order: 1;
+    }
+
+    .secao-postos__trilho {
+      display: none;
+    }
+
+    .secao-postos__chapeu {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  import { montarSimboloAoAparecer } from '../../lib/simbolo';
+
+  montarSimboloAoAparecer('.secao-postos__simbolo');
+</script>

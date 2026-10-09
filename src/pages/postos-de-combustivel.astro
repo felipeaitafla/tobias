@@ -1,0 +1,257 @@
+---
+/*
+ * Landing de reforma tributária para postos de combustível (Figma #352:212).
+ *
+ * A composição mora aqui, e não num layout como `Site.astro` ou `Legal.astro`:
+ * esses existem para servir mais de uma rota, e esta página tem uma só — em
+ * português, sem versão inglesa.
+ *
+ * Só o hero e as credenciais têm desenho no Figma. Da seção 3 em diante a
+ * página é montada com as peças da one page (ver o cabeçalho de cada
+ * componente em `src/components/postos/`), e a ordem é a da copy.
+ *
+ * Do que a one page tem, ela aproveita o header (sem seletor de idioma nem CTA,
+ * e no tom cinza do hero dela), o rodapé, os tokens e UM freio de camada: as
+ * credenciais sobem por cima do hero, que sobe mais devagar (pedido do
+ * cliente, 2026-10-08 — ver o `<style>` aqui embaixo). Nada de abertura nem
+ * divisória: é uma página de venda, lida de cima a baixo. As duas faixas da
+ * divisória chegaram a estar aqui e saíram a pedido do cliente (2026-10-08).
+ */
+import Base from '../layouts/Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import Rodape from '../components/Rodape.astro';
+import Hero from '../components/postos/Hero.astro';
+import Credenciais from '../components/postos/Credenciais.astro';
+import Secao from '../components/postos/Secao.astro';
+import Cartoes from '../components/postos/Cartoes.astro';
+import Passos from '../components/postos/Passos.astro';
+import Sobre from '../components/postos/Sobre.astro';
+import Chamada from '../components/postos/Chamada.astro';
+import Faixa from '../components/postos/Faixa.astro';
+import Perguntas from '../components/postos/Perguntas.astro';
+import { buscarPostos } from '../lib/conteudo';
+import { grafoPostos } from '../lib/dadosEstruturados';
+import { PAGINAS } from '../lib/rotas';
+import { linkWhatsapp } from '../lib/whatsapp';
+import { postos } from '../data/postos';
+
+const idioma = 'pt-BR';
+const { pagina, config } = await buscarPostos();
+
+/* A agenda online quando o link existir; até lá, o WhatsApp (ver
+   `postos.agendar`). */
+const agendar = {
+  texto: postos.agendar.texto,
+  href: postos.agendar.url ?? linkWhatsapp(config.telefonePrincipal, postos.agendar.mensagem),
+};
+
+/* O rodapé da one page com a navegação desta página — pedido do cliente,
+   2026-10-08. O resto (contato, redes, legais, copyright) é o mesmo. */
+const rodape = { ...pagina.rodape, navegacao: postos.navegacao };
+---
+
+<Base
+  titulo={postos.seo.titulo}
+  descricao={postos.seo.descricao}
+  idioma={idioma}
+  rotas={PAGINAS.postos}
+  dadosEstruturados={(contexto) =>
+    grafoPostos(
+      contexto,
+      { nome: 'Diagnóstico tributário para postos de combustível', descricao: postos.seo.descricao },
+      postos.perguntas.itens,
+    )}
+>
+  {/* `sempreVisivel`: aqui o hero não ocupa a tela inteira, e o arquivo
+      desenha o header à mostra desde o topo (#352:193). A marca leva à home do
+      escritório — o topo desta página é o próprio hero. */}
+  <Cabecalho
+    navegacao={postos.navegacao}
+    idioma={idioma}
+    inicio="/"
+    seletorIdioma={false}
+    tom="cinza"
+    sempreVisivel
+  />
+
+  <main id="topo">
+    {/* O hero é a camada de baixo: sobe a 35% enquanto as credenciais entram
+        por cima dele. */}
+    <div class="camada-hero">
+      <Hero
+        hero={postos.hero}
+        agendar={agendar}
+        saibaMais="#a-reforma"
+        fotoAutor={pagina.thiago.foto}
+      />
+    </div>
+
+    {/* Tudo o que vem depois é UMA camada, e não só as credenciais: são elas que
+        cobrem o hero, mas o hero freado pinta abaixo do próprio lugar, e quem
+        estiver nessa faixa tem de passar por cima dele. */}
+    <div class="camada-conteudo">
+      <Credenciais credenciais={postos.credenciais} />
+
+      {/* `abertura` na seção branca que tem outra branca logo depois (os
+          artigos): o vão entre elas fica em 192px, e não 256 — ver o `respiro`
+          em Secao.astro. A Reforma já foi o outro caso; cinza desde 2026-10-08,
+          a cor é que a separa das perdas, e ela volta aos 128/128 do passo a
+          passo, a outra seção cinza. */}
+      <Secao
+        id="a-reforma"
+        rotulo={postos.reforma.rotulo}
+        titulo={postos.reforma.titulo}
+        fundo="cinza"
+      >
+        <p class="reforma__texto">{postos.reforma.texto}</p>
+      </Secao>
+
+      {/* Perder e ganhar são um par, um o espelho do outro (pedido do cliente,
+          2026-10-08): cartões numa coluna estreita (90% da de sempre), o símbolo
+          no pé da coluna do rótulo e o rótulo parado — nas perdas, rótulo e
+          símbolo à direita. Duas seções
+          brancas seguidas, então a primeira fecha com `abertura` e o vão entre
+          elas fica em 192. */}
+      <Secao
+        id="perdas"
+        rotulo={postos.perdas.rotulo}
+        titulo={postos.perdas.titulo}
+        respiro="abertura"
+        simbolo
+        grudado={false}
+        lado="direita"
+        estreita
+        larguraTitulo="40rem"
+      >
+        {/* 640px: "Onde o posto perde / dinheiro sem perceber", pedido do
+            cliente (2026-10-08). A segunda linha mede 577 e "…perde dinheiro"
+            722, então qualquer teto entre os dois dá a mesma quebra. */}
+        <Cartoes itens={postos.perdas.itens} />
+      </Secao>
+      <Secao
+        id="ganhos"
+        rotulo={postos.ganhos.rotulo}
+        titulo={postos.ganhos.titulo}
+        simbolo
+        grudado={false}
+        estreita
+      >
+        <Cartoes itens={postos.ganhos.itens} />
+      </Secao>
+
+      <Passos passos={postos.passos} />
+      {/* A terracota do Sobre emenda direto no CTA: a faixa vermelha que ficava
+          entre os dois saiu a pedido do cliente, 2026-10-08. */}
+      <Sobre sobre={postos.sobre} socio={pagina.thiago} />
+      <Chamada cta={postos.cta} agendar={agendar} />
+
+      <Secao
+        id="artigos"
+        rotulo={postos.artigos.rotulo}
+        titulo={postos.artigos.titulo}
+        respiro="abertura"
+        centrada
+        larguraTitulo="53rem"
+      >
+        {/* 848px: "Reforma tributária no / posto, explicada em detalhe", pedido
+            do cliente (2026-10-08). O teto só obriga a duas linhas (o título
+            inteiro mede 1270 e caberia em uma); quem põe "posto" na segunda é o
+            `balance` da `Secao` centrada. */}
+        <Faixa itens={postos.artigos.itens} artigos />
+      </Secao>
+
+      <Secao
+        id="perguntas"
+        rotulo={postos.perguntas.rotulo}
+        titulo={postos.perguntas.titulo}
+        larguraTitulo="45rem"
+      >
+        {/* 720px: "Dúvidas sobre a reforma / tributária nos postos", pedido do
+            cliente (2026-10-08). A primeira linha mede 619 e "…reforma
+            tributária" 875, então qualquer teto entre os dois dá a mesma quebra. */}
+        <Perguntas itens={postos.perguntas.itens} />
+      </Secao>
+    </div>
+  </main>
+
+  {/* Fora do `main` e último no documento: a revelação dele se apoia em ser o
+      fim da página (ver Rodape.astro). */}
+  <Rodape rodape={rodape} config={config} idioma={idioma} />
+</Base>
+
+<style>
+  /*
+   * O freio do hero: as credenciais entram por cima dele e ele sobe a 35% da
+   * velocidade da página — a mesma passagem das camadas da one page (o Sobre
+   * por cima dos clientes, ver Site.astro), pedido do cliente (2026-10-08).
+   *
+   * A conta é outra, e por uma razão: lá a camada de baixo é freada pela faixa
+   * `entry` da de CIMA, que dura 100vh porque a de cima é mais alta que a tela.
+   * Copiar isso aqui quebra onde o hero é mais BAIXO que a janela (medido: 960px
+   * em 1280×1024, 778 em 1000×800, 756 em 768×1024) — as credenciais já estão
+   * à vista na carga, a faixa já começou, e o hero nascia empurrado para baixo
+   * (174px no tablet em pé), com o título fora do lugar antes de qualquer
+   * rolagem.
+   *
+   * Por isso a linha do tempo é a do PRÓPRIO hero, na faixa `exit`, que nunca
+   * começa antes da rolagem zero: de "a base do hero encosta na base da tela"
+   * (ou o topo da página, o que vier depois) até "a base encosta no topo". Ela
+   * dura min(H, 100vh), e o deslocamento é `min(65%, 65vh)` — 65% da mesma
+   * medida, porque o `%` do translate é a altura do próprio hero. Os dois
+   * casos dão 35% de velocidade, e no fim da faixa o hero está inteiro debaixo
+   * das credenciais.
+   *
+   * Transformar o hero não desregula a timeline que ele mesmo publica: ela sai
+   * do layout, não da pintura (o mesmo que o Sobre da one page faz ao frear e
+   * servir de linha do tempo ao mesmo tempo).
+   */
+  .camada-hero {
+    position: relative;
+    z-index: 0;
+    view-timeline-name: --hero-postos;
+    view-timeline-axis: block;
+  }
+
+  /* Fundo próprio, como o `.conteudo` da one page: uma seção sem fundo deixaria
+     o hero freado aparecer por trás dela. */
+  .camada-conteudo {
+    position: relative;
+    z-index: 1;
+    background: var(--cor-branco);
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .camada-hero {
+        animation: hero-postos-frear linear both;
+        animation-range: exit;
+      }
+
+      /* Regra separada, com seletor diferente — a armadilha do minificador
+         (Site.astro): fundida no atalho `animation`, a timeline nomeada derruba
+         a declaração inteira e o freio some só no build. */
+      main > .camada-hero {
+        animation-timeline: --hero-postos;
+      }
+    }
+  }
+
+  /* `--freio-camada` é o 65vh das camadas da one page — o mesmo freio. */
+  @keyframes hero-postos-frear {
+    to {
+      transform: translateY(min(65%, var(--freio-camada)));
+    }
+  }
+
+  /*
+   * O texto da seção A Reforma: o corpo de 24px do resumo do hero (#352:192),
+   * na largura do título do hero — a coluna inteira de 980px daria ~95
+   * caracteres por linha.
+   */
+  .reforma__texto {
+    max-width: 47.25rem; /* 756px */
+    font: 400 1.5rem / 1.5 var(--fonte-corpo);
+    letter-spacing: -0.05em;
+    text-wrap: wrap;
+  }
+</style>

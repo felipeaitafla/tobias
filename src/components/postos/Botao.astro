@@ -1,0 +1,162 @@
+---
+/*
+ * O botão da landing de postos (#352:231 e #352:234, os dois frames "btn").
+ *
+ * Componente, e não estilo dentro do hero, porque a copy repete o "Agendar
+ * diagnóstico" no CTA final: dois botões escritos à mão divergiriam na primeira
+ * vez que alguém acertasse um só.
+ *
+ * O site não tinha botão nenhum nesse formato até aqui — o Enviar do formulário
+ * é uma barra inteira, e o resto da one page é link de texto. Por isso nada é
+ * herdado: os números vêm todos dos dois frames.
+ */
+import SetaExterna from '../../assets/icones/seta-externa.svg';
+import SetaDescer from '../../assets/icones/seta-descer.svg';
+
+interface Props {
+  href: string;
+  /* `cheio` é o petróleo com texto branco (#352:231); `contorno`, o traço
+     cinza de 1px com texto petróleo (#352:234). */
+  variante?: 'cheio' | 'contorno';
+  /* `externa` (↗) para quem sai da página, `descer` (↓) para quem desce nela —
+     o arquivo usa as duas com esse sentido, e a seta é o que avisa antes do
+     clique. */
+  seta: 'externa' | 'descer';
+  /*
+   * O evento que o clique manda ao Google Analytics, e de onde ele veio. Só o
+   * "Agendar diagnóstico" usa: é a conversão da página, e sem o evento não há
+   * como saber quantos cliques vêm do hero e quantos do fim.
+   */
+  evento?: string;
+  posicao?: string;
+}
+
+const { href, variante = 'cheio', seta, evento, posicao } = Astro.props;
+const externo = seta === 'externa';
+---
+
+<a
+  class:list={['botao', `botao--${variante}`]}
+  href={href}
+  target={externo ? '_blank' : undefined}
+  rel={externo ? 'noopener noreferrer' : undefined}
+  data-evento={evento}
+  data-posicao={posicao}
+>
+  {
+    externo ? (
+      <SetaExterna class="botao__seta botao__seta--externa" aria-hidden="true" />
+    ) : (
+      <SetaDescer class="botao__seta botao__seta--descer" aria-hidden="true" />
+    )
+  }
+  <slot />
+</a>
+
+<style>
+  .botao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    /*
+     * 56px de altura cravada no arquivo (o frame é `fixed` na vertical), com
+     * 48px de padding lateral (eram 32 até a leva de 2026-10-08). O padding
+     * vertical de 16 que o frame também declara não age: a altura é que manda.
+     *
+     * Os dois pisos são os do resto do site abaixo de ~1084px, onde a
+     * fonte-raiz trava em 12px: sem eles o botão iria a 42px de altura e 12px de
+     * texto no celular. 44px é o alvo de toque do header (ver Cabecalho.astro)
+     * e 14px é o piso de leitura do `--texto-apoio`. `max()` não toca na
+     * largura de projeto — com a raiz em 16px o `rem` já ganha dos dois.
+     */
+    height: max(3.5rem, 44px);
+    padding-inline: 3rem; /* 48px */
+    /* Semi Bold 16/1.1, e tracking próprio: -0.01em, não os -0.04 do corpo. */
+    font: 600 max(1rem, 14px) / 1.1 var(--fonte-corpo);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .botao--cheio {
+    color: var(--cor-branco);
+    background: var(--cor-petroleo);
+  }
+
+  /*
+   * O traço vai por DENTRO dos 56px (`border-box` do reset), como no arquivo:
+   * medido no render, o botão de contorno tem a mesma altura do cheio.
+   *
+   * `#dedede`, e não mais o petróleo do texto (leva de 2026-10-08). Não é
+   * token: só este traço usa, e não é nenhum dos cinzas de divisa do site —
+   * fica entre o `#ebebeb` do fundo do hero e o `#d1d1d1` da régua acima dele.
+   */
+  .botao--contorno {
+    color: var(--cor-petroleo);
+    border: 1px solid #dedede;
+  }
+
+  /*
+   * Acréscimo ao Figma: o arquivo não desenha estado de ponteiro, e um botão sem
+   * reação nenhuma não parece clicável (a mesma razão do Enviar do formulário).
+   * Só cor, nunca `opacity` — ver o hover do rodapé no CLAUDE.md.
+   *
+   *   - o cheio escurece;
+   *   - o contorno acende o traço no petróleo do próprio texto (pedido do
+   *     cliente, 2026-10-08). Até essa leva o traço já nascia petróleo e o
+   *     hover era um véu de fundo; com o traço cinza, é ele quem reage.
+   *
+   * `(hover: hover)`: sem a guarda, o toque deixa o estado grudado.
+   */
+  @media (hover: hover) {
+    .botao--cheio:hover {
+      background: color-mix(in srgb, var(--cor-petroleo) 85%, var(--cor-preto));
+    }
+
+    .botao--contorno:hover {
+      border-color: var(--cor-petroleo);
+    }
+  }
+
+  .botao__seta {
+    flex-shrink: 0;
+    height: auto;
+  }
+
+  /*
+   * O nó da seta mede 23×23 (#352:232), mas o desenho dentro dele tem 13 — a
+   * armadilha do "tamanho do nó não é o tamanho do desenho" (CLAUDE.md, seção do
+   * formulário). A folga de 5px de cada lado vira `margin`, e é ela que fecha a
+   * largura do botão em 286px, como no arquivo (o "Saiba mais", em 203,26).
+   */
+  .botao__seta--externa {
+    width: 0.8125rem; /* 13px */
+    margin: 0.3125rem; /* 5px — (23 − 13) ÷ 2 */
+  }
+
+  /* Aqui nó e desenho coincidem (#352:235, 16,26px). */
+  .botao__seta--descer {
+    width: 1.01625rem; /* 16,26px */
+  }
+</style>
+
+<script>
+  /*
+   * O evento de conversão. Não é exceção ao "sem JS" do site: o botão funciona
+   * igual sem script — isto só conta o clique. `gtag` vem do `Base.astro`; se um
+   * bloqueador o tirou da página, o `?.` faz o clique seguir sem erro.
+   *
+   * Delegado no documento, e não um ouvinte por botão: o Astro roda este script
+   * uma vez só, por mais que o componente apareça duas vezes na página.
+   */
+  const { gtag } = window as Window & { gtag?: (...args: unknown[]) => void };
+
+  document.addEventListener('click', (evento) => {
+    const botao = (evento.target as HTMLElement)?.closest?.<HTMLElement>('[data-evento]');
+    if (!botao?.dataset.evento) return;
+    gtag?.('event', botao.dataset.evento, { posicao: botao.dataset.posicao });
+  });
+</script>

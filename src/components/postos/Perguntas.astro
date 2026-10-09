@@ -1,0 +1,131 @@
+---
+/*
+ * As perguntas frequentes (seção 10 da copy). Sem desenho no Figma.
+ *
+ * `<details>` nativo, pelo mesmo critério do seletor de idioma e do `<select>`
+ * do formulário: abrir, fechar, teclado, foco e o estado "expandido" anunciado
+ * pelo leitor de tela saem do HTML sem uma linha de JS. Um acordeão montado à
+ * mão precisaria de script e de ARIA para chegar no mesmo lugar.
+ *
+ * `name` igual em todos faz o grupo ser exclusivo — abrir uma fecha a outra
+ * (Chrome 120+, Safari 17.2+, Firefox 130+). Onde não existe, várias abrem ao
+ * mesmo tempo, e nada quebra.
+ *
+ * As respostas ficam no HTML mesmo fechadas: o buscador as lê, e o `FAQPage`
+ * do JSON-LD (ver `grafoPostos`) repete exatamente o mesmo texto.
+ */
+import Mais from '../../assets/icones/mais-circulo.svg';
+import type { Postos } from '../../data/postos';
+
+interface Props {
+  itens: Postos['perguntas']['itens'];
+}
+
+const { itens } = Astro.props;
+---
+
+<div class="perguntas">
+  {
+    itens.map((item) => (
+      <details class="pergunta" name="perguntas">
+        <summary class="pergunta__resumo">
+          <h3 class="pergunta__titulo">{item.pergunta}</h3>
+          <Mais class="pergunta__icone" aria-hidden="true" />
+        </summary>
+        <p class="pergunta__resposta">{item.resposta}</p>
+      </details>
+    ))
+  }
+</div>
+
+<style>
+  /* A divisa das Áreas entre cada pergunta, e uma embaixo da última. */
+  .perguntas {
+    border-bottom: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .pergunta {
+    border-top: 1px solid var(--cor-cinza-divisa);
+  }
+
+  /*
+   * O resumo inteiro é o alvo do clique, e não só o texto. `list-style` e o
+   * `::-webkit-details-marker` matam o triângulo do navegador — os dois, porque
+   * o Safari ignora o primeiro (a mesma dupla do seletor de idioma).
+   */
+  .pergunta__resumo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem; /* 32px */
+    padding-block: 2rem; /* 32px, o padding dos cartões */
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .pergunta__resumo::-webkit-details-marker {
+    display: none;
+  }
+
+  /* O contorno de foco acompanha a fileira inteira, por dentro — sem isto ele
+     nasce 3px por fora e vira uma moldura solta em volta da pergunta. */
+  .pergunta__resumo:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* Inter Medium a 20px, fora da escala — pedido do cliente (2026-10-08): era o
+     `--texto-d4` (24px, serifada), e as duas coisas pesavam demais numa lista
+     de oito. Fica um degrau acima dos 16px da resposta. */
+  .pergunta__titulo {
+    font: 500 1.25rem / 1.3 var(--fonte-corpo); /* 20px */
+    letter-spacing: -0.04em;
+    text-wrap: wrap;
+    transition: color 0.2s ease;
+  }
+
+  /* O ícone de "mais" da matéria (#185:105), em 32px. Aberta, a pergunta gira
+     o "+" em "×" — a mesma cruz, então o estado muda sem trocar de desenho. */
+  .pergunta__icone {
+    flex-shrink: 0;
+    width: 2rem; /* 32px */
+    height: 2rem;
+    color: var(--cor-apoio);
+    transition:
+      rotate 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .pergunta[open] .pergunta__icone {
+    rotate: 45deg;
+    color: var(--cor-preto);
+  }
+
+  /* Cor, nunca `opacity` — ver o hover do rodapé no CLAUDE.md. */
+  @media (hover: hover) {
+    .pergunta__resumo:hover .pergunta__titulo {
+      color: var(--cor-petroleo);
+    }
+
+    .pergunta__resumo:hover .pergunta__icone {
+      color: var(--cor-petroleo);
+    }
+  }
+
+  /* A descrição dos cartões, numa linha que não passa dos 756px do título do
+     hero — a coluna inteira de 980 daria mais de 110 caracteres por linha. De
+     quebra, o texto nunca chega embaixo do ícone, que mora na borda dos 980. */
+  .pergunta__resposta {
+    max-width: 47.25rem; /* 756px */
+    padding-bottom: 2rem; /* 32px */
+    font: var(--texto-c2);
+    letter-spacing: var(--texto-corpo-ls);
+    color: rgb(23 23 23 / 0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pergunta__titulo,
+    .pergunta__icone {
+      transition: none;
+    }
+  }
+</style>

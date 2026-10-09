@@ -152,3 +152,52 @@ export function grafoLegal(base: ContextoPagina, atualizadoEm: string) {
     '@graph': [paginaWeb(base, { dateModified: atualizadoEm })],
   };
 }
+
+/*
+ * A landing de postos de combustível: a página, o serviço que ela vende e as
+ * perguntas frequentes.
+ *
+ * O escritório NÃO é redeclarado — é citado pelo `@id` da one page
+ * (`/#escritorio`), como as legais fazem. Uma segunda declaração aqui seria uma
+ * segunda versão dos mesmos fatos, e as duas divergiriam.
+ *
+ * As perguntas vêm da mesma lista que desenha a seção (`postos.perguntas`): o
+ * texto que o buscador lê é o mesmo que a pessoa lê, palavra por palavra — o
+ * Google exige isso de um `FAQPage`. Desde 2023 ele só mostra o resultado rico
+ * de FAQ para sites de governo e saúde, então o ganho aqui é ser lido como
+ * pergunta e resposta, por buscador e por IA, não o destaque na busca.
+ */
+export function grafoPostos(
+  base: ContextoPagina,
+  servico: { nome: string; descricao: string },
+  perguntas: { pergunta: string; resposta: string }[],
+) {
+  const { site, canonical } = base;
+  const id = ids(site);
+
+  const servicoJsonLd = {
+    '@type': 'Service',
+    '@id': `${canonical}#servico`,
+    name: servico.nome,
+    description: servico.descricao,
+    serviceType: 'Advocacia tributária',
+    provider: { '@id': id.escritorio },
+    areaServed: { '@type': 'Country', name: 'Brasil' },
+    audience: { '@type': 'BusinessAudience', audienceType: 'Postos de combustível' },
+  };
+
+  const faq = {
+    '@type': 'FAQPage',
+    '@id': `${canonical}#perguntas`,
+    mainEntity: perguntas.map(({ pergunta, resposta }) => ({
+      '@type': 'Question',
+      name: pergunta,
+      acceptedAnswer: { '@type': 'Answer', text: resposta },
+    })),
+  };
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [paginaWeb(base, { about: { '@id': `${canonical}#servico` } }), servicoJsonLd, faq],
+  };
+}

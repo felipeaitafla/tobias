@@ -30,11 +30,18 @@
  *
  *   - o-que-muda: bicos de abastecimento, Engin Akyurt (pexels.com/photo/12377480);
  *   - creditos: notas de R$ 100, Daniel Dan (pexels.com/photo/7542641);
- *   - checklist: caixas de seleção, Tara Winstead (pexels.com/photo/8850713).
+ *   - preparar: posto Ipiranga numa rua de cidade, com etanol e gasolina em
+ *     reais, Marcio Skull (Pexels, publicada em 2021-09-15; o link da página
+ *     não foi achado). Foi o cliente quem escolheu e mandou o arquivo
+ *     (`posto.jpg`, na raiz, 6720×4480). Trocada em 2026-10-15, junto com o
+ *     título — a anterior, de caixas de seleção, prometia um checklist que o
+ *     artigo não tem. É a exceção às duas regras acima, por escolha dele: tem
+ *     texto legível e tem marca de distribuidora. As placas dos quatro carros
+ *     foram borradas aqui.
  */
 import capaOQueMuda from '../assets/fotos/artigos/o-que-muda.jpg';
 import capaCreditos from '../assets/fotos/artigos/creditos.jpg';
-import capaChecklist from '../assets/fotos/artigos/checklist.jpg';
+import capaPreparar from '../assets/fotos/artigos/preparar.jpg';
 
 export const postos = {
   seo: {
@@ -54,6 +61,13 @@ export const postos = {
     { _key: 'sobre', texto: 'Sobre', href: '#sobre' },
     { _key: 'contato', texto: 'Contato', href: '#contato' },
   ],
+
+  /*
+   * Só no rodapé, à frente da `navegacao` (pedido do cliente, 2026-10-15): o
+   * header já leva ao topo pela marca. `#topo` é o `<main>` da landing; nos
+   * artigos ele ganha o caminho na frente, como os outros itens.
+   */
+  inicio: { _key: 'inicio', texto: 'Início', href: '#topo' },
 
   /*
    * O "Agendar diagnóstico" — o mesmo botão no hero e no CTA final.
@@ -110,22 +124,22 @@ export const postos = {
       {
         _key: 'advogado',
         titulo: 'Advogado e especialista',
-        texto: 'Direito tributário e gestão empresarial focada em postos de gasolina.',
+        texto: 'Planejamento tributário e gestão empresarial, focado em comércio varejista de combustíveis.',
       },
       {
         _key: 'desde-2006',
         titulo: 'Desde 2006',
-        texto: 'Assessoria jurídica e tributária para empresas.',
+        texto: 'Assessoria jurídica tributária e fiscal para empresas.',
       },
       {
         _key: 'palestrante',
-        titulo: 'Palestrante do setor',
-        texto: 'Realizamos palestras para donos de postos sobre o tema na Sulpetro.',
+        titulo: 'Palestrante',
+        texto: 'Realiza palestras sobre temas fiscais e tributários para o setor.',
       },
       {
         _key: 'relatorio',
         titulo: 'Relatório completo',
-        texto: 'Análise da operação do posto com sistema próprio.',
+        texto: 'Utilização de tecnologia na análise de dados fiscais e da operação.',
       },
     ],
   },
@@ -148,21 +162,21 @@ export const postos = {
         icone: 'bifurcacao',
         titulo: 'Escolha do regime',
         texto:
-          'Postos do Simples Nacional precisam decidir se continuam no recolhimento unificado ou se passam a apurar IBS e CBS pelo regime regular. No unificado, os custos da operação, como energia, aluguel e frete, não geram crédito. Quem perde o prazo fica no unificado por padrão, e depois de feita, a escolha não volta atrás.',
+          'Lojas do Simples Nacional precisam decidir se continuam no recolhimento unificado ou se passam a apurar IBS e CBS pelo regime regular. No unificado, os custos da operação, como energia, aluguel e frete, não geram crédito. Quem não faz a opção no prazo continua no unificado, e a escolha pode ser revista nas janelas seguintes.',
       },
       {
         _key: 'cadastro',
         icone: 'etiqueta',
         titulo: 'Cadastro fiscal',
         texto:
-          'Dentro do mesmo posto, combustível, lubrificante e itens da conveniência têm tratamentos tributários diferentes. Se o NCM, o CST ou o cClass estiver errado no cadastro, a nota sai com a tributação errada, e nota errada gera autuação.',
+          'Dentro do mesmo posto, combustível, lubrificantes, e itens da conveniência têm tratamentos tributários diferentes. Se o código de Classificação Tributária estiver errado, a nota sai com tributação errada, e nota errada é pagamento a maior ou autuação.',
       },
       {
         _key: 'notas',
         icone: 'tela-codigo',
         titulo: 'Notas e sistema',
         texto:
-          'A apuração passa a ser feita a partir do XML das notas. Se o sistema emite errado, o crédito do posto trava. Nas vendas para empresas, como transportadoras e frotas, o problema dobra: o cliente depende da sua nota para tomar o crédito dele.',
+          'A apuração passa a ser feita a partir do XML das notas. Se o sistema admite nota errada, o crédito do posto trava. Nas vendas para empresas, como transportadoras e frotas, o problema dobra: o cliente depende da sua nota para tomar o crédito dele.',
       },
     ],
   },
@@ -183,14 +197,14 @@ export const postos = {
         icone: 'reembolso',
         titulo: 'Ressarcimento mais rápido',
         texto:
-          'O crédito que sobra pode ser devolvido em dinheiro. Para empresas no Programa Nacional de Conformidade Tributária (PNCT), o prazo é de 30 dias. Fora dele, varia de 60 a 180 dias.',
+          'O crédito que sobra pode ser devolvido em dinheiro. Para empresas aderentes ao Programa Nacional de Conformidade Tributária (PNCT), o prazo é de 30 dias. Fora dele, varia de 60 a 180 dias.',
       },
       {
         _key: 'contratos',
         icone: 'contrato',
         titulo: 'Contratos e estrutura societária',
         texto:
-          'A forma como o posto contrata muda o crédito que ele gera. Frete contratado de terceiros gera crédito, mas frete embutido no preço do combustível não gera. Operações como vender um imóvel e alugá-lo de volta (sale and leaseback) também transformam custo em crédito.',
+          'A forma como o posto contrata muda o crédito que ele gera. Frete contratado de terceiros gera crédito, mas frete embutido no preço do combustível não gera. Operações como vender um imóvel e alugá-lo de volta (sale and leaseback) agora transformam custo em crédito.',
       },
       {
         _key: 'investimentos',
@@ -214,38 +228,38 @@ export const postos = {
         numero: '01',
         titulo: 'Agende o diagnóstico',
         texto:
-          'Uma conversa com o Thiago sobre a operação do posto. Ele faz as perguntas certas e mostra o que o relatório vai cobrir.',
+          'Uma conversa com o Tobias sobre a operação do posto. Ele faz as perguntas certas e mostra o que o relatório vai cobrir.',
       },
       {
         _key: 'envie',
         numero: '02',
         titulo: 'Envie os documentos',
         texto:
-          'Se decidir seguir, você envia notas fiscais, cadastro de produtos e documentos da empresa.',
+          'Se decidir seguir, você envia arquivos fiscais e documentos da empresa.',
       },
       {
         _key: 'analise',
         numero: '03',
         titulo: 'Análise em até 15 dias',
         texto:
-          'Os dados passam pelo sistema de análise do escritório, que cruza notas, cadastro e estrutura do posto.',
+          'Os dados passam pelo sistema de análise do escritório que cruza notas, cadastro e estrutura societária.',
       },
       {
         _key: 'relatorio',
         numero: '04',
         titulo: 'Receba o relatório',
         texto:
-          'Um relatório detalhado mostrando o que o posto precisa corrigir e onde tem crédito a usar. A decisão do que fazer é sua, sem compromisso de contratação.',
+          'Um relatório detalhado mostrando o que o posto precisa corrigir e onde tem crédito a usar. A decisão do que fazer é sua, sem compromisso de contratações adicionais.',
       },
     ],
   },
 
   sobre: {
     rotulo: 'Quem conduz',
-    titulo: 'Thiago Tobias, advogado tributarista no setor de combustíveis',
+    titulo: 'Thiago Tobias, advogado tributarista, especialista no setor de combustíveis',
     paragrafos: [
-      'Thiago atua há 20 anos nas questões tributárias do setor de combustíveis, do ICMS-ST à transição para o IBS e a CBS, e leva o tema da reforma tributária a encontros de revendedores, como os promovidos pelo Sulpetro.',
-      'Trabalha com pragmatismo e honestidade intelectual. Enxerga oportunidade em tudo que envolve o Direito e desenvolveu um método de análise para aumentar o grau de confiança na hora de quantificar a incerteza.',
+      'Thiago atua há 20 anos nas questões tributárias do setor de combustíveis, tanto na tributação federal, quanto estadual. Sobre a Reforma Tributária, tem estudado os impactos da transição para o IBS e CBS na revenda, assim como tem levado aos revendedores análises práticas de grande valor.',
+      'Trabalha com pragmatismo e honestidade intelectual, sobretudo quando enxerga oportunidades no planejamento tributário.',
       'Formado pela Universidade Católica de Pernambuco e especialista em Gestão Empresarial, assessora empresários na transformação de cenários caóticos em estruturas sólidas, integrando decisões jurídicas e econômicas sob uma ótica realista.',
     ],
   },
@@ -254,17 +268,18 @@ export const postos = {
     rotulo: 'Seu próximo passo',
     titulo: 'Prepare seu posto para a reforma com quem conhece o setor',
     texto:
-      'Na conversa de diagnóstico, o Thiago entende a operação do seu posto e mostra o que o relatório vai cobrir. Se fizer sentido, você envia os documentos e recebe o relatório em até 15 dias.',
-    nota: 'Sem compromisso de contratação após o relatório.',
+      'Na conversa de diagnóstico, o Tobias entende a operação do seu posto e mostra o que o relatório vai cobrir. Se fizer sentido, você envia os documentos e recebe o relatório em até 15 dias.',
   },
 
   artigos: {
     rotulo: 'Para se aprofundar',
     titulo: 'Reforma tributária no posto, explicada em detalhe',
     /*
-     * Os artigos AINDA NÃO EXISTEM. A seção vai ao ar com o "Ler artigo"
-     * desativado (decisão de 2026-10-08); quando cada um for publicado, é
-     * preencher o `href` dele aqui — com `href`, o mesmo item vira link sozinho.
+     * O "Ler artigo" nasce desativado (decisão de 2026-10-08) e acende sozinho
+     * quando o artigo existe em `src/content/artigos/` com o `cartao` igual ao
+     * `_key` daqui: o `href` é derivado em `src/lib/artigos.ts`, e o `null`
+     * abaixo não precisa ser mexido. O primeiro (`o-que-muda`) saiu em
+     * 2026-10-15.
      */
     itens: [
       {
@@ -284,9 +299,9 @@ export const postos = {
         acao: { detalhe: 'Por Thiago Tobias', texto: 'Ler artigo', href: null as string | null },
       },
       {
-        _key: 'checklist',
-        capa: capaChecklist,
-        titulo: 'Como preparar seu posto para a reforma tributária: checklist prático',
+        _key: 'preparar',
+        capa: capaPreparar,
+        titulo: 'Como preparar seu posto para a reforma tributária: as decisões antes da virada',
         texto:
           'Escolha do regime, cadastro fiscal, sistema e notas: o que revisar na operação para não perder crédito nem gerar autuação.',
         acao: { detalhe: 'Por Thiago Tobias', texto: 'Ler artigo', href: null as string | null },
@@ -328,17 +343,17 @@ export const postos = {
         _key: 'credito-acumulado',
         pergunta: 'O que fazer com o crédito que o posto acumula e não consegue usar?',
         resposta:
-          'Primeiro, usá-lo para abater o imposto da conveniência e da troca de óleo, que geram débito. O que sobrar pode ser pedido de volta em dinheiro. Para empresas no Programa Nacional de Conformidade Tributária (PNCT), o prazo é de 30 dias. Fora dele, varia de 60 a 180 dias.',
+          'Primeiro, usá-lo para abater o imposto da conveniência e da troca de óleo, que geram débito. O que sobrar pode ser pedido de volta em dinheiro. Para empresas aderentes ao Programa Nacional de Conformidade Tributária (PNCT), o prazo é de 30 dias. Fora dele, varia de 60 a 180 dias.',
       },
       {
         _key: 'simples',
-        pergunta: 'Posto do Simples deve optar pelo regime regular de IBS e CBS?',
+        pergunta: 'Conveniência no Simples deve optar pelo regime regular de IBS e CBS?',
         resposta:
-          'Depende da operação. No recolhimento unificado do Simples, os custos do posto não geram crédito. No regime regular, geram, mas a apuração fica mais complexa. A conta envolve o volume de custos, o peso da conveniência e o perfil dos clientes. A opção é feita em prazos definidos pela Receita e, depois de feita, não volta atrás.',
+          'Depende da operação. No recolhimento unificado do Simples, os custos da loja não geram crédito. No regime regular, geram, mas a apuração fica mais complexa. A conta envolve o volume de custos, o mix de produtos e o perfil dos clientes. A opção é feita em prazos definidos pela Receita e, depois de feita, não volta atrás.',
       },
       {
         _key: 'advogado-contador',
-        pergunta: 'Preciso de advogado ou só do contador para a reforma no posto?',
+        pergunta: 'Preciso de advogado ou só do contador para preparar o posto para a reforma tributária?',
         resposta:
           'Os dois trabalhos se completam. O contador cuida da apuração e da escrituração. O advogado tributarista entra nas decisões com efeito jurídico: a escolha do regime, a estrutura societária, os contratos que geram ou travam crédito e a defesa em caso de autuação.',
       },
@@ -346,7 +361,7 @@ export const postos = {
         _key: 'diagnostico',
         pergunta: 'O que é um diagnóstico tributário para posto de combustível?',
         resposta:
-          'É uma análise da operação do posto diante da reforma. Começa com uma conversa com o Thiago. Se fizer sentido seguir, o posto envia notas, cadastro e documentos da empresa, e em até 15 dias recebe um relatório com o que precisa corrigir e onde tem crédito a usar. Não há compromisso de contratação depois do relatório.',
+          'É uma análise da operação do posto diante da reforma. Começa com uma conversa com um especialista. Se fizer sentido seguir, o posto envia arquivos fiscais e informações da empresa, e em até 15 dias recebe um relatório com o que precisa corrigir e onde tem crédito a usar.',
       },
     ],
   },

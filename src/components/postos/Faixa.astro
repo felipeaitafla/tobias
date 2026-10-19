@@ -278,11 +278,13 @@ const fileiras = centrada
     cursor: default;
   }
 
-  /* A mesma seta do botão "Agendar diagnóstico", no corpo de 16px. */
+  /* A mesma seta do botão "Agendar diagnóstico", no corpo de 16px — e com o
+     mesmo `overflow: visible`, pelo mesmo motivo (ver Botao.astro). */
   .faixa__seta {
     width: 0.625rem; /* 10px */
     height: auto;
     flex-shrink: 0;
+    overflow: visible;
   }
 
   /*

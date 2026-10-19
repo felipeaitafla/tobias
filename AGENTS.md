@@ -3005,6 +3005,48 @@ da one page, e o mapa é este (cada componente explica a escolha no cabeçalho):
 - `#D1D1D1` virou token (`--cor-cinza-divisa-forte`): a divisa quando o fundo é
   o próprio `#ebebeb`.
 
+### Os artigos (`/postos-de-combustivel/<slug>/`, desde 2026-10-15)
+
+Um Markdown por artigo em `src/content/artigos/` (coleção em
+`src/content.config.ts`); o nome do arquivo é o slug. A rota é
+[`[artigo].astro`](src/pages/postos-de-combustivel/[artigo].astro), sem Figma:
+o alto é o hero da landing (cinza, capa sangrando, a pílula do Thiago, que saiu
+do hero para `Autor.astro`), o miolo é a disposição da `Secao` com o índice dos
+`h2` grudado no lugar do rótulo, e o fim é o `Chamada` e um "Continue lendo"
+com os outros cartões.
+
+- **Publicar um artigo é criar o arquivo, e só.** O `cartao` do frontmatter é o
+  `_key` do item em `postos.artigos.itens`: de lá vêm a capa, e é por ele que
+  `cartoesDeArtigo()` ([`src/lib/artigos.ts`](src/lib/artigos.ts)) acende o
+  "Ler artigo" da landing. O sitemap lê a coleção direto. Não escreva `href` em
+  `postos.ts`.
+- **O Astro 7 não roda plugin rehype** — o processador padrão é o Sätteri, e
+  `markdown.rehypePlugins` derruba o build pedindo `@astrojs/markdown-remark`.
+  Por isso a moldura rolável das tabelas (`div.tabela`, com `role="region"` e
+  `tabindex`) é posta por substituição no `rendered.html` da coleção, na rota.
+- **O tratador de âncoras do `Base.astro` passou a descontar o
+  `scroll-margin-top` do alvo.** Só os `h2` dos artigos declaram (6rem), para o
+  índice não deixar o título debaixo do header; no resto do site é zero.
+- **A `Secao` centrada estica o corpo** (`align-self: stretch`). Antes ela
+  media o conteúdo, e só não se notava porque a faixa de três cartões já
+  transbordava.
+- **O alto encosta na margem esquerda, com breadcrumb e sem chapéu** (pedido
+  do cliente, 2026-10-15), e respira mais que o hero da landing: 192px até o
+  header e 96 até a capa. O vão entre o índice e o texto é 96, o triplo da
+  `Secao` (era 64 até o mesmo dia). O breadcrumb é "Início / Artigos", e o **Início é a landing**, não a
+  one page: a landing é um projeto à parte do institucional. Na tela ele para
+  em "Artigos"; o `BreadcrumbList` do JSON-LD vai até o artigo.
+- **O título do artigo é o do hero da landing** (45px/1.28/-0.05em, Medium),
+  e não o título de seção do site (58px): o artigo não pode abrir com título
+  maior que o da página que leva a ele. São duas regras locais com o mesmo
+  número, em `Hero.astro` e em `[artigo].astro` — mexeu numa, mexa na outra.
+- **Os artigos se citam por link interno** (`/postos-de-combustivel/<slug>/`, à
+  mão no Markdown — renomear um arquivo quebra os links dos outros dois). O
+  "[LINK DA LP]" do redator vira `#contato`, o CTA da própria página.
+- O texto chega do redator com notas para ele mesmo ("Pontos para eu
+  verificar", metadados, `[LINK …]`): elas não entram no Markdown. O original
+  fica na raiz, como o `copy-tobias-postos.md`.
+
 ## Convenções
 
 - Classes e variáveis em português, seguindo o vocabulário da marca

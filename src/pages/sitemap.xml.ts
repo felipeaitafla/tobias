@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
+import { getCollection } from 'astro:content';
 import { PAGINAS } from '../lib/rotas';
+import { caminhoArtigo } from '../lib/artigos';
 
 /*
  * O sitemap, gerado a cada build a partir de `PAGINAS` — sem arquivo fixo para
@@ -9,11 +11,19 @@ import { PAGINAS } from '../lib/rotas';
  * Cada URL leva as versões nos outros idiomas (`xhtml:link`), o mesmo par que o
  * `hreflang` do `Base.astro` declara no HTML. O Google aceita os dois lugares; ter
  * os dois não conflita enquanto os dois saem da mesma lista, que é o caso.
+ *
+ * Os artigos da landing de postos entram pela coleção, e não por `PAGINAS`:
+ * publicar um é criar o Markdown, e um segundo lugar para lembrar de registrá-lo
+ * é o que deixaria o artigo fora do sitemap sem nada avisar.
  */
-export const GET: APIRoute = ({ site }) => {
+export const GET: APIRoute = async ({ site }) => {
   const url = (caminho: string) => new URL(caminho, site).href;
 
-  const entradas = Object.values(PAGINAS).flatMap((versoes) => {
+  const artigos = (await getCollection('artigos')).map((artigo) => ({
+    'pt-BR': caminhoArtigo(artigo.id),
+  }));
+
+  const entradas = [...Object.values(PAGINAS), ...artigos].flatMap((versoes) => {
     const pares = Object.entries(versoes);
     const alternativas = pares
       .map(([id, caminho]) => `    <xhtml:link rel="alternate" hreflang="${id}" href="${url(caminho)}"/>`)

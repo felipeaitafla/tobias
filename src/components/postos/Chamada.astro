@@ -29,7 +29,6 @@ const { cta, agendar } = Astro.props;
     <Botao href={agendar.href} seta="externa" evento="agendar_diagnostico" posicao="cta">
       {agendar.texto}
     </Botao>
-    <p class="chamada__nota">{cta.nota}</p>
   </div>
 </section>
 
@@ -86,14 +85,6 @@ const { cta, agendar } = Astro.props;
     align-items: center;
     gap: 1rem; /* 16px: a nota é do botão, não um bloco à parte */
     margin-top: 2rem; /* 32px */
-  }
-
-  /* 12px, com piso: abaixo de ~1084px a fonte-raiz trava em 12 e `0.75rem`
-     daria 9. */
-  .chamada__nota {
-    font: 400 max(0.75rem, 12px) / 1.25 var(--fonte-corpo);
-    letter-spacing: var(--texto-corpo-ls);
-    color: var(--cor-apoio);
   }
 
   @media (max-width: 700px) {

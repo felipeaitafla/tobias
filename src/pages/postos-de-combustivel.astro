@@ -30,6 +30,7 @@ import Chamada from '../components/postos/Chamada.astro';
 import Faixa from '../components/postos/Faixa.astro';
 import Perguntas from '../components/postos/Perguntas.astro';
 import { buscarPostos } from '../lib/conteudo';
+import { cartoesDeArtigo } from '../lib/artigos';
 import { grafoPostos } from '../lib/dadosEstruturados';
 import { PAGINAS } from '../lib/rotas';
 import { linkWhatsapp } from '../lib/whatsapp';
@@ -46,8 +47,13 @@ const agendar = {
 };
 
 /* O rodapé da one page com a navegação desta página — pedido do cliente,
-   2026-10-08. O resto (contato, redes, legais, copyright) é o mesmo. */
-const rodape = { ...pagina.rodape, navegacao: postos.navegacao };
+   2026-10-08 —, aberta pelo "Início" (2026-10-15). O resto (contato, redes,
+   legais, copyright) é o mesmo. */
+const rodape = { ...pagina.rodape, navegacao: [postos.inicio, ...postos.navegacao] };
+
+/* Os cartões dos artigos, com o link ligado em quem já foi publicado (ver
+   `src/lib/artigos.ts`). */
+const artigos = await cartoesDeArtigo();
 ---
 
 <Base
@@ -157,7 +163,7 @@ const rodape = { ...pagina.rodape, navegacao: postos.navegacao };
             do cliente (2026-10-08). O teto só obriga a duas linhas (o título
             inteiro mede 1270 e caberia em uma); quem põe "posto" na segunda é o
             `balance` da `Secao` centrada. */}
-        <Faixa itens={postos.artigos.itens} artigos />
+        <Faixa itens={artigos} artigos />
       </Secao>
 
       <Secao

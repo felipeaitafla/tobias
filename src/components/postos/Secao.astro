@@ -279,8 +279,14 @@ const {
     display: none;
   }
 
+  /* `stretch` explícito: a seção é coluna com `align-items: flex-start`, e sem
+     ele o corpo mede o próprio conteúdo. Nos artigos da landing a faixa de três
+     cartões já transborda, e o defeito não aparecia; com um conteúdo mais
+     estreito (os dois cartões do "Continue lendo"), a seção inteira encolhia
+     para a esquerda. */
   .secao-postos--centrada .secao-postos__corpo {
     flex: none;
+    align-self: stretch;
   }
 
   .secao-postos--centrada .secao-postos__cabecalho {

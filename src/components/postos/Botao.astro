@@ -121,9 +121,17 @@ const externo = seta === 'externa';
     }
   }
 
+  /*
+   * `overflow: visible`: o desenho da seta externa encosta nas bordas do
+   * `viewBox` (0 e 12), e o Chrome recorta o SVG na caixa arredondada para o
+   * pixel do aparelho. Em tela de 125% ou 150% a seta cai em fração de pixel e
+   * a coluna de borda do traço vertical perde metade da tinta — medido a 1,5×
+   * no CTA final, 221 contra 110 de contraste; o traço lia como cortado.
+   */
   .botao__seta {
     flex-shrink: 0;
     height: auto;
+    overflow: visible;
   }
 
   /*

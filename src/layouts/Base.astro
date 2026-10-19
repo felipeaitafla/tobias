@@ -278,8 +278,14 @@ const jsonLd =
            * do hero aparecendo por cima. E desconto nenhum não esconde nada:
            * o header é translúcido e toda seção abre com respiro ou fundo,
            * então o que fica sob ele é margem, não texto.
+           *
+           * A exceção é de quem pede: o `scroll-margin-top` do alvo, que é o
+           * que o âncora nativo já respeita. Só os títulos dos artigos de
+           * postos declaram (lá o alvo é o próprio título, sem respiro em
+           * cima); no resto do site ele é zero e nada muda.
            */
-          lenis.scrollTo(posicaoNoLayout(alvo));
+          const margem = parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0;
+          lenis.scrollTo(posicaoNoLayout(alvo) - margem);
           history.pushState(null, '', hash);
         });
       }

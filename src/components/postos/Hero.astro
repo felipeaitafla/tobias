@@ -8,9 +8,10 @@
  * vídeo — é uma página de venda, e o que importa nela é o título e o botão.
  */
 import { Picture } from 'astro:assets';
+import Autor from './Autor.astro';
 import Botao from './Botao.astro';
 import foto from '../../assets/fotos/posto-combustivel.jpg';
-import { imagem, type ImagemSanity } from '../../lib/imagem';
+import type { ImagemSanity } from '../../lib/imagem';
 import type { Postos } from '../../data/postos';
 
 interface Props {
@@ -25,23 +26,6 @@ interface Props {
 }
 
 const { hero, agendar, saibaMais, fotoAutor } = Astro.props;
-
-/*
- * A pílula mostra só o rosto (#373:161, 36px). O arquivo do Figma é o retrato
- * original (2067×3100) e o do Sanity, um recorte dele na mesma escala,
- * deslocado em (59, 285) — achado comparando os dois pixel a pixel. Levada
- * para o arquivo do Sanity, a janela do Figma é um quadrado de 1166px em
- * (308, −77): começa ACIMA da foto. O recorte encosta no topo, e o rosto sai
- * ~2px mais alto na pílula do que no arquivo; o tamanho dele é o mesmo.
- *
- * `sizes` acompanha os 2.25rem do CSS (27 a 63px com o clamp da raiz) — um px
- * cravado mentiria fora da largura de projeto.
- */
-const retrato = imagem(fotoAutor, {
-  larguras: [72, 144],
-  sizes: 'clamp(27px, 2.49vw, 63px)',
-  recorte: { x: 0.1744, y: 0, largura: 0.661, altura: 0.5891 },
-});
 ---
 
 <section class="hero-postos">
@@ -58,24 +42,9 @@ const retrato = imagem(fotoAutor, {
           <strong>{hero.resumo.destaque}</strong> {hero.resumo.texto}
         </p>
 
-        {/* `alt` vazio: o nome está escrito logo ao lado, e um `alt` com ele
-            faria o leitor de tela dizê-lo duas vezes.
-
-            A pílula inteira é um link para o "Quem conduz" (pedido do cliente,
+        {/* A pílula inteira é um link para o "Quem conduz" (pedido do cliente,
             2026-10-09) — quem quer saber quem é o Thiago clica nele. */}
-        <a class="hero-postos__autor" href="#sobre">
-          <img
-            class="hero-postos__retrato"
-            src={retrato.src}
-            srcset={retrato.srcset}
-            sizes={retrato.sizes}
-            width={retrato.width}
-            height={retrato.height}
-            alt=""
-            loading="eager"
-          />
-          <span><strong class="hero-postos__nome">{hero.autor.nome}</strong> <span class="hero-postos__registro">• {hero.autor.registro}</span></span>
-        </a>
+        <Autor foto={fotoAutor} nome={hero.autor.nome} registro={hero.autor.registro} href="#sobre" />
       </div>
     </div>
 
@@ -247,64 +216,6 @@ const retrato = imagem(fotoAutor, {
 
   .hero-postos__resumo strong {
     font-weight: 700;
-  }
-
-  /*
-   * A pílula com o rosto, o nome e a OAB (#373:164): bege, raio de 100 (que é
-   * "redondo até a ponta" em qualquer altura), e o respiro assimétrico do
-   * arquivo — 4px em volta da foto, 20 depois do texto.
-   *
-   * O bege é o `--cor-bege-claro`, o mesmo do fundo das credenciais logo
-   * abaixo.
-   *
-   * Inter 16/1.5/-0.05em; o nome em Semi Bold, o resto Regular. Piso de 14px,
-   * o mesmo do `--texto-apoio`.
-   */
-  .hero-postos__autor {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5625rem; /* 9px */
-    padding: 0.25rem 1.25rem 0.25rem 0.25rem; /* 4 20 4 4 */
-    border-radius: 6.25rem; /* 100px */
-    font: 400 max(1rem, 14px) / 1.5 var(--fonte-corpo);
-    letter-spacing: -0.05em;
-    white-space: nowrap;
-    color: var(--cor-preto);
-    background: var(--cor-bege-claro);
-  }
-
-  .hero-postos__autor strong {
-    font-weight: var(--peso-destaque);
-  }
-
-  /*
-   * O hover da pílula é o dos cartões de artigo (pedido do cliente,
-   * 2026-10-09): o nome no petróleo da marca, a OAB no mesmo petróleo mais
-   * claro. Cor, e não `opacity`, como em todo hover do site.
-   */
-  .hero-postos__nome,
-  .hero-postos__registro {
-    transition: color 0.2s ease;
-  }
-
-  @media (hover: hover) {
-    .hero-postos__autor:hover .hero-postos__nome {
-      color: var(--cor-petroleo);
-    }
-
-    .hero-postos__autor:hover .hero-postos__registro {
-      color: rgb(60 117 124 / 0.8); /* o --cor-petroleo a 0.8 */
-    }
-  }
-
-  /* 36px, redondo (#373:161). Tamanho cravado nas duas medidas e `cover`: a
-     proporção do recorte é quadrada hoje, mas a foto é trocável no Studio. */
-  .hero-postos__retrato {
-    flex-shrink: 0;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 50%;
-    object-fit: cover;
   }
 
   /*

@@ -201,3 +201,70 @@ export function grafoPostos(
     '@graph': [paginaWeb(base, { about: { '@id': `${canonical}#servico` } }), servicoJsonLd, faq],
   };
 }
+
+/*
+ * Um artigo da landing de postos: a página e o `Article` dentro dela.
+ *
+ * O autor é o Thiago pelo `@id` que a one page já declara (`/#socio-1`, o
+ * primeiro de `FATOS.socios`), com o nome repetido aqui só para quem ler este
+ * grafo sozinho. Escritório e site, também por `@id` — como nas legais.
+ *
+ * `citation` são as fontes do fim do artigo: é o que diz a buscador e IA que o
+ * texto se apoia em lei e jurisprudência, e não em opinião.
+ *
+ * O `BreadcrumbList` é o breadcrumb da página mais o próprio artigo no fim — na
+ * tela ele não aparece, porque é o `h1` logo abaixo do trilho.
+ */
+export function grafoArtigo(
+  base: ContextoPagina,
+  artigo: {
+    titulo: string;
+    publicado: string;
+    imagem?: string;
+    fontes: string[];
+    trilha: { texto: string; href: string }[];
+  },
+) {
+  const { site, canonical, idioma, descricao } = base;
+  const id = ids(site);
+  const autor = FATOS.socios[0];
+
+  const artigoJsonLd = {
+    '@type': 'Article',
+    '@id': `${canonical}#artigo`,
+    headline: artigo.titulo,
+    description: descricao,
+    inLanguage: idioma,
+    datePublished: artigo.publicado,
+    ...(artigo.imagem && { image: new URL(artigo.imagem, site).href }),
+    author: { '@type': 'Person', '@id': new URL('/#socio-1', site).href, name: autor.nome },
+    publisher: { '@id': id.escritorio },
+    mainEntityOfPage: { '@id': `${canonical}#pagina` },
+    citation: artigo.fontes,
+  };
+
+  const trilha = {
+    '@type': 'BreadcrumbList',
+    '@id': `${canonical}#trilha`,
+    itemListElement: [...artigo.trilha, { texto: artigo.titulo, href: canonical }].map(
+      (passo, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: passo.texto,
+        item: new URL(passo.href, site).href,
+      }),
+    ),
+  };
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      paginaWeb(base, {
+        mainEntity: { '@id': `${canonical}#artigo` },
+        breadcrumb: { '@id': `${canonical}#trilha` },
+      }),
+      artigoJsonLd,
+      trilha,
+    ],
+  };
+}

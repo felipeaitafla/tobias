@@ -1,0 +1,716 @@
+---
+/*
+ * Os artigos da landing de postos — um por arquivo em `src/content/artigos/`,
+ * na URL `/postos-de-combustivel/<nome do arquivo>/`.
+ *
+ * Sem Figma: a página é montada com as peças da landing, para ler como o mesmo
+ * site. O alto é o hero dela (o cinza, a capa sangrando pela base da faixa, a
+ * pílula do Thiago); o miolo é a disposição da `Secao` (uma coluna à esquerda e
+ * a de 980px à direita), com o índice no lugar do rótulo grudado; e o fim é o
+ * CTA e os cartões de artigo, os mesmos de lá.
+ *
+ * Como nas páginas legais, nada se mexe por baixo do texto: sem freio de
+ * camada, sem vídeo. Quem chega aqui veio ler.
+ */
+import { Picture } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Cabecalho from '../../components/Cabecalho.astro';
+import Rodape from '../../components/Rodape.astro';
+import Autor from '../../components/postos/Autor.astro';
+import Chamada from '../../components/postos/Chamada.astro';
+import Secao from '../../components/postos/Secao.astro';
+import Faixa from '../../components/postos/Faixa.astro';
+import { buscarPostos } from '../../lib/conteudo';
+import { caminhoArtigo, cartoesDeArtigo } from '../../lib/artigos';
+import { grafoArtigo } from '../../lib/dadosEstruturados';
+import { PAGINAS } from '../../lib/rotas';
+import { linkWhatsapp } from '../../lib/whatsapp';
+import { postos } from '../../data/postos';
+
+export async function getStaticPaths() {
+  const artigos = await getCollection('artigos');
+  return artigos.map((artigo) => ({ params: { artigo: artigo.id }, props: { artigo } }));
+}
+
+const { artigo } = Astro.props;
+const { pagina, config } = await buscarPostos();
+const idioma = 'pt-BR';
+const landing = PAGINAS.postos[idioma];
+
+const cartoes = await cartoesDeArtigo();
+const cartao = cartoes.find((item) => item._key === artigo.data.cartao);
+if (!cartao) {
+  throw new Error(
+    `O artigo "${artigo.id}" aponta para o cartão "${artigo.data.cartao}", que não existe ` +
+      'em `postos.artigos.itens` (src/data/postos.ts). É de lá que vêm a capa e o link da landing.',
+  );
+}
+/* Os outros artigos, para o "Continue lendo" — os que ainda não existem vão
+   desativados, como na landing. */
+const outros = cartoes.filter((item) => item._key !== artigo.data.cartao);
+
+/* O mesmo "Agendar diagnóstico" da landing: a agenda online quando o link
+   existir, o WhatsApp até lá (ver `postos.agendar`). */
+const agendar = {
+  texto: postos.agendar.texto,
+  href: postos.agendar.url ?? linkWhatsapp(config.telefonePrincipal, postos.agendar.mensagem),
+};
+
+/*
+ * A navegação é a da landing, e as âncoras dela não existem aqui: com o
+ * caminho na frente, cada item leva aonde o texto promete (a mesma conta do
+ * `Legal.astro`). O "Contato" fica local — o CTA desta página é a mesma seção
+ * de lá, com o mesmo `id`.
+ */
+const comCaminho = (href: string) => (href === '#contato' ? href : `${landing}${href}`);
+const navegacao = postos.navegacao.map((item) => ({ ...item, href: comCaminho(item.href) }));
+const rodape = {
+  ...pagina.rodape,
+  navegacao: [{ ...postos.inicio, href: comCaminho(postos.inicio.href) }, ...navegacao],
+};
+
+/*
+ * O HTML do Markdown, que a coleção já entrega renderizado, com cada `<table>`
+ * numa moldura rolável.
+ *
+ * A tabela de cinco colunas não cabe numa tela de 375px, e espremida vira uma
+ * palavra por linha; a saída de sempre é rolar a tabela, e não a página. Mas o
+ * `overflow` não pode morar na `<table>`: `display: block` nela tira a
+ * semântica de tabela em parte dos leitores de tela. `tabindex`, `role` e
+ * nome são o que deixa o teclado rolar a moldura e o leitor de tela anunciá-la
+ * (WCAG 2.1.1); o nome é a primeira célula do cabeçalho.
+ *
+ * Aqui, e não num plugin do Markdown: o processador padrão do Astro 7
+ * (Sätteri) não roda plugins rehype, e trocar de processador por isto seria
+ * uma dependência nova para uma substituição de texto.
+ */
+const semTags = (html: string) => html.replace(/<[^>]+>/g, '').trim();
+const html = (artigo.rendered?.html ?? '').replace(/<table>[\s\S]*?<\/table>/g, (tabela) => {
+  const cabeca = tabela.match(/<th[^>]*>([\s\S]*?)<\/th>/);
+  const nome = cabeca ? `Tabela: ${semTags(cabeca[1])}` : 'Tabela';
+  return `<div class="tabela" role="region" tabindex="0" aria-label="${nome}">${tabela}</div>`;
+});
+
+/* O índice são os `h2` do texto — o Markdown já os entrega com `id`. */
+const indice = (artigo.rendered?.metadata?.headings ?? []).filter((titulo) => titulo.depth === 2);
+
+/* `T00:00:00` obriga a leitura em hora local — sem isso a data volta um dia a
+   oeste de Greenwich (ver `Legal.astro`). */
+const publicado = new Intl.DateTimeFormat(idioma, { dateStyle: 'long' }).format(
+  new Date(`${artigo.data.publicado}T00:00:00`),
+);
+
+/* 200 palavras por minuto, a conta usual para texto técnico em português. A
+   tabela entra na contagem, e é justo: ela também é lida. */
+const palavras = (artigo.body ?? '').split(/\s+/).filter(Boolean).length;
+const minutos = Math.max(1, Math.round(palavras / 200));
+
+const fontes = artigo.data.fontes.map((fonte) => `${fonte.autor} ${fonte.obra} ${fonte.nota}`);
+
+/* O breadcrumb. O "Início" é a landing, e não a one page: a landing é um
+   projeto à parte do site institucional (pedido do cliente, 2026-10-15), e o
+   artigo pertence a ela. */
+const trilha = [
+  { texto: 'Início', href: landing },
+  { texto: 'Artigos', href: `${landing}#artigos` },
+];
+---
+
+<Base
+  titulo={artigo.data.seo.titulo}
+  descricao={artigo.data.seo.descricao}
+  idioma={idioma}
+  rotas={{ [idioma]: caminhoArtigo(artigo.id) }}
+  dadosEstruturados={(contexto) =>
+    grafoArtigo(contexto, {
+      titulo: artigo.data.titulo,
+      publicado: artigo.data.publicado,
+      imagem: cartao.capa?.src,
+      fontes,
+      trilha,
+    })}
+>
+  <Cabecalho
+    navegacao={navegacao}
+    idioma={idioma}
+    inicio="/"
+    seletorIdioma={false}
+    tom="cinza"
+    sempreVisivel
+  />
+
+  <main id="topo">
+    <article class="artigo">
+      <header class="artigo__topo">
+        {/* Encostado na margem esquerda, e não na coluna de 980 do texto
+            (pedido do cliente, 2026-10-15): o chapéu da coluna da esquerda saiu
+            e o caminho de volta passou a ser o breadcrumb. */}
+        <div class="artigo__cabecalho">
+          {/* O trilho até aqui. A página atual não entra na lista: ela é o `h1`
+              logo abaixo, e repeti-la seria ler o título duas vezes. O
+              buscador recebe o trilho inteiro, com ela, no JSON-LD. */}
+          <nav class="artigo__trilha" aria-label="Você está em">
+            <ol>
+              {
+                trilha.map((passo) => (
+                  <li>
+                    <a href={passo.href}>{passo.texto}</a>
+                  </li>
+                ))
+              }
+            </ol>
+          </nav>
+
+          <h1 class="artigo__titulo">{artigo.data.titulo}</h1>
+
+          <div class="artigo__meta">
+            <Autor
+              foto={pagina.thiago.foto}
+              prefixo="Por"
+              nome={postos.hero.autor.nome}
+              registro={postos.hero.autor.registro}
+              href={`${landing}#sobre`}
+            />
+            <p class="artigo__data">
+              <time datetime={artigo.data.publicado}>{publicado}</time>
+              <span aria-hidden="true">·</span>
+              {minutos} min de leitura
+            </p>
+          </div>
+        </div>
+
+        {/* A capa do cartão da landing, na geometria da foto do hero dela.
+            Ilustra o título, não informa: `alt` vazio. É o maior elemento
+            acima da dobra, então carrega na hora. */}
+        {
+          cartao.capa && (
+            <div class="artigo__capa">
+              <Picture
+                src={cartao.capa}
+                alt=""
+                formats={['avif', 'webp']}
+                widths={[640, 1024, 1600]}
+                sizes="(max-width: 700px) calc(100vw - 64px), 92vw"
+                loading="eager"
+                fetchpriority="high"
+              />
+            </div>
+          )
+        }
+      </header>
+
+      <div class="artigo__miolo">
+        {/* O índice mora onde a `Secao` põe o rótulo grudado, e gruda do mesmo
+            jeito. No celular ele sai: lá a coluna não existe. */}
+        <nav class="artigo__indice" aria-labelledby="indice-titulo">
+          <div class="artigo__indice-trilho">
+            <p class="artigo__indice-titulo" id="indice-titulo">Neste artigo</p>
+            <ol class="artigo__indice-lista">
+              {
+                indice.map((titulo) => (
+                  <li>
+                    <a href={`#${titulo.slug}`}>{titulo.text}</a>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </nav>
+
+        <div class="artigo__corpo">
+          <div class="artigo__texto">
+            <Fragment set:html={html} />
+          </div>
+
+          <section class="artigo__fontes" aria-labelledby="fontes-titulo">
+            <h2 class="artigo__fontes-titulo" id="fontes-titulo">Fontes citadas</h2>
+            <ol>
+              {
+                artigo.data.fontes.map((fonte) => (
+                  <li>
+                    <strong>{fonte.autor}</strong> <cite>{fonte.obra}</cite> {fonte.nota}
+                  </li>
+                ))
+              }
+            </ol>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <Chamada cta={postos.cta} agendar={agendar} />
+
+    <Secao id="artigos" rotulo="Continue lendo" titulo={postos.artigos.titulo} centrada larguraTitulo="53rem">
+      <div class="artigo__outros">
+        <Faixa itens={outros} artigos />
+      </div>
+    </Secao>
+  </main>
+
+  <Rodape rodape={rodape} config={config} idioma={idioma} />
+</Base>
+
+<style>
+  /*
+   * O alto: o cinza do hero da landing, com a capa fechando a faixa por baixo,
+   * sem respiro.
+   *
+   * 192px em cima e 96 até a capa — eram os 139 do hero da landing e 64,
+   * aumentados a pedido do cliente (2026-10-15). O header é `fixed`, então o
+   * respiro que o separa do breadcrumb mora aqui.
+   */
+  .artigo__topo {
+    display: flex;
+    flex-direction: column;
+    gap: 6rem; /* 96px */
+    padding: 12rem var(--gutter) 0; /* 192px */
+    background: var(--cor-cinza-divisa);
+  }
+
+  /*
+   * O miolo: o texto na coluna de 980px encostada à direita, e o índice na
+   * sobra à esquerda — a disposição da `Secao`.
+   *
+   * 96px entre os dois, o triplo dos 32 da `Secao` (pedido do cliente,
+   * 2026-10-15, em dois passos: 32 → 64 → 96): o índice é texto corrido como
+   * o artigo, e a 32 as duas colunas liam como uma.
+   */
+  .artigo__miolo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 6rem; /* 96px */
+  }
+
+  /* `flex: 1 0 12rem`, como o rótulo da `Secao`: cresce com a sobra (242px na
+     largura de projeto) e não encolhe abaixo de 192px entre 700 e 1084. */
+  .artigo__indice {
+    flex: 1 0 12rem;
+  }
+
+  .artigo__corpo {
+    display: flex;
+    flex: 0 1 61.25rem; /* 980px */
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /*
+   * O alto encosta na margem esquerda, e não na coluna do texto (pedido do
+   * cliente, 2026-10-15). Os 980px continuam como teto, para o título quebrar
+   * em duas linhas como antes.
+   */
+  .artigo__cabecalho {
+    display: flex;
+    flex-direction: column;
+    max-width: 61.25rem; /* 980px */
+  }
+
+  /*
+   * O breadcrumb é texto de apoio, e os passos são links: acendem no preto,
+   * como a navegação do header. A barra é do CSS, e não do texto — é
+   * separador, e o leitor de tela não precisa ouvi-la a cada passo.
+   */
+  .artigo__trilha ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem; /* 4 8 */
+    margin-bottom: 1.5rem; /* 24px até o título */
+    padding: 0;
+    list-style: none;
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  .artigo__trilha li + li::before {
+    content: '/';
+    margin-right: 0.5rem; /* 8px */
+    color: var(--cor-cinza-divisa-forte);
+  }
+
+  .artigo__trilha a {
+    transition: color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .artigo__trilha a:hover {
+      color: var(--cor-preto);
+    }
+  }
+
+  /*
+   * O título do hero da landing (Hero.astro): 45px/1.28/-0.05em, Medium 500.
+   * Pedido do cliente, 2026-10-15 — era o título de seção do site (58px), e o
+   * artigo saía com título maior que o da página que leva a ele. Sem token,
+   * pela mesma razão de lá; mexeu num, mexa no outro.
+   *
+   * O `padding-bottom` é a sobra de métrica da Noto Serif KR, o mesmo dos
+   * títulos da `Secao`.
+   */
+  .artigo__titulo {
+    font: 500 2.8125rem / 1.28 var(--fonte-display);
+    letter-spacing: -0.05em;
+    padding-bottom: 1.25rem; /* 20px */
+  }
+
+  .artigo__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem; /* 16 24 */
+    margin-top: 2rem; /* 32px */
+  }
+
+  .artigo__data {
+    display: flex;
+    gap: 0.5rem; /* 8px */
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  /* A geometria da foto do hero da landing (1318×591), pelo mesmo motivo de lá:
+     `aspect-ratio`, e não altura em `rem`, para não virar retrato abaixo de
+     1084px. Moldura relativa com a imagem absoluta — a armadilha do flex. */
+  .artigo__capa {
+    position: relative;
+    aspect-ratio: 1318 / 591;
+  }
+
+  .artigo__capa :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .artigo__miolo {
+    padding: var(--respiro-secao) var(--gutter);
+    background: var(--cor-branco);
+  }
+
+  .artigo__indice {
+    align-self: stretch;
+  }
+
+  /* Gruda a 128px do topo, como o rótulo da `Secao`, e corre a coluna inteira
+     do texto. */
+  .artigo__indice-trilho {
+    position: sticky;
+    top: var(--respiro-secao);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* 24px */
+    padding-top: 0.75rem; /* 12px */
+  }
+
+  /*
+   * 13px na largura de projeto (pedido do cliente, 2026-10-15) — um degrau
+   * abaixo dos 16 do texto de apoio, para o índice não competir com o artigo
+   * ao lado. Piso de 13: abaixo de ~1084px a raiz trava em 12 e `0.8125rem`
+   * daria 9,75.
+   */
+  .artigo__indice-titulo {
+    font: 600 max(0.8125rem, 13px) / 1.25 var(--fonte-corpo);
+    letter-spacing: var(--texto-apoio-ls);
+  }
+
+  .artigo__indice-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* 16px */
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Cinza que acende no preto — o hover da navegação do header. */
+  .artigo__indice-lista a {
+    display: block;
+    font: 400 max(0.8125rem, 13px) / 1.35 var(--fonte-corpo); /* 13px, ver o título acima */
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+    text-wrap: pretty;
+    transition: color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .artigo__indice-lista a:hover {
+      color: var(--cor-preto);
+    }
+  }
+
+  /*
+   * O texto. 16px e entrelinha 1.5, o corpo do site (`--texto-c2`) — pedido do
+   * cliente, 2026-10-15; nasceu em 18/1.6. Piso de 16px, e não os 14 do token:
+   * abaixo de ~1084px a raiz trava em 12, e um artigo inteiro a 14 no celular
+   * é pequeno demais para ler.
+   *
+   * O parágrafo, o título e a lista ficam numa medida de leitura de 704px (a
+   * mesma das legais, ~80 caracteres); só a tabela usa os 980 da coluna.
+   *
+   * Tudo com `:global()` dentro do ancestral escopado: o HTML vem do Markdown,
+   * e o Astro não carimba o atributo de escopo no que não está NESTE template.
+   */
+  .artigo__texto {
+    font-family: var(--fonte-corpo);
+    font-weight: 400;
+    font-size: max(1rem, 16px);
+    line-height: 1.5;
+    letter-spacing: var(--texto-corpo-ls);
+    color: var(--cor-preto);
+  }
+
+  .artigo__texto > :global(:not(.tabela)) {
+    max-width: 44rem; /* 704px */
+  }
+
+  .artigo__texto > :global(* + *) {
+    margin-top: 1.25rem; /* 20px */
+  }
+
+  /* A abertura, um degrau acima do texto: 20px (era 24 enquanto o texto era 18
+     — os dois desceram juntos). Piso de 18. */
+  .artigo__texto > :global(p:first-child) {
+    max-width: 47.25rem;
+    font-size: max(1.25rem, 18px);
+    line-height: 1.5;
+    letter-spacing: -0.05em;
+  }
+
+  /*
+   * Os títulos são perguntas, e cada uma abre um bloco: a divisa de 1px que o
+   * site usa para abrir cartões, e a serifada dos títulos — 32px, entre os 24
+   * dos cartões e os 58 do título de seção. Piso de 24px no celular.
+   *
+   * `scroll-margin-top`: o índice leva até aqui, e o header fixo (52px) cobriria
+   * o título. O tratador de âncoras do `Base.astro` lê esta margem.
+   */
+  .artigo__texto > :global(h2) {
+    margin-top: 4rem; /* 64px */
+    padding-top: 2rem; /* 32px */
+    border-top: 1px solid var(--cor-cinza-divisa);
+    font: 500 max(2rem, 24px) / 1.2 var(--fonte-display);
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+    scroll-margin-top: 6rem;
+  }
+
+  .artigo__texto > :global(h2 + *) {
+    margin-top: 1.5rem; /* 24px */
+  }
+
+  .artigo__texto :global(strong) {
+    font-weight: var(--peso-destaque);
+  }
+
+  /* Sublinhado, e não só cor: no meio do parágrafo, cor sozinha falha para quem
+     não a distingue (WCAG 1.4.1) — o mesmo link das páginas legais. */
+  .artigo__texto :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+    transition: color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .artigo__texto :global(a:hover) {
+      color: var(--cor-petroleo);
+    }
+  }
+
+  /*
+   * A subseção (o artigo 2 divide uma resposta em duas vias): Inter, e não a
+   * serifada — ela vive dentro de um bloco e não abre nada, e o peso é o que a
+   * separa do parágrafo. O mesmo par das páginas legais. Não entra no índice.
+   */
+  .artigo__texto > :global(h3) {
+    margin-top: 2.5rem; /* 40px */
+    font-weight: var(--peso-destaque);
+    font-size: max(1.125rem, 17px); /* 18px, um degrau acima do texto */
+    line-height: 1.4;
+    letter-spacing: var(--texto-corpo-ls);
+  }
+
+  .artigo__texto > :global(h3 + *) {
+    margin-top: 0.75rem; /* 12px — a subseção é o rótulo do que vem abaixo */
+  }
+
+  /* O reset não zera lista, e o padding é declarado: sem ele os marcadores caem
+     FORA da caixa. Numerada quando o texto diz "primeiro, segundo" — o
+     Markdown já entrega `<ol>`. */
+  .artigo__texto > :global(ul),
+  .artigo__texto > :global(ol) {
+    padding-left: 1.5rem; /* 24px */
+  }
+
+  .artigo__texto > :global(ul) {
+    list-style: disc;
+  }
+
+  .artigo__texto > :global(ol) {
+    list-style: decimal;
+  }
+
+  .artigo__texto > :global(:is(ul, ol) > li + li) {
+    margin-top: 0.75rem; /* 12px */
+  }
+
+  .artigo__texto > :global(:is(ul, ol)) :global(::marker) {
+    color: var(--cor-apoio);
+  }
+
+  /*
+   * As tabelas (a moldura `.tabela` é posta no frontmatter, em `html`). Abertas, como o
+   * resto do site: sem caixa nem fundo, só réguas — a de cima e a de baixo no
+   * cinza mais forte, que fecham o bloco, e as de cada linha no `#ebebeb` dos
+   * cartões. O cabeçalho é texto de apoio; a primeira coluna, que diz do que é
+   * a linha, vai na serifada, como o título de um cartão das Áreas.
+   *
+   * 14px, um degrau abaixo do texto: a tabela de cinco colunas tem frases nas
+   * células, e no tamanho do texto cada uma iria a quatro, cinco linhas.
+   */
+  .artigo__texto > :global(.tabela) {
+    margin-block: 2.5rem; /* 40px */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .artigo__texto :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    border-block: 1px solid var(--cor-cinza-divisa-forte);
+    font-size: max(0.875rem, 13px);
+    line-height: 1.5;
+  }
+
+  .artigo__texto :global(th),
+  .artigo__texto :global(td) {
+    padding: 1.25rem 1.5rem 1.25rem 0; /* 20 24 */
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .artigo__texto :global(th:last-child),
+  .artigo__texto :global(td:last-child) {
+    padding-right: 0;
+  }
+
+  .artigo__texto :global(th) {
+    padding-block: 1rem; /* 16px */
+    font: var(--texto-apoio);
+    font-size: max(0.875rem, 13px);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+    vertical-align: bottom;
+  }
+
+  .artigo__texto :global(tbody tr) {
+    border-top: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .artigo__texto :global(td:first-child) {
+    min-width: 11rem;
+    font: 400 max(1rem, 15px) / 1.35 var(--fonte-display);
+    letter-spacing: -0.04em;
+  }
+
+  /* O `strong` da primeira coluna é o nome da linha; o parêntese ao lado fica
+     no 400 da célula. */
+  .artigo__texto :global(td:first-child strong) {
+    font-weight: var(--peso-destaque);
+  }
+
+  /*
+   * O "Continue lendo" tem um cartão a menos que a landing, e a `Faixa` divide a
+   * largura pela quantidade: com dois, cada capa sairia com o dobro da altura.
+   * Dois terços da coluna devolvem aos cartões os 439px de lá (878,67 ÷ 2).
+   */
+  .artigo__outros {
+    width: 100%;
+    max-width: 54.917rem; /* 878,67px */
+    margin-inline: auto;
+  }
+
+  /* As fontes: nota de rodapé, um degrau abaixo do texto e no cinza de leitura
+     dos cartões. A mesma divisa que abre cada pergunta. */
+  .artigo__fontes {
+    max-width: 44rem;
+    margin-top: 4rem; /* 64px */
+    padding-top: 2rem; /* 32px */
+    border-top: 1px solid var(--cor-cinza-divisa);
+  }
+
+  .artigo__fontes-titulo {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  .artigo__fontes ol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* 12px */
+    margin-top: 1.5rem; /* 24px */
+    padding-left: 1.5rem;
+    font: 400 max(0.875rem, 14px) / 1.5 var(--fonte-corpo);
+    letter-spacing: var(--texto-corpo-ls);
+    color: rgb(23 23 23 / 0.7);
+  }
+
+  .artigo__fontes ::marker {
+    color: var(--cor-apoio);
+  }
+
+  .artigo__fontes strong {
+    font-weight: var(--peso-destaque);
+    color: var(--cor-preto);
+  }
+
+  /*
+   * O breakpoint de sempre, só para comportamento:
+   *
+   *   - o respiro lateral do site no celular;
+   *   - o índice sai — sem coluna, ele seria uma lista de sete perguntas antes
+   *     da primeira palavra do texto;
+   *   - a capa volta ao 3:2, como a foto do hero da landing;
+   *   - a tabela sangra até a borda da tela e rola sozinha — com 640px de
+   *     largura mínima, cada célula fica legível em vez de virar uma palavra
+   *     por linha.
+   */
+  @media (max-width: 700px) {
+    .artigo__topo,
+    .artigo__miolo {
+      padding-inline: var(--gutter-mobile);
+    }
+
+    /* Os 192/96 do desktop, na mesma proporção dos 104/40 de antes. */
+    .artigo__topo {
+      gap: 64px;
+      padding-top: 144px;
+    }
+
+    .artigo__miolo {
+      padding-block: 64px 96px;
+    }
+
+    .artigo__indice {
+      display: none;
+    }
+
+    .artigo__capa {
+      aspect-ratio: 3 / 2;
+    }
+
+    .artigo__texto > :global(.tabela) {
+      margin-inline: calc(-1 * var(--gutter-mobile));
+      padding-inline: var(--gutter-mobile);
+    }
+
+    .artigo__texto :global(table) {
+      min-width: 640px;
+    }
+  }
+</style>

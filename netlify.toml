@@ -15,3 +15,14 @@
   from = "/api/contato"
   to = "/.netlify/functions/contato"
   status = 200
+
+# O endereço que a Netlify dá ao site continua respondendo mesmo com o domínio
+# próprio. Sem isto ele serve uma cópia inteira da página — o canonical já
+# aponta para o www, mas o Google ainda rastreia as duas. `force` porque os
+# arquivos existem nos dois endereços, e sem ele a Netlify serve o arquivo em
+# vez de redirecionar.
+[[redirects]]
+  from = "https://tobiasadv.netlify.app/*"
+  to = "https://www.tobias.adv.br/:splat"
+  status = 301
+  force = true

@@ -133,6 +133,13 @@ export function iniciarEnvioFormulario() {
         });
         if (!resposta.ok) throw new Error(String(resposta.status));
         aplicar('sucesso');
+        /* Conversão: só depois do envio confirmado pela função. `gtag` vem do
+           `Base.astro`; com bloqueador ele não existe, e o `?.` segue sem erro. */
+        (window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.(
+          'event',
+          'contato_formulario',
+          { area: corpo.area },
+        );
         forma.reset();
       } catch {
         aplicar('falha');

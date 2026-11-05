@@ -19,6 +19,11 @@ const t = textos(idioma);
    lido pelo leitor de tela acompanha cada um. Pedido do cliente, 2026-08-05:
    o telefone leva ao WhatsApp, não ao discador. */
 const whatsappHref = linkWhatsapp(config.telefonePrincipal);
+
+/* O endereço leva ao mapa (2026-11-05): no Clarity ele e o ícone do pino eram
+   dos pontos mais clicados sem efeito. A busca do Maps acha o prédio pelo
+   texto que o cliente já mantém no Sanity — sem coordenada para atualizar. */
+const mapaHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.endereco)}`;
 const canais = [
   {
     texto: config.telefonePrincipal.texto,
@@ -51,12 +56,12 @@ const canais = [
         de tela e o nome vem no `.sr-only` ao lado.
       */}
       <address class="cartao-info__dados">
-        <div class="dado dado--endereco">
+        <a class="dado dado--endereco dado--mapa" href={mapaHref} target="_blank" rel="noopener">
           <MapaPino class="dado__icone" aria-hidden="true" />
           <p class="dado__texto dado__texto--endereco">
             <span class="sr-only">{t['contato.endereco']}</span>{config.endereco}
           </p>
-        </div>
+        </a>
 
         {/* Horário antes dos canais desde a revisão de 2026-07-30 — no arquivo
             os dois blocos trocaram de lugar (#181:30 antes de #181:29). */}
@@ -341,6 +346,19 @@ const canais = [
   /* Entrelinha maior só aqui: é o único texto do card que vira parágrafo. */
   .dado__texto--endereco {
     line-height: 1.5;
+  }
+
+  /* O bloco do endereço virou link: herda a cor e só sublinha no hover, para
+     não mudar o desenho do cartão. */
+  .dado--mapa {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .dado--mapa:hover .dado__texto--endereco,
+  .dado--mapa:focus-visible .dado__texto--endereco {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .dado__item--traco {

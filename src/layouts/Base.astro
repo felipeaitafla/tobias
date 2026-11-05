@@ -74,12 +74,48 @@ const jsonLd =
 <!doctype html>
 <html lang={idioma}>
   <head>
-    {/* Google tag (gtag.js). `is:inline` pelo mesmo motivo do Clarity, mais abaixo: sem ele o Astro processa o script como módulo. */}
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-QWQL2DJVGN"></script>
+    {/*
+      Acesso interno: quem abre o site uma vez com `?interno` no endereço deixa
+      de ser contado pelo Google Analytics e pelo Clarity naquele navegador
+      (fica gravado no localStorage). `?interno=0` desfaz. Serve para o
+      escritório e o estúdio não entrarem nas métricas. Filtro por IP não
+      serve aqui: os dois estão em IPv6 de provedor residencial, que troca o
+      final do endereço todo dia.
+
+      Precisa vir ANTES das duas tags, que leem `window.acessoInterno`.
+    */}
+    <script is:inline>
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          if (q.has('interno')) {
+            if (q.get('interno') === '0') localStorage.removeItem('tobias-interno');
+            else localStorage.setItem('tobias-interno', '1');
+          }
+          window.acessoInterno = localStorage.getItem('tobias-interno') === '1';
+        } catch (e) {
+          window.acessoInterno = false;
+        }
+      })();
+    </script>
+
+    {/*
+      Google tag (gtag.js). `is:inline` pelo mesmo motivo do Clarity, mais
+      abaixo: sem ele o Astro processa o script como módulo. A tag é inserida
+      por script, e não por uma tag com `src` fixo, para poder ser pulada no acesso
+      interno. O `gtag` existe nos dois casos — os eventos do site chamam ele
+      sem checar nada e, sem a tag, só enchem um `dataLayer` que ninguém lê.
+    */}
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
+      }
+      if (!window.acessoInterno) {
+        var tagGoogle = document.createElement('script');
+        tagGoogle.async = true;
+        tagGoogle.src = 'https://www.googletagmanager.com/gtag/js?id=G-QWQL2DJVGN';
+        document.head.appendChild(tagGoogle);
       }
       gtag('js', new Date());
 
@@ -151,7 +187,7 @@ const jsonLd =
       terceiro precisa rodar exatamente como o Clarity o entrega.
     */}
     <script is:inline type="text/javascript">
-      (function (c, l, a, r, i, t, y) {
+      if (!window.acessoInterno) (function (c, l, a, r, i, t, y) {
         c[a] =
           c[a] ||
           function () {
@@ -167,6 +203,20 @@ const jsonLd =
   </head>
   <body>
     <slot />
+
+    <script>
+      /*
+       * Conversão do e-mail. Os cliques no WhatsApp já viram `contato_whatsapp`
+       * no próprio Google Analytics (regra criada lá, a partir do `click` de
+       * link externo), mas `mailto:` não é link externo para o GA e não gera
+       * `click` nenhum — por isso este conta à mão.
+       */
+      document.addEventListener('click', (evento) => {
+        const link = (evento.target as HTMLElement)?.closest?.('a[href^="mailto:"]');
+        if (!link) return;
+        (window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', 'contato_email');
+      });
+    </script>
 
     <script>
       import Lenis from 'lenis';

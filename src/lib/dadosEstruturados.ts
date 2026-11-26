@@ -1,4 +1,5 @@
 import type { Config, Pagina } from './conteudo';
+import { imagem } from './imagem';
 
 /*
  * JSON-LD (schema.org) — o que buscador e IA leem como FATO sobre o escritório:
@@ -122,13 +123,22 @@ export function grafoInicio(
     sameAs: [config.instagram, config.linkedin].filter(Boolean),
   };
 
-  const socios = FATOS.socios.map((socio, i) => ({
-    '@type': 'Person',
-    '@id': url(`/#socio-${i + 1}`),
-    name: socio.nome,
-    alumniOf: { '@type': 'CollegeOrUniversity', name: socio.formacao },
-    worksFor: { '@id': id.escritorio },
-  }));
+  const socios = FATOS.socios.map((socio, i) => {
+    /* A foto e a âncora são as da faixa dele na página, achadas pelo primeiro
+       nome — o único que o Sanity guarda. Sem par, o sócio sai sem as duas. */
+    const faixa = pagina.socios.find((s) => socio.nome.startsWith(s.nome));
+    return {
+      '@type': 'Person',
+      '@id': url(`/#socio-${i + 1}`),
+      name: socio.nome,
+      ...(faixa && {
+        url: `${base.canonical}#${faixa.nome.toLowerCase()}`,
+        image: imagem(faixa.foto, { larguras: [722], sizes: '50vw', nome: `${faixa.nome} Tobias advogados` }).src,
+      }),
+      alumniOf: { '@type': 'CollegeOrUniversity', name: socio.formacao },
+      worksFor: { '@id': id.escritorio },
+    };
+  });
 
   const siteWeb = {
     '@type': 'WebSite',
@@ -220,6 +230,9 @@ export function grafoArtigo(
   artigo: {
     titulo: string;
     publicado: string;
+    atualizado?: string;
+    /* A assinatura que a página mostra: a OAB e para onde ela aponta. */
+    autor: { registro: string; caminho: string };
     imagem?: string;
     fontes: string[];
     trilha: { texto: string; href: string }[];
@@ -236,8 +249,16 @@ export function grafoArtigo(
     description: descricao,
     inLanguage: idioma,
     datePublished: artigo.publicado,
+    dateModified: artigo.atualizado ?? artigo.publicado,
     ...(artigo.imagem && { image: new URL(artigo.imagem, site).href }),
-    author: { '@type': 'Person', '@id': new URL('/#socio-1', site).href, name: autor.nome },
+    author: {
+      '@type': 'Person',
+      '@id': new URL('/#socio-1', site).href,
+      name: autor.nome,
+      jobTitle: 'Advogado',
+      identifier: artigo.autor.registro,
+      url: new URL(artigo.autor.caminho, site).href,
+    },
     publisher: { '@id': id.escritorio },
     mainEntityOfPage: { '@id': `${canonical}#pagina` },
     citation: artigo.fontes,

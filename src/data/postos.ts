@@ -45,7 +45,7 @@ import capaPreparar from '../assets/fotos/artigos/preparar.jpg';
 
 export const postos = {
   seo: {
-    titulo: 'Reforma tributária para postos de combustível | Tobias Advogados',
+    titulo: 'Reforma tributária para postos de combustível | Tobias',
     descricao:
       'Análise de documentos fiscais e estrutura societária para adequar seu posto às novas regras do IBS e da CBS.',
   },

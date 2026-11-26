@@ -24,7 +24,11 @@ const t = textos('pt-BR');
 
 /* Meia tela na largura de projeto e o dobro para telas densas — os mesmos
    candidatos do Sobre da one page. */
-const foto = imagem(socio.foto, { larguras: [722, 1444], sizes: '(max-width: 700px) 100vw, 50vw' });
+const foto = imagem(socio.foto, {
+  larguras: [722, 1444],
+  sizes: '(max-width: 700px) 100vw, 50vw',
+  nome: `${socio.nome} Tobias advogado tributarista`,
+});
 ---
 
 <section class="sobre-postos" id="sobre">

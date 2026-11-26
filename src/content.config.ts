@@ -22,6 +22,9 @@ const artigos = defineCollection({
     seo: z.object({ titulo: z.string(), descricao: z.string() }),
     /* `YYYY-MM-DD`, escrito por extenso na página — ver o layout. */
     publicado: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    /* Só quando o CONTEÚDO for revisado (lei nova, correção de mérito): aparece
+       na página, vira o `dateModified` do JSON-LD e o `lastmod` do sitemap. */
+    atualizado: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     /*
      * O `_key` do cartão deste artigo em `postos.artigos.itens`. É dele que vêm
      * a capa e o "Ler artigo" da landing: com o arquivo aqui, o cartão de lá

@@ -6,6 +6,52 @@
   command = "npm run build"
   publish = "dist"
 
+# Cache. Sem estas regras a Netlify manda `max-age=0` em tudo, e o navegador
+# pergunta de novo por cada arquivo a cada visita.
+#
+# Tudo em `/_astro/` tem o hash do conteúdo no nome: arquivo que muda ganha
+# outro endereço, então pode ser guardado para sempre.
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Os vídeos saem de `public/` com nome fixo, então o prazo é curto: um dia sem
+# perguntar e, depois disso, serve o guardado enquanto confere. Quem trocar um
+# vídeo mantendo o nome pode levar até um dia para ver o novo. Vídeo novo nesta
+# pasta precisa da própria regra.
+[[headers]]
+  for = "/video-hero-720.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/video-hero-1080.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/video-hero-1440.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/video-postos-celular.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/video-postos-desktop.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# Endereço inexistente em `/en/` cai na 404 em inglês. A da raiz (`404.html`) a
+# Netlify usa sozinha. Sem `force`, a regra só vale onde não há arquivo.
+[[redirects]]
+  from = "/en/*"
+  to = "/en/404/"
+  status = 404
+
 [[redirects]]
   from = "/api/apresentacao"
   to = "/.netlify/functions/apresentacao"

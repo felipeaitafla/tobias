@@ -12,6 +12,22 @@
 const PRONTA = 'simbolo-monta--pronta';
 const MONTANDO = 'simbolo-monta--montando';
 
+/*
+ * Para o símbolo que já está à vista na carga (o da 404): a classe de montagem
+ * vem escrita no HTML e o CSS anima desde o primeiro quadro, sem script. Aqui
+ * ela só sai no fim, para o `:hover` voltar a ter o que reiniciar. `finished`, e
+ * não `animationend`: resolve mesmo que a montagem tenha acabado antes de o
+ * script rodar.
+ */
+export function soltarSimboloAoMontar(seletor: string) {
+  document.querySelectorAll<SVGElement>(seletor).forEach((simbolo) => {
+    const barras = simbolo.getAnimations({ subtree: true });
+    Promise.all(barras.map((barra) => barra.finished)).then(() =>
+      simbolo.classList.remove(MONTANDO),
+    );
+  });
+}
+
 export function montarSimboloAoAparecer(seletor: string) {
   // Sem observador não há quem tire a classe `--pronta` depois: melhor nunca
   // fechar o símbolo do que fechá-lo sem promessa de reabrir.

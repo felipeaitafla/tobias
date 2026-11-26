@@ -36,7 +36,11 @@ const pdfApresentacao = apresentacao?.arquivo
 const LARGURAS_FOTO = [722, 1444];
 const SIZES_FOTO = '50vw';
 
-const fotoEscritorio = imagem(historia.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
+const fotoEscritorio = imagem(historia.foto, {
+  larguras: LARGURAS_FOTO,
+  sizes: SIZES_FOTO,
+  nome: 'socios-tobias-advogados',
+});
 /*
  * O logo do Valor NÃO tem 81,67px de largura fixa — ele escala junto com o resto
  * do site. `.materia__logo` pede `5.104rem`, e a fonte-raiz é
@@ -62,6 +66,7 @@ const fotoEscritorio = imagem(historia.foto, { larguras: LARGURAS_FOTO, sizes: S
 const logoValor = imagem(materia.logo, {
   larguras: [82, 164],
   sizes: 'clamp(61.3px, 5.65vw, 142.9px)',
+  nome: `logo-${materia.veiculo}`,
 });
 
 /*
@@ -115,6 +120,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
           width={logoValor.width}
           height={logoValor.height}
           alt={materia.veiculo}
+          loading="lazy"
         />
         {/*
           Mesma renderização do aparte do hero: Portable Text de um bloco só,
@@ -148,26 +154,30 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
         width={fotoEscritorio.width}
         height={fotoEscritorio.height}
         alt={historia.fotoAlt}
+        loading="lazy"
       />
 
       {/*
-        `loading="lazy"` para o PDF (e o leitor embutido do navegador) só
-        entrarem quando a seção estiver perto da tela — a página não paga por
-        eles na carga.
+        Sem `src` na origem: quem monta o visor é o script, perto de a faixa
+        aparecer e só onde há hover — a página não paga pelo PDF na carga (ver
+        `src/lib/sobre/materia.ts`).
       */}
-      <div class="materia__visor">
+      <div class="materia__visor" hidden>
         <iframe
           class="materia__pdf"
-          src={`${materia.arquivo}#toolbar=0&navpanes=0&view=FitH`}
-          title={`${materia.veiculo}: ${chamadaTexto}`}
-          loading="lazy"></iframe>
+          data-src={`${materia.arquivo}#toolbar=0&navpanes=0&view=FitH`}
+          title={`${materia.veiculo}: ${chamadaTexto}`}></iframe>
       </div>
     </div>
   </div>
 
   {
     socios.map((socio) => {
-      const foto = imagem(socio.foto, { larguras: LARGURAS_FOTO, sizes: SIZES_FOTO });
+      const foto = imagem(socio.foto, {
+        larguras: LARGURAS_FOTO,
+        sizes: SIZES_FOTO,
+        nome: `${socio.nome} Tobias advogados`,
+      });
       /* A âncora vem do nome porque o CMS não tem por que pedir um id ao
          cliente — e assim `#marjorye` e `#thiago` continuam existindo. */
       const ancora = socio.nome.toLowerCase();
@@ -1135,4 +1145,7 @@ const avisoFormato = (historia.materiaFormato ?? '').replace(
 <script>
   import { iniciarGateApresentacao } from '../lib/sobre/apresentacao';
   iniciarGateApresentacao();
+
+  import { montarVisorDaMateria } from '../lib/sobre/materia';
+  montarVisorDaMateria();
 </script>

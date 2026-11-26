@@ -97,9 +97,10 @@ const indice = (artigo.rendered?.metadata?.headings ?? []).filter((titulo) => ti
 
 /* `T00:00:00` obriga a leitura em hora local — sem isso a data volta um dia a
    oeste de Greenwich (ver `Legal.astro`). */
-const publicado = new Intl.DateTimeFormat(idioma, { dateStyle: 'long' }).format(
-  new Date(`${artigo.data.publicado}T00:00:00`),
-);
+const porExtenso = (data: string) =>
+  new Intl.DateTimeFormat(idioma, { dateStyle: 'long' }).format(new Date(`${data}T00:00:00`));
+const publicado = porExtenso(artigo.data.publicado);
+const { atualizado } = artigo.data;
 
 /* 200 palavras por minuto, a conta usual para texto técnico em português. A
    tabela entra na contagem, e é justo: ela também é lida. */
@@ -122,10 +123,13 @@ const trilha = [
   descricao={artigo.data.seo.descricao}
   idioma={idioma}
   rotas={{ [idioma]: caminhoArtigo(artigo.id) }}
+  pesosDeTitulo={[500]}
   dadosEstruturados={(contexto) =>
     grafoArtigo(contexto, {
       titulo: artigo.data.titulo,
       publicado: artigo.data.publicado,
+      atualizado,
+      autor: { registro: postos.hero.autor.registro, caminho: `${landing}#sobre` },
       imagem: cartao.capa?.src,
       fontes,
       trilha,
@@ -175,6 +179,16 @@ const trilha = [
             <p class="artigo__data">
               <time datetime={artigo.data.publicado}>{publicado}</time>
               <span aria-hidden="true">·</span>
+              {
+                atualizado && (
+                  <>
+                    <span>
+                      Atualizado em <time datetime={atualizado}>{porExtenso(atualizado)}</time>
+                    </span>
+                    <span aria-hidden="true">·</span>
+                  </>
+                )
+              }
               {minutos} min de leitura
             </p>
           </div>

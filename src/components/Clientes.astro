@@ -88,6 +88,7 @@ const ritmo = `
             const logo = imagem(cliente.logo, {
               larguras: [Math.round(cliente.largura * 16), Math.round(cliente.largura * 32)],
               sizes: `${cliente.largura}rem`,
+              nome: `logo-${cliente.nome}`,
             });
             return (
               <li class="clientes__celula">

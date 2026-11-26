@@ -5,7 +5,7 @@
 # os outros dois artigos e para o CTA.
 titulo: O que muda para postos de combustível com a reforma tributária
 seo:
-  titulo: 'Reforma tributária em postos de combustível: o que muda | Tobias Advogados'
+  titulo: 'Postos de combustível: o que muda com a reforma | Tobias'
   descricao: 'Entenda o impacto da reforma tributária nos postos de combustível: regime monofásico na pista, tributação na conveniência e lubrificantes.'
 publicado: '2026-10-15'
 cartao: o-que-muda

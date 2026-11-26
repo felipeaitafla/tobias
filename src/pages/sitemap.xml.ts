@@ -19,18 +19,25 @@ import { caminhoArtigo } from '../lib/artigos';
 export const GET: APIRoute = async ({ site }) => {
   const url = (caminho: string) => new URL(caminho, site).href;
 
-  const artigos = (await getCollection('artigos')).map((artigo) => ({
-    'pt-BR': caminhoArtigo(artigo.id),
-  }));
+  const colecao = await getCollection('artigos');
+  const artigos = colecao.map((artigo) => ({ 'pt-BR': caminhoArtigo(artigo.id) }));
+
+  /* `lastmod` só nos artigos, que são quem tem data de verdade: a do build
+     marcaria toda página como alterada a cada edição de qualquer uma. */
+  const datas = new Map(
+    colecao.map(({ id, data }) => [caminhoArtigo(id), data.atualizado ?? data.publicado]),
+  );
 
   const entradas = [...Object.values(PAGINAS), ...artigos].flatMap((versoes) => {
     const pares = Object.entries(versoes);
     const alternativas = pares
       .map(([id, caminho]) => `    <xhtml:link rel="alternate" hreflang="${id}" href="${url(caminho)}"/>`)
       .join('\n');
-    return pares.map(
-      ([, caminho]) => `  <url>\n    <loc>${url(caminho)}</loc>\n${alternativas}\n  </url>`,
-    );
+    return pares.map(([, caminho]) => {
+      const data = datas.get(caminho);
+      const lastmod = data ? `\n    <lastmod>${data}</lastmod>` : '';
+      return `  <url>\n    <loc>${url(caminho)}</loc>${lastmod}\n${alternativas}\n  </url>`;
+    });
   });
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

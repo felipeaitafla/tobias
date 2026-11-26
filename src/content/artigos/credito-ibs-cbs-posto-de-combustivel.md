@@ -4,7 +4,7 @@
 # artigos e para o CTA, e as notas do redator ficaram de fora.
 titulo: Quais créditos o posto tem, e não tem, na reforma tributária
 seo:
-  titulo: 'Crédito de IBS e CBS em posto de combustível: guia | Tobias Advogados'
+  titulo: 'Crédito de IBS e CBS em posto de combustível | Tobias'
   descricao: 'Entenda os créditos de IBS e CBS no posto de combustível: frete, aluguel, equipamentos e as regras para o ressarcimento de saldos.'
 publicado: '2026-10-15'
 cartao: creditos
@@ -26,11 +26,11 @@ fontes:
     nota: Define as regras de creditamento nas aquisições sob o regime monofásico.
 ---
 
-A regra de aproveitamento de **crédito IBS CBS posto de combustível** introduz uma separação clara entre os custos operacionais da empresa e a aquisição do produto vendido na bomba. Enquanto a compra de combustíveis para revenda não permite a apropriação de créditos por estar sujeita ao regime monofásico, as demais despesas e insumos da operação geram direito ao creditamento amplo do Imposto sobre Bens e Serviços (IBS) e da Contribuição sobre Bens e Serviços (CBS). Compreender a gestão desse saldo credor acumulado é essencial para garantir a liquidez do caixa e evitar o represamento de capital no estabelecimento.
+A regra de aproveitamento de **crédito de IBS e CBS no posto de combustível** introduz uma separação clara entre os custos operacionais da empresa e a aquisição do produto vendido na bomba. Enquanto a compra de combustíveis para revenda não permite a apropriação de créditos por estar sujeita ao regime monofásico, as demais despesas e insumos da operação geram direito ao creditamento amplo do Imposto sobre Bens e Serviços (IBS) e da Contribuição sobre Bens e Serviços (CBS). Compreender a gestão desse saldo credor acumulado é essencial para garantir a liquidez do caixa e evitar o represamento de capital no estabelecimento.
 
 ## Posto de combustível tem direito a crédito de IBS e CBS?
 
-Sim, o posto de combustível tem direito a **crédito IBS CBS posto de combustível** sobre as despesas e insumos operacionais do estabelecimento, mas não sobre a aquisição do combustível destinado à revenda.
+Sim, o posto de combustível tem direito a **crédito de IBS e CBS** sobre as despesas e insumos operacionais do estabelecimento, mas não sobre a aquisição do combustível destinado à revenda.
 
 A Emenda Constitucional 132/2023 e a Lei Complementar 214/2025 consagraram o princípio da não cumulatividade plena para o IVA Dual (composto pelo IBS, de gestão estadual e municipal, e pela CBS, de gestão federal). Sob esse novo modelo, todas as aquisições de bens e serviços tributados efetuadas por uma empresa no regime regular geram créditos para abater os tributos devidos em suas saídas.
 
@@ -121,6 +121,6 @@ Embora o crédito do aluguel seja legítimo e reduza o custo operacional, ele ex
 
 ## Conclusão
 
-O aproveitamento do **crédito IBS CBS posto de combustível** representa a principal ferramenta de equilíbrio financeiro para os revendedores na reforma tributária. Embora o combustível monofásico não gere crédito na compra e nem débito na venda, a apropriação sobre o frete, energia, aluguel e equipamentos garante a desoneração dos custos operacionais. Organizar a escrituração e manter a conformidade fiscal serão os passos decisivos para transformar saldos credores em dinheiro no caixa.
+O aproveitamento do **crédito de IBS e CBS no posto de combustível** representa a principal ferramenta de equilíbrio financeiro para os revendedores na reforma tributária. Embora o combustível monofásico não gere crédito na compra e nem débito na venda, a apropriação sobre o frete, energia, aluguel e equipamentos garante a desoneração dos custos operacionais. Organizar a escrituração e manter a conformidade fiscal serão os passos decisivos para transformar saldos credores em dinheiro no caixa.
 
 Para mapear os créditos das suas despesas operacionais e definir a melhor estratégia de ressarcimento para a sua rede, [agende um diagnóstico tributário personalizado](#contato) com nossa equipe técnica.

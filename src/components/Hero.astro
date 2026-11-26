@@ -11,7 +11,11 @@ interface Props {
 
 const { hero } = Astro.props;
 
-const foto = imagem(hero.foto, { larguras: [640, 1024, 1440, 2048], sizes: '100vw' });
+const foto = imagem(hero.foto, {
+  larguras: [640, 1024, 1440, 2048],
+  sizes: '100vw',
+  nome: 'tobias-advogados-capa',
+});
 
 /*
  * O aparte vem como Portable Text de um bloco só: os trechos fortes são marcas
@@ -41,8 +45,11 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     para quem prefere sem movimento (`prefers-reduced-motion`, ver o style: o
     vídeo some e a foto mostra por baixo, sem JS nenhum). Os dois arquivos saem
     do mesmo ProRes 4K de 692 MB, que não entra no git (ver `.gitignore`).
-    `muted` é obrigatório para o autoplay funcionar em qualquer navegador, e
+    `muted` é obrigatório para tocar sozinho em qualquer navegador, e
     `playsinline` evita o iOS abrir em tela cheia sozinho.
+
+    Sem `autoplay` desde 2026-11-26: quem dá o play é o script no fim do
+    arquivo, depois da carga da página (ver `src/lib/video.ts`).
 
     --- A escada de resolução (2026-08-11) ---
 
@@ -80,7 +87,7 @@ const trechos = hero.aparte?.[0]?.children ?? [];
   */}
   <video
     class="hero__video"
-    autoplay
+    preload="none"
     muted
     loop
     playsinline
@@ -372,3 +379,9 @@ const trechos = hero.aparte?.[0]?.children ?? [];
     flex-shrink: 0;
   }
 </style>
+
+<script>
+  import { tocarDepoisDaCarga } from '../lib/video';
+
+  tocarDepoisDaCarga('.hero__video');
+</script>

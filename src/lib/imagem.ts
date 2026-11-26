@@ -45,10 +45,24 @@ interface Opcoes {
    * menor. Precisa de `dimensoes` na consulta; sem elas, vai a foto inteira.
    */
   recorte?: { x: number; y: number; largura: number; altura: number };
+  /**
+   * Nome de arquivo legível no fim do endereço. Sem ele a CDN serve a imagem só
+   * pelo hash, que não diz nada a buscador nenhum. Texto livre: vira
+   * minúsculas e hífens aqui, e a extensão é a do arquivo original.
+   */
+  nome?: string;
 }
 
+const paraArquivo = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
 /** Devolve o pacote que um `<img>` precisa: src, srcset, width, height. */
-export function imagem(fonte: ImagemSanity, { larguras, sizes, altura, recorte }: Opcoes) {
+export function imagem(fonte: ImagemSanity, { larguras, sizes, altura, recorte, nome }: Opcoes) {
   const dim = fonte.dimensoes;
   /* O recorte em pixels do arquivo, que é o que a CDN entende (`rect`). */
   const rect =
@@ -66,6 +80,11 @@ export function imagem(fonte: ImagemSanity, { larguras, sizes, altura, recorte }
     if (rect) url = url.rect(rect.x, rect.y, rect.w, rect.h);
     url = url.width(largura).auto('format').quality(82);
     if (altura) url = url.height(Math.round((altura / larguras[0]) * largura)).fit('crop');
+    const arquivo = nome && paraArquivo(nome);
+    if (arquivo) {
+      const extensao = new URL(url.url()).pathname.split('.').pop();
+      url = url.vanityName(`${arquivo}.${extensao}`);
+    }
     return url.url();
   };
 

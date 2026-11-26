@@ -61,6 +61,9 @@ const artigos = await cartoesDeArtigo();
   descricao={postos.seo.descricao}
   idioma={idioma}
   rotas={PAGINAS.postos}
+  {/* Só o 500, que é o título. O 700 do destaque ficou de fora de propósito:
+      pré-carregado, o LCP subia de 2,1 para 2,45s sem reduzir o CLS. */}
+  pesosDeTitulo={[500]}
   dadosEstruturados={(contexto) =>
     grafoPostos(
       contexto,

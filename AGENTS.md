@@ -772,6 +772,11 @@ destravamento do download da apresentação, na faixa do Thiago — nas três o 
 entra é interação, não movimento. A sétima, o ornamento que segue o ponteiro, é
 movimento e está na seção do formulário.)
 
+Desde 2026-11-26 há mais dois scripts, e os dois existem por peso de página, não
+por efeito: o **play dos vídeos de fundo** depois da carga e a **montagem do
+visor do PDF** da matéria (ver "Buscadores e IAs"). O critério do "sem JS a
+página continua inteira" vale igual: sobra a foto, e o link do PDF.
+
 **1. O símbolo do manifesto** monta sozinho na primeira vez que aparece na tela.
 Não dá em CSS — `animation-timeline` amarra a animação à barra de rolagem, e a
 montagem congelaria no meio se a pessoa parasse de rolar; aqui ela precisa
@@ -875,7 +880,9 @@ menos que isso e a espera longa parecia travamento). O que vale como regra para
 qualquer hover do mesmo tipo é a forma, não o número: **a revelação é imediata, o
 atraso é só na saída.**
 
-Não precisa de JS. O truque é onde mora o `transition-delay`:
+O hover não precisa de JS (o script de [`materia.ts`](src/lib/sobre/materia.ts)
+só monta o iframe, ver "Buscadores e IAs"). O truque é onde mora o
+`transition-delay`:
 
 - no estado **normal** vai `transition: opacity .3s .4s, visibility 0s .7s` — é
   ele que segura o visor aberto na saída, e o segundo tempo é sempre o primeiro
@@ -1310,9 +1317,10 @@ Três detalhes para não tropeçar:
 ### O vídeo de fundo do hero
 
 Pedido do cliente, 2026-07-31: vídeo no lugar da foto estática
-(`Hero.astro`). **Zero JS** — nem entra na lista das sete exceções ao
-"sem JS", porque o mecanismo inteiro é `<video autoplay muted loop
-playsinline>` mais uma media query.
+(`Hero.astro`). O mecanismo é `<video preload="none" muted loop
+playsinline>` mais uma media query, e o play vem de
+[`video.ts`](src/lib/video.ts) **depois da carga da página** — até 2026-11-26
+era `autoplay`, sem JS nenhum (ver "Buscadores e IAs").
 
 O arquivo de origem, `src/assets/video-hero.mov`, é ProRes 4K de 692 MB
 e ~10s — grande demais para o repositório e cru demais para servir.
@@ -1349,7 +1357,7 @@ movimento nunca veja o vídeo rodar, nem por um quadro, é ele nascer
 escondido e a media query é que precisa se esforçar para revelar, não o
 contrário.
 
-`muted` é obrigatório — sem ele nenhum navegador libera `autoplay` — e
+`muted` é obrigatório — sem ele nenhum navegador deixa tocar sozinho — e
 `playsinline` evita o iOS abrir o vídeo em tela cheia sozinho.
 
 **O vídeo NÃO está no Sanity, e isso é decisão, não esquecimento.** Ele é o
@@ -2798,6 +2806,24 @@ navegador. O que faltava entrou assim:
 aponta sem a barra (`/termos-de-uso`, `/en/privacy-policy`…). Funciona, mas
 cada clique passa por um 301.
 
+### A segunda leva (2026-11-25 e 26), contra o guia de SEO/GEO do estúdio
+
+- **Vídeos de fundo tocam depois da carga** ([`video.ts`](src/lib/video.ts)):
+  com `autoplay` eles disputavam banda com fontes e imagem do topo, e quem pedia
+  sem movimento baixava o arquivo do mesmo jeito. Não há como adiar no HTML. Não
+  devolva o `autoplay`;
+- **o PDF da matéria só baixa com hover disponível e perto da faixa**
+  ([`materia.ts`](src/lib/sobre/materia.ts)). `loading="lazy"` não adia iframe
+  escondido, e ele baixava em toda visita. O visor nasce `hidden`;
+- **título de página até ~60 caracteres.** Na landing e nos artigos a marca é
+  "| Tobias", para a palavra-chave caber;
+- **artigo revisado ganha `atualizado` no frontmatter** — aparece na página, no
+  `dateModified` e no `lastmod` do sitemap. Só para revisão de conteúdo;
+- fonte do título pré-carregada na landing e nos artigos (só o peso 500; com o
+  700 junto o LCP piorava), 404 própria nos dois idiomas
+  ([`NaoEncontrada.astro`](src/layouts/NaoEncontrada.astro)), cache longo em
+  `/_astro/` no `netlify.toml`, nomes legíveis nas imagens do Sanity.
+
 ## A landing de postos de combustível (`/postos-de-combustivel/`)
 
 Começou em 2026-10-08: landing de reforma tributária para postos, só em
@@ -2940,8 +2966,8 @@ da one page, e o mapa é este (cada componente explica a escolha no cabeçalho):
   `srcset` para no 1024 porque não há de onde tirar mais.
 - **Desde 2026-10-09 há um vídeo por cima da foto do hero** (pedido do cliente:
   "colagem de vídeos de postos, 8 segundos, conceitual"). Mesmo esquema do hero
-  da one page — `<video autoplay muted loop playsinline>` em `public/`, nasce
-  escondido e só aparece sem `prefers-reduced-motion`, a foto embaixo como
+  da one page — `<video preload="none" muted loop playsinline>` em `public/`,
+  com o play depois da carga (`video.ts`), nasce escondido e só aparece sem `prefers-reduced-motion`, a foto embaixo como
   fallback e LCP. Duas versões, trocadas no **700px do layout** (e não num
   degrau de resolução como na one page) porque o bloco muda de PROPORÇÃO ali:
   `video-postos-desktop.mp4` (1920×860, 2,23:1, 2,9 MB) e

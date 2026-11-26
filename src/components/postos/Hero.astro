@@ -84,9 +84,11 @@ const { hero, agendar, saibaMais, fotoAutor } = Astro.props;
       Uma cor só nos cinco, dessaturada e puxada para o petróleo. O loop emenda
       num corte. Clipes, trechos e recortes estão no AGENTS.md.
 
-      O mesmo esquema do hero da one page, sem JS: a foto continua embaixo —
-      é o que aparece até o vídeo carregar, o que conta como LCP e o que fica
-      para quem pediu sem movimento (o vídeo nasce escondido, ver o style).
+      O mesmo esquema do hero da one page: a foto continua embaixo — é o que
+      aparece até o vídeo carregar, o que conta como LCP e o que fica para quem
+      pediu sem movimento (o vídeo nasce escondido, ver o style) ou está sem
+      JS. Quem dá o play é o script no fim do arquivo, depois da carga da página
+      (ver `src/lib/video.ts`).
 
       Duas versões porque o bloco muda de PROPORÇÃO no breakpoint: 2,23:1 acima
       de 700px e 3:2 abaixo. Por isso o corte aqui é o 700 do layout, e não um
@@ -96,7 +98,7 @@ const { hero, agendar, saibaMais, fotoAutor } = Astro.props;
     */}
     <video
       class="hero-postos__video"
-      autoplay
+      preload="none"
       muted
       loop
       playsinline
@@ -331,3 +333,9 @@ const { hero, agendar, saibaMais, fotoAutor } = Astro.props;
     }
   }
 </style>
+
+<script>
+  import { tocarDepoisDaCarga } from '../../lib/video';
+
+  tocarDepoisDaCarga('.hero-postos__video');
+</script>

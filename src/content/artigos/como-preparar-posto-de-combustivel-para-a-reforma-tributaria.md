@@ -5,7 +5,7 @@
 # [LINK …] viraram links, e as notas do redator ficaram de fora.
 titulo: 'Como preparar seu posto para a reforma tributária: as decisões antes da virada'
 seo:
-  titulo: 'Como preparar posto de combustível para a reforma tributária | Tobias Advogados'
+  titulo: 'Como preparar o posto para a reforma tributária | Tobias'
   descricao: 'Aprenda como preparar seu posto de combustível para a reforma tributária: opção pelo Simples, ajuste de notas fiscais, ERP e diagnóstico tributário.'
 publicado: '2026-10-15'
 cartao: preparar

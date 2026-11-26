@@ -28,9 +28,28 @@ interface Props {
    * lugar, e as duas divergiriam na primeira vez que alguém acertasse uma só.
    */
   dadosEstruturados?: (contexto: ContextoPagina) => object;
+  /*
+   * Pesos da fonte de título a pré-carregar ALÉM do 400. Quem abre com título
+   * em outro peso precisa pedir: a face chega depois do primeiro desenho, o
+   * texto requebra e empurra o que está embaixo (CLS de até 0,15 na landing de
+   * postos, medido em 2026-11-25). Só o que aparece acima da dobra — cada peso
+   * é um download com prioridade, disputando com a imagem principal.
+   */
+  pesosDeTitulo?: number[];
+  /* Para a página de erro: sai com `noindex` e sem canonical nem `hreflang`,
+     porque ela não tem endereço próprio — responde em qualquer um. */
+  semIndexar?: boolean;
 }
 
-const { titulo, descricao, idioma, rotas, dadosEstruturados } = Astro.props;
+const {
+  titulo,
+  descricao,
+  idioma,
+  rotas,
+  dadosEstruturados,
+  pesosDeTitulo = [],
+  semIndexar = false,
+} = Astro.props;
 
 /*
  * O português mora na raiz e o inglês em `/en/` (`prefixDefaultLocale: false`).
@@ -138,18 +157,19 @@ const jsonLd =
     <title>{titulo}</title>
     <meta name="description" content={descricao} />
 
-    <link rel="canonical" href={canonical} />
+    {semIndexar ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     {
-      Object.entries(caminhos).map(([id, caminho]) => (
-        <link rel="alternate" hreflang={id} href={urlDe(caminho)} />
-      ))
+      !semIndexar &&
+        Object.entries(caminhos).map(([id, caminho]) => (
+          <link rel="alternate" hreflang={id} href={urlDe(caminho)} />
+        ))
     }
-    {padrao && <link rel="alternate" hreflang="x-default" href={urlDe(padrao)} />}
+    {!semIndexar && padrao && <link rel="alternate" hreflang="x-default" href={urlDe(padrao)} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={titulo} />
     <meta property="og:description" content={descricao} />
-    <meta property="og:url" content={canonical} />
+    {!semIndexar && <meta property="og:url" content={canonical} />}
     <meta property="og:locale" content={ogLocale} />
     <meta property="og:image" content={ogImagem} />
     <meta property="og:image:width" content="1200" />
@@ -170,7 +190,10 @@ const jsonLd =
       latino e peso 400 sobram só as duas faces usadas acima da dobra —
       o resto é buscado sob demanda via unicode-range.
     */}
-    <Font cssVariable="--fonte-display-astro" preload={[{ subset: 'latin', weight: 400 }]} />
+    <Font
+      cssVariable="--fonte-display-astro"
+      preload={[400, ...pesosDeTitulo].map((weight) => ({ subset: 'latin', weight }))}
+    />
     <Font cssVariable="--fonte-corpo-astro" preload={[{ subset: 'latin', weight: 400 }]} />
     {/*
       Se um dia entrar uma terceira família em `astro.config.mjs`, ela precisa

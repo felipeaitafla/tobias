@@ -28,6 +28,10 @@ const DICIONARIO: Record<
     'apresentacao.travado': string;
     'idioma.escolher': string;
     'legal.atualizado': string;
+    'erro.seo': string;
+    'erro.titulo': string;
+    'erro.texto': string;
+    'erro.voltar': string;
   }
 > = {
   'pt-BR': {
@@ -49,6 +53,13 @@ const DICIONARIO: Record<
     /* O rótulo é fixo; a DATA vem do Sanity, porque é ela que o cliente
        atualiza a cada revisão do texto. */
     'legal.atualizado': 'Última atualização: ',
+    /* A página 404. Aqui, e não no Sanity, apesar de ser texto à vista: são
+       quatro frases de sistema, que o cliente não tem por que editar. Se um dia
+       quiser, viram campos na `pagina`. */
+    'erro.seo': 'Página não encontrada — Tobias Advogados',
+    'erro.titulo': 'Página não encontrada',
+    'erro.texto': 'O endereço pode ter mudado ou ter sido digitado com algum erro.',
+    'erro.voltar': 'Voltar ao início',
   },
   en: {
     'rodape.aria': 'Footer',
@@ -64,6 +75,10 @@ const DICIONARIO: Record<
     'apresentacao.travado': 'Available once you fill in your email',
     'idioma.escolher': 'Choose language',
     'legal.atualizado': 'Last updated: ',
+    'erro.seo': 'Page not found — Tobias Advogados',
+    'erro.titulo': 'Page not found',
+    'erro.texto': 'The address may have changed, or it was typed with a mistake.',
+    'erro.voltar': 'Back to the home page',
   },
 };
 

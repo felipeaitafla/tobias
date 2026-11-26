@@ -28,6 +28,17 @@ const { trechos = [], anotacoes = [] } = Astro.props;
  */
 const destinoDe = (marcas: string[]) =>
   marcas.map((marca) => anotacoes.find((a) => a._key === marca)?.href).find(Boolean);
+
+/*
+ * Caminho do próprio site ganha a barra do fim, mesmo que o texto no Studio
+ * venha sem: sem ela a Netlify responde com 301 (ver `src/lib/rotas.ts`). Só
+ * mexe no que começa com uma barra; arquivo (com extensão), endereço de fora,
+ * `mailto:` e âncora ficam como estão.
+ */
+const comBarra = (href: string) =>
+  href.replace(/^(\/(?!\/)[^?#]*)/, (caminho) =>
+    caminho.endsWith('/') || /\.[a-z0-9]+$/i.test(caminho) ? caminho : `${caminho}/`,
+  );
 ---
 
 {
@@ -53,7 +64,7 @@ const destinoDe = (marcas: string[]) =>
         {comPeso}
       </a>
     ) : (
-      <a href={href}>{comPeso}</a>
+      <a href={comBarra(href)}>{comPeso}</a>
     );
   })
 }

@@ -1,0 +1,119 @@
+---
+/*
+ * A página 404, nos dois idiomas. O alto e o pé do site em volta do símbolo, um
+ * título, uma frase e o caminho de volta — a mesma moldura das páginas legais.
+ *
+ * A raiz (`src/pages/404.astro`) vira `404.html`, que a Netlify serve sozinha em
+ * qualquer endereço sem arquivo. A inglesa precisa da regra de `/en/*` no
+ * `netlify.toml`. Nenhuma das duas entra no sitemap.
+ */
+import Base from './Base.astro';
+import Cabecalho from '../components/Cabecalho.astro';
+import Rodape from '../components/Rodape.astro';
+import Simbolo from '../assets/logos/simbolo-positivo.svg';
+import { buscarConteudo } from '../lib/conteudo';
+import { caminhoDe } from '../lib/idioma';
+import { textos } from '../lib/dicionario';
+
+interface Props {
+  idioma: string;
+}
+
+const { idioma } = Astro.props;
+const { pagina, config } = await buscarConteudo(idioma);
+const t = textos(idioma);
+const inicio = caminhoDe(idioma);
+
+/* Âncora da one page vira âncora COM caminho, como no `Legal.astro`: as seções
+   não estão aqui. `#topo` fica, que é o topo desta página. */
+const comCaminho = (href: string) =>
+  href.startsWith('#') && href !== '#topo' ? `${inicio}${href}` : href;
+
+const navegacao = pagina.navegacao.map((item) => ({ ...item, href: comCaminho(item.href) }));
+const rodape = {
+  ...pagina.rodape,
+  navegacao: pagina.rodape.navegacao.map((item) => ({ ...item, href: comCaminho(item.href) })),
+};
+---
+
+<Base titulo={t['erro.seo']} descricao={t['erro.texto']} idioma={idioma} semIndexar>
+  <Cabecalho
+    navegacao={navegacao}
+    whatsapp={config.whatsapp}
+    whatsappTexto={pagina.whatsappTexto}
+    idioma={idioma}
+    inicio={inicio}
+    sempreVisivel
+  />
+
+  <main id="topo" class="erro secao">
+    {/* `--montando` vem escrita aqui porque o símbolo já está à vista na carga:
+        posta pelo script, como no manifesto, ele apareceria montado por um
+        instante antes de fechar para reabrir (ver `soltarSimboloAoMontar`). */}
+    <Simbolo class="erro__simbolo simbolo-monta simbolo-monta--montando" aria-hidden="true" />
+    <h1 class="erro__titulo">{t['erro.titulo']}</h1>
+    <p class="erro__texto">{t['erro.texto']}</p>
+    <a class="erro__voltar" href={inicio}>{t['erro.voltar']}</a>
+  </main>
+
+  <Rodape rodape={rodape} config={config} idioma={idioma} />
+</Base>
+
+<script>
+  import { soltarSimboloAoMontar } from '../lib/simbolo';
+
+  soltarSimboloAoMontar('.erro__simbolo');
+</script>
+
+<style>
+  .erro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem; /* 24px */
+    min-height: 70svh;
+    text-align: center;
+    background: var(--cor-branco);
+  }
+
+  /* O tamanho do símbolo do manifesto. O vão até o título é o `gap` da coluna,
+     o mesmo que separa o título do texto. */
+  .erro__simbolo {
+    width: 4.956rem; /* 79.29px */
+    height: auto;
+  }
+
+  .erro__titulo {
+    font: var(--texto-titulo-secao);
+    letter-spacing: var(--texto-titulo-secao-ls);
+  }
+
+  .erro__texto {
+    font: var(--texto-apoio);
+    letter-spacing: var(--texto-apoio-ls);
+    color: var(--cor-apoio);
+  }
+
+  .erro__voltar {
+    font: var(--texto-hero-link);
+    text-decoration: underline;
+    text-underline-offset: 0.3em;
+  }
+
+  .erro__voltar:hover {
+    color: var(--cor-petroleo);
+  }
+
+  /* A mesma exceção de mobile das páginas legais: o título de 58px não cabe
+     numa tela de 375. */
+  @media (max-width: 700px) {
+    .erro {
+      padding-block: 96px 64px;
+    }
+
+    .erro__titulo {
+      font-size: 36px;
+    }
+  }
+</style>
